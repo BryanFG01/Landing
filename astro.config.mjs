@@ -7,9 +7,8 @@ import { fotosPublicas, ogImage } from './src/data/imagenes.ts';
 
 // https://astro.build/config
 export default defineConfig({
-  // URL real de esta landing. Canónica, sitemap, robots.txt, og:image y JSON-LD salen de aquí.
-  // PENDIENTE: cambiarlo cuando la landing tenga su dominio final.
-  site: 'https://arko-sushi.midudev.workers.dev',
+  // URL de la landing. Canónica, sitemap, robots.txt, og:image y JSON-LD salen de aquí.
+  site: 'http://localhost:4321',
   integrations: [
     sitemap({
       // La portada lleva sus imágenes en el sitemap: la de redes y las fotos de la finca.

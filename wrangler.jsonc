@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "arko-sushi",
+  "name": "finca-la-esperanza",
   "compatibility_date": "2026-10-06",
   // Web estática: Workers sirve el build de Astro sin código de Worker.
   "assets": {
