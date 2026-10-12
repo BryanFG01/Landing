@@ -3,12 +3,11 @@ import Layout from '../layouts/Layout.astro';
 import ScrollWorld from '../components/ScrollWorld.astro';
 import Tagline from '../components/Tagline.astro';
 import Dishes from '../components/Dishes.astro';
-import Press from '../components/Press.astro';
 import Experiences from '../components/Experiences.astro';
 import Faq from '../components/Faq.astro';
 import Gift from '../components/Gift.astro';
 import FinalCta from '../components/FinalCta.astro';
-import { seo } from '../data/arko';
+import { seo } from '../data/finca';
 import { structuredData } from '../data/schema';
 
 const site = Astro.site;
@@ -21,7 +20,6 @@ const jsonLd = JSON.stringify(structuredData(site)).replaceAll('<', '\\u003c');
   <ScrollWorld />
   <Tagline />
   <Dishes />
-  <Press />
   <Experiences />
   <Faq />
   <Gift />

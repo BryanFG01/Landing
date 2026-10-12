@@ -1,11 +1,12 @@
 ---
+import { marca } from '../data/finca';
+
+// Logo provisional en texto hasta tener el de la finca. El tamaño se da con clases de texto (text-lg, text-2xl…).
 interface Props {
   class?: string;
 }
 
-const { class: className = 'h-5 w-auto' } = Astro.props;
+const { class: className = 'text-xl' } = Astro.props;
 ---
 
-<svg viewBox="0 0 4504 1204" fill="currentColor" class={className} role="img" aria-label="Arko">
-  <use href="#arko-wordmark"></use>
-</svg>
+<span class:list={['font-display leading-none whitespace-nowrap', className]}>{marca.nombre}</span>

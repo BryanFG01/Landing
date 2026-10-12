@@ -1,16 +1,17 @@
 ---
 import { Picture } from 'astro:assets';
+import Pending from './Pending.astro';
 import Spiral from './Spiral.astro';
-import { contacto, links, photos } from '../data/arko';
+import { contacto, links, photos } from '../data/finca';
 ---
 
-<section id="reservar" aria-labelledby="final-title" class="relative overflow-hidden px-4 py-24 md:px-12 xl:px-24">
+<section id="pedir" aria-labelledby="final-title" class="relative overflow-hidden px-4 py-24 md:px-12 xl:px-24">
   <Spiral rings={12} class="pointer-events-none absolute right-0 bottom-0 w-[640px] translate-x-1/3 translate-y-1/3 text-crema/10" />
   <div class="relative mx-auto flex max-w-[680px] flex-col items-center text-center">
     <div data-reveal class="w-48 lg:w-56">
       <Picture
-        src={photos.entrada}
-        alt="La puerta de Arko vista desde dentro, bajo un cerezo en flor"
+        src={photos.amanecer}
+        alt="El sol sale entre las montañas sobre los potreros de la finca"
         formats={['avif', 'webp']}
         widths={[320, 480]}
         sizes="224px"
@@ -21,16 +22,17 @@ import { contacto, links, photos } from '../data/arko';
       />
     </div>
     <h2 id="final-title" data-reveal style="--d:100ms" class="mt-12 text-4xl lg:text-6xl">
-      Te esperamos en<br /> Enric Granados 63
+      Del gallinero<br /> a tu cocina
     </h2>
     <p data-reveal style="--d:200ms" class="mt-6 text-base text-crema/70 lg:text-lg">
-      Todos los días, de 13:00 a 00:00. La cocina sirve hasta las 23:00.
+      Haz tu pedido hoy. Entregamos {contacto.entregas} en {contacto.zonaEntrega}.
     </p>
     <div data-reveal style="--d:300ms" class="mt-8 flex flex-col items-center gap-4">
-      <a href={links.reservar} class="btn btn-primary"><span>Reservar mesa</span></a>
+      <a href={links.pedir} class="btn btn-primary" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
       <p class="text-sm text-crema/70">
         O llámanos al <a href={links.telefono} class="link whitespace-nowrap">{contacto.telefono}</a>
       </p>
     </div>
+    <Pending class="mt-8">Días y zona de entrega, y número de WhatsApp.</Pending>
   </div>
 </section>

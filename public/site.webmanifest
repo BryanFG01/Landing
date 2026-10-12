@@ -1,7 +1,7 @@
 {
-  "name": "Arko Restaurant",
-  "short_name": "Arko",
-  "description": "Sushi y cocina nikkei en el Eixample, Barcelona.",
+  "name": "Finca La Esperanza",
+  "short_name": "La Esperanza",
+  "description": "Huevos colorados de finca y pollo de campo.",
   "lang": "es",
   "start_url": "/",
   "scope": "/",

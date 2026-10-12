@@ -1,16 +1,17 @@
 ---
 import Icon from './Icon.astro';
 import Pending from './Pending.astro';
-import { faqs, faqsPendientes, links } from '../data/arko';
+import { contacto, faqs, faqsPendientes, links } from '../data/finca';
 ---
 
 <section id="preguntas" data-spy="#preguntas" aria-labelledby="faq-title" class="px-4 py-24 md:px-12 xl:px-24">
   <div class="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.6fr]">
     <div>
       <p data-reveal class="text-sm text-teja">Preguntas frecuentes</p>
-      <h2 id="faq-title" data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">Antes de venir</h2>
+      <h2 id="faq-title" data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">Antes de pedir</h2>
       <p data-reveal style="--d:200ms" class="mt-6 max-w-sm text-base text-crema/70">
-        ¿Te queda alguna duda? Llámanos al <a href={links.telefono} class="link whitespace-nowrap">+34 938 29 95 72</a>.
+        ¿Te queda alguna duda? <a href={links.pedir} class="link" rel="noopener" target="_blank">Escríbenos por WhatsApp</a>
+        o llámanos al <a href={links.telefono} class="link whitespace-nowrap">{contacto.telefono}</a>.
       </p>
     </div>
 

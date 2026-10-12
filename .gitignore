@@ -26,9 +26,23 @@ pnpm-debug.log*
 # wrangler
 .wrangler/
 
-# media de trabajo: vídeos, keyframes y respuestas de Higgsfield (pesan mucho o llevan URLs de la cuenta)
-media/**/*.mp4
-media/**/*.webm
-media/**/*.jpg
-media/**/*.log
-media/scroll-world/pruebas/*.json
+# archivos de trabajo locales (no forman parte del sitio)
+.claude/
+.cursor/
+.agents/
+.codex/
+.gemini/
+.windsurf/
+.github/copilot-instructions.md
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+GEMINI.md
+**/PROMPTS.md
+**/SKILL.md
+/skills/
+/agents/
+.mcp.json
+
+# media de trabajo
+media/

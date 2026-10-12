@@ -1,5 +1,5 @@
 ---
-import { paseo } from '../data/arko';
+import { paseo } from '../data/finca';
 
 // Una parada del paseo. El artículo marca la distancia de scroll; el texto se queda abajo a la izquierda
 // mientras la cámara avanza y sale empujado por la parada siguiente.
@@ -10,7 +10,7 @@ interface Props {
   spy?: string;
 }
 
-const { index, eyebrow, spy = '#nikkei' } = Astro.props;
+const { index, eyebrow, spy = '#crianza' } = Astro.props;
 const parada = paseo.paradas[index];
 const pad = (n: number) => String(n).padStart(2, '0');
 ---

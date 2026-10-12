@@ -16,7 +16,7 @@ const piecewise = (y: number, keys: Key[]) => {
 
 const clamp = gsap.utils.clamp(0, 1);
 
-// Paseo por Arko: el scroll mueve los clips (o las fotos, mientras el clip del tramo no ha cargado) y cada parada
+// Paseo por la finca: el scroll mueve los clips (o las fotos, mientras el clip del tramo no ha cargado) y cada parada
 // muestra su texto. Cada parada tiene un clip que va de ella a la siguiente; el de la última sigue hasta el final.
 // `w` es la posición en el paseo: 0 en la primera parada, 1 en la segunda, 2.5 a medio camino entre la tercera y la
 // cuarta. Al acabar la sección vale `stops.length`, para que el último clip también tenga su tramo.

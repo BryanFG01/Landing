@@ -35,7 +35,7 @@ const reveal = new IntersectionObserver(
 );
 document.querySelectorAll('[data-reveal]').forEach((el) => reveal.observe(el));
 
-// Scroll world: el paseo por Arko.
+// Scroll world: el paseo por la finca.
 const world = document.querySelector<HTMLElement>('[data-world]');
 if (world) initWorld(world, reduceMotion);
 

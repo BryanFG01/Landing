@@ -35,7 +35,7 @@ La web queda en `http://localhost:4321`.
 
 ```text
 7 fotos reales ──► keyframes 16:9 ──► 6 clips (MiniMax H3) ──► ffmpeg ──► public/video/ ──► src/scripts/world.ts
- public/photos      recorte/outpaint   1.er y último frame       GOP 6        paseo-1…6.mp4     scrub con el scroll
+ public/photos      recorte/outpaint   1.er y último frame       GOP 6        finca-1…6.mp4     scrub con el scroll
 ```
 
 - **Seis paradas, seis tramos.** Cada parada de `paseo.paradas` (en `src/data/arko.ts`) tiene su clip, que va de ella a la siguiente. El clip de la última llega hasta el final de la sección. El texto de cada parada se queda fijo abajo a la izquierda mientras la cámara avanza.
@@ -82,7 +82,7 @@ src/
 ├── styles/global.css     Tokens de Tailwind (colores, fuentes, curva) y utilidades
 └── assets/               Fotos, pósters del paseo, fuentes recortadas y logo
 public/
-├── video/paseo-1…6.mp4   Clips del paseo, ya codificados para scrub
+├── video/finca-1…6.mp4   Clips del paseo, ya codificados para scrub
 ├── photos/               Fotos del local en JPG, enlazadas desde el JSON-LD y el sitemap
 ├── og-image.jpg          Imagen para redes (1200×630)
 ├── site.webmanifest      Manifest con los iconos icon-192.png e icon-512.png
@@ -103,14 +103,14 @@ Para que el scrub sea fluido, cada clip necesita un keyframe cada pocos fotogram
 ffmpeg -i clip.mp4 -an -vf "scale=1920:-2" -c:v libx264 -preset slow -crf 28 \
   -g 6 -keyint_min 6 -sc_threshold 0 -pix_fmt yuv420p \
   -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv \
-  -movflags +faststart+write_colr public/video/paseo-1.mp4
+  -movflags +faststart+write_colr public/video/finca-1.mp4
 ```
 
 Después regenera su póster a partir del primer fotograma, conviértelo a WebP y guárdalo en `src/assets/paseo/`:
 
 ```sh
-ffmpeg -i public/video/paseo-1.mp4 -frames:v 1 \
-  -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" paseo-1.png
+ffmpeg -i public/video/finca-1.mp4 -frames:v 1 \
+  -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" finca-1.png
 ```
 
 ## SEO

@@ -3,15 +3,15 @@ import { Picture } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import Logo from '../components/Logo.astro';
 import Icon from '../components/Icon.astro';
-import { links, photos } from '../data/arko';
+import { links, marca, photos } from '../data/finca';
 ---
 
-<Layout title="Página no encontrada · Arko" description="Esta página no existe." noindex header={false}>
+<Layout title={`Página no encontrada · ${marca.nombre}`} description="Esta página no existe." noindex header={false}>
   <section class="flex min-h-svh flex-col items-center justify-center gap-12 px-4 py-24 text-center md:flex-row md:text-left">
     <div data-reveal class="w-48 md:w-64">
       <Picture
-        src={photos.vinos}
-        alt="Pasillo de vinotecas que termina en una puerta de cristal"
+        src={photos.amanecer}
+        alt="Amanecer sobre los potreros de la finca"
         formats={['avif', 'webp']}
         widths={[320, 512]}
         sizes="256px"
@@ -21,13 +21,13 @@ import { links, photos } from '../data/arko';
       />
     </div>
     <div class="flex max-w-md flex-col items-center gap-6 md:items-start">
-      <a href="/" aria-label="Arko, volver al inicio"><Logo class="h-5 w-auto" /></a>
+      <a href="/" aria-label={`${marca.nombre}, volver al inicio`}><Logo class="text-xl" /></a>
       <p data-reveal class="text-sm text-teja">Error 404</p>
-      <h1 data-reveal style="--d:100ms" class="text-4xl lg:text-5xl">Este pasillo no lleva a ninguna mesa</h1>
+      <h1 data-reveal style="--d:100ms" class="text-4xl lg:text-5xl">Este camino no lleva al gallinero</h1>
       <p data-reveal style="--d:200ms" class="text-base text-crema/70">La página que buscas no existe o ha cambiado de sitio.</p>
       <div data-reveal style="--d:300ms" class="flex flex-wrap items-center justify-center gap-4">
         <a href="/" class="btn btn-ghost"><Icon name="arrowLeft" class="size-5" /><span>Volver al inicio</span></a>
-        <a href={links.reservar} class="btn btn-primary"><span>Reservar mesa</span></a>
+        <a href={links.pedir} class="btn btn-primary" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
       </div>
     </div>
   </section>

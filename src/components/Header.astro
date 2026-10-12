@@ -1,7 +1,7 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
-import { contacto, links, nav } from '../data/arko';
+import { contacto, links, marca, nav } from '../data/finca';
 ---
 
 <a
@@ -17,8 +17,8 @@ import { contacto, links, nav } from '../data/arko';
   <div
     class="pointer-events-auto flex w-max items-center gap-6 rounded-full bg-bg/60 p-2 pl-6 ring-1 ring-crema/10 backdrop-blur-xl lg:gap-5"
   >
-    <a href="#inicio" class="flex h-9 items-center rounded-full text-crema" aria-label="Arko, volver al inicio">
-      <Logo class="h-4 w-auto" />
+    <a href="#inicio" class="flex h-9 items-center rounded-full text-crema" aria-label={`${marca.nombre}, volver al inicio`}>
+      <Logo class="text-lg" />
     </a>
 
     <nav aria-label="Principal" class="relative hidden lg:block">
@@ -41,8 +41,8 @@ import { contacto, links, nav } from '../data/arko';
     </nav>
 
     <div class="flex items-center gap-1">
-      <a href={links.reservar} class="btn btn-primary btn-sm px-4">
-        <span>Reservar</span>
+      <a href={links.pedir} class="btn btn-primary btn-sm px-4" rel="noopener" target="_blank">
+        <span>Pedir</span>
       </a>
       <button
         type="button"
@@ -75,7 +75,7 @@ import { contacto, links, nav } from '../data/arko';
         ))
       }
       <li class="menu-item pt-6" style={`--i:${nav.length}`}>
-        <a href={links.reservar} class="btn btn-primary"><span>Reservar mesa</span></a>
+        <a href={links.pedir} class="btn btn-primary" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
       </li>
     </ul>
   </nav>
@@ -85,7 +85,7 @@ import { contacto, links, nav } from '../data/arko';
       <Icon name="phone" />
       {contacto.telefono}
     </a>
-    <p>{contacto.calle} · {contacto.horario}</p>
+    <p>{contacto.ubicacion} · {contacto.horario}</p>
   </div>
 </div>
 

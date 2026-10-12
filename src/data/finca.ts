@@ -1,36 +1,43 @@
-// Datos verificados en arkorestaurant.com (6 de octubre de 2026) y en el intake.
-// Todo lo que no se ha podido verificar va marcado como `pending` y solo se ve en desarrollo.
+// Contenido de la landing de la finca: huevos colorados y pollo de campo.
+// Lo que todavía no está confirmado por el negocio va marcado como `pending` (o con <Pending>) y solo se ve en
+// desarrollo. Los valores entre corchetes son provisionales: hay que cambiarlos antes de publicar.
 
 import type { ImageMetadata } from 'astro';
-import entrada from '../assets/photos/0-entrada.webp';
-import lateralEntrada from '../assets/photos/1-lateral-entrada.webp';
-import mesaEspecial from '../assets/photos/2-mesa-especial.webp';
-import mesas from '../assets/photos/3-mesas.webp';
-import barra from '../assets/photos/4-barra.webp';
-import barraLateral from '../assets/photos/5-barra-lateral.webp';
-import vinos from '../assets/photos/6-vinos.webp';
+import amanecer from '../assets/photos/0-amanecer.webp';
+import gallinas from '../assets/photos/1-gallinas.webp';
+import nidos from '../assets/photos/2-nidos.webp';
+import recogida from '../assets/photos/3-recogida.webp';
+import pollos from '../assets/photos/4-pollos.webp';
+import seleccion from '../assets/photos/5-seleccion.webp';
+import entrega from '../assets/photos/6-entrega.webp';
 // Primer fotograma de cada clip del paseo, sacado del propio MP4 para que encaje exactamente con él:
-// ffmpeg -i public/video/paseo-1.mp4 -frames:v 1 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" paseo-1.png
-import poster1 from '../assets/paseo/paseo-1.webp';
-import poster2 from '../assets/paseo/paseo-2.webp';
-import poster3 from '../assets/paseo/paseo-3.webp';
-import poster4 from '../assets/paseo/paseo-4.webp';
-import poster5 from '../assets/paseo/paseo-5.webp';
-import poster6 from '../assets/paseo/paseo-6.webp';
+// ffmpeg -i public/video/finca-1.mp4 -frames:v 1 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" finca-1.png
+import poster1 from '../assets/paseo/finca-1.webp';
+import poster2 from '../assets/paseo/finca-2.webp';
+import poster3 from '../assets/paseo/finca-3.webp';
+import poster4 from '../assets/paseo/finca-4.webp';
+import poster5 from '../assets/paseo/finca-5.webp';
+import poster6 from '../assets/paseo/finca-6.webp';
 
-export const photos = { entrada, lateralEntrada, mesaEspecial, mesas, barra, barraLateral, vinos };
+export const photos = { amanecer, gallinas, nidos, recogida, pollos, seleccion, entrega };
 
-export const seo = {
-  title: 'Arko · Sushi y cocina nikkei en el Eixample, Barcelona',
-  description:
-    'Restaurante japonés con alma mediterránea en Enric Granados 63, Barcelona. Sushi, nigiri y wagyu, con menús para dos desde 150 €. Abierto todos los días.',
+// PENDIENTE: nombre provisional. Cambiándolo aquí cambia en toda la web (logo, títulos, SEO y JSON-LD).
+export const marca = {
+  nombre: 'Finca La Esperanza',
+  lema: 'Huevos colorados y pollo de campo',
 };
 
-// Paseo por Arko (scroll world): un clip 16:9 sin audio por tramo, que avanza o retrocede con el scroll.
+export const seo = {
+  title: `${marca.nombre} · Huevos colorados de finca y pollo de campo`,
+  description:
+    'Huevos colorados recién recogidos y pollo de campo de buena calidad, directo de la finca. Haz tu pedido por WhatsApp y te lo llevamos.',
+};
+
+// Paseo por la finca (scroll world): un clip 16:9 sin audio por tramo, que avanza o retrocede con el scroll.
 // Mientras el clip de un tramo no ha cargado se ve su primer fotograma (`poster`).
 // Para que el scrub sea fluido, cada clip necesita keyframes muy seguidos. El color va marcado como BT.709 con curva
 // sRGB: sin marcar, o con curva BT.709, el navegador pinta el vídeo más claro que el póster y el cambio se nota.
-// ffmpeg -i clip.mp4 -an -vf "scale=1920:-2" -c:v libx264 -preset slow -crf 28 -g 6 -keyint_min 6 -sc_threshold 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/paseo-1.mp4
+// ffmpeg -i clip.mp4 -an -vf "scale=1920:-2" -c:v libx264 -preset slow -crf 28 -g 6 -keyint_min 6 -sc_threshold 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/finca-1.mp4
 export type Parada = {
   id: string;
   lugar: string;
@@ -47,183 +54,166 @@ export const paseo: { paradas: Parada[] } = {
   paradas: [
     {
       id: 'inicio',
-      lugar: 'La entrada',
-      clip: '/video/paseo-1.mp4',
+      lugar: 'El amanecer',
+      clip: '/video/finca-1.mp4',
       focus: 50,
       poster: poster1,
-      alt: 'Entrada de Arko: un cerezo en flor bajo la bóveda blanca, entre dos ventanas ovaladas',
+      alt: 'El sol sale entre las montañas sobre los potreros de la finca, con el galpón a la derecha',
     },
     {
-      id: 'nikkei',
-      lugar: 'Los espejos',
-      clip: '/video/paseo-2.mp4',
+      id: 'crianza',
+      lugar: 'Las gallinas',
+      clip: '/video/finca-2.mp4',
       focus: 50,
       poster: poster2,
-      alt: 'Espejos de marco de madera y forma orgánica sobre los bancos de piel del comedor',
+      alt: 'Gallinas pintadas y coloradas picoteando en el pasto junto al corral',
     },
     {
-      id: 'precio',
-      lugar: 'La mesa redonda',
-      clip: '/video/paseo-3.mp4',
+      id: 'precios',
+      lugar: 'Los nidos',
+      clip: '/video/finca-3.mp4',
       focus: 50,
       poster: poster3,
-      alt: 'Mesa redonda con banco de piel curvo bajo una lámpara cónica',
+      alt: 'Una gallina en su nido de viruta, junto a los huevos recién puestos',
     },
     {
-      id: 'producto',
-      lugar: 'La sala',
-      clip: '/video/paseo-4.mp4',
+      id: 'frescura',
+      lugar: 'La recogida',
+      clip: '/video/finca-4.mp4',
       focus: 50,
       poster: poster4,
-      alt: 'Sala principal con mesas de madera, espejos ovalados y luz cálida',
+      alt: 'Canasta de mimbre con huevos recién recogidos en el gallinero',
     },
     {
-      id: 'shari',
-      lugar: 'La barra de sushi',
-      clip: '/video/paseo-5.mp4',
+      id: 'pollo',
+      lugar: 'El corral',
+      clip: '/video/finca-5.mp4',
       focus: 50,
       poster: poster5,
-      alt: 'Barra de sushi con espirales de arena talladas en el frontal',
+      alt: 'Gallinas posadas en una vara de madera en el corral, con pasto alrededor',
     },
     {
-      id: 'como-reservar',
-      lugar: 'La barra',
-      clip: '/video/paseo-6.mp4',
+      id: 'como-pedir',
+      lugar: 'La cubeta',
+      clip: '/video/finca-6.mp4',
       focus: 50,
       poster: poster6,
-      alt: 'Barra junto a un cerezo, con nichos ovalados llenos de botellas',
+      alt: 'Una mano acomoda huevos colorados en la cubeta, listos para el pedido',
     },
   ],
 };
 
+// PENDIENTE: número de WhatsApp real, con indicativo de país y sin espacios ni signos (57 para Colombia).
+const whatsapp = '570000000000';
+const wa = (mensaje: string) => `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
+
 export const links = {
-  reservar: 'https://arkorestaurant.myrestoo.net/es/reservar',
-  regalar: 'https://www.arkorestaurant.com/es/regala/',
-  carta: 'https://www.arkorestaurant.com/es/menu/',
-  maps: 'https://maps.google.com/?q=Carrer+Enric+Granados+63+Barcelona',
-  instagram: 'https://www.instagram.com/arko.barcelona/',
-  telefono: 'tel:+34938299572',
-  email: 'mailto:hola@arkorestaurant.com',
+  pedir: wa(`Hola, ${marca.nombre}. Quiero hacer un pedido de huevos y pollo de campo.`),
+  semanal: wa(`Hola, ${marca.nombre}. Me interesa el pedido fijo cada semana.`),
+  telefono: `tel:+${whatsapp}`,
+  // PENDIENTE: Instagram real, o quitarlo del pie si no hay.
+  instagram: 'https://www.instagram.com/',
 };
 
+// PENDIENTE: todos los datos de contacto son provisionales.
 export const contacto = {
-  calle: 'Carrer Enric Granados 63',
-  ciudad: '08008 Barcelona',
-  codigoPostal: '08008',
-  localidad: 'Barcelona',
-  barrio: 'Eixample',
-  lat: 41.3910158,
-  lon: 2.1579108,
-  telefono: '+34 938 29 95 72',
-  email: 'hola@arkorestaurant.com',
-  instagram: '@arko.barcelona',
-  horario: 'Lunes a domingo, de 13:00 a 00:00',
-  cocina: 'Cocina hasta las 23:00',
+  ubicacion: '[Vereda y municipio]',
+  zonaEntrega: '[Zona de entrega]',
+  telefono: '+57 000 000 0000',
+  instagram: '@[cuenta]',
+  horario: '[Días y horas de atención]',
+  entregas: '[Días de entrega]',
 };
-
-export const legal = [
-  { label: 'Aviso legal', href: 'https://www.arkorestaurant.com/es/legal/' },
-  { label: 'Privacidad', href: 'https://www.arkorestaurant.com/es/privacidad/' },
-  { label: 'Cookies', href: 'https://www.arkorestaurant.com/es/cookies/' },
-  { label: 'Términos de compra', href: 'https://www.arkorestaurant.com/es/terminos-compra/' },
-];
 
 export const nav = [
-  { label: 'Recorrido', href: '#nikkei' },
-  { label: 'Carta', href: '#carta' },
-  { label: 'Experiencias', href: '#experiencias' },
+  { label: 'La finca', href: '#crianza' },
+  { label: 'Productos', href: '#productos' },
+  { label: 'Combos', href: '#combos' },
   { label: 'Preguntas', href: '#preguntas' },
 ];
 
-export const experiencias = [
+export type Producto = { nombre: string; detalle: string; precio: string };
+
+// PENDIENTE: confirmar el catálogo, cómo se entrega cada producto y sus precios.
+export const productos: Producto[] = [
+  { nombre: 'Cubeta de huevos colorados', detalle: '30 huevos recogidos en la finca', precio: '$ —' },
+  { nombre: 'Media cubeta', detalle: '15 huevos colorados', precio: '$ —' },
+  { nombre: 'Pollo entero de campo', detalle: 'Limpio y listo para cocinar', precio: '$ —' },
+  { nombre: 'Pollo despresado', detalle: 'Pechuga, perniles y alas, empacados por separado', precio: '$ —' },
+];
+
+// PENDIENTE: confirmar combos, qué incluyen y precios.
+export const combos = [
   {
-    nombre: 'Arko Short Experience',
-    descripcion: 'Menú para 2 personas. Sushi, starters, principal y postre.',
-    precio: '150 €',
-    porPersona: '75 € por persona',
+    nombre: 'Combo Casa',
+    descripcion: '1 cubeta de huevos colorados y 1 pollo entero de campo.',
+    precio: '$ —',
+    nota: 'Para la semana de una familia pequeña',
   },
   {
-    nombre: 'Arko Full Experience',
-    descripcion: 'Menú degustación completo para 2 personas. 11 pases.',
-    precio: '250 €',
-    porPersona: '125 € por persona',
-    etiqueta: 'Más popular',
+    nombre: 'Combo Familia',
+    descripcion: '2 cubetas de huevos colorados y 2 pollos de campo, enteros o despresados.',
+    precio: '$ —',
+    nota: 'Para familias grandes o para congelar',
+    etiqueta: 'Recomendado',
   },
 ];
 
-export const maridaje = {
-  nombre: 'Maridaje',
-  descripcion: 'Selección de vinos armonizados con el menú, para 2 personas.',
-  precio: '+100 €',
-};
-
-export const platos = [
-  { nombre: 'Carpaccio de ventresca Bluefin trufado', detalle: 'Kizami, wasabi y crema de aguacate' },
-  { nombre: 'Ostra con salsa ponzu de fruta de la pasión', detalle: '' },
-  { nombre: 'Nigiri Selección', detalle: '' },
-  { nombre: 'Picanha de Wagyu a la brasa', detalle: 'Yuca frita y salsa tarí' },
-  { nombre: 'Gelato de lúcuma', detalle: 'Sablé, nueces pecanas y caramelo salado' },
-];
-
-export const prensa = {
-  medio: 'El Periódico',
-  fecha: '12 de septiembre de 2024',
-  titular: 'Arko un restaurante japonés muy ‘ibicenco’ en el centro de Barcelona',
-  entradilla:
-    'El nuevo establecimiento de la calle de Enric Granados propone platos eclécticos con excelente producto en un ambiente que te transporta a la isla balear.',
-  url: 'https://www.elperiodico.com/es/gastronomia/restaurantes/20240912/arko-restaurante-japones-barcelona-107827904',
+export const aLaMedida = {
+  nombre: 'Pedido a la medida',
+  descripcion: 'Dinos cuántos huevos y cuánto pollo necesitas y lo armamos para ti.',
+  precio: 'Tú eliges',
 };
 
 export type Faq = { pregunta: string; respuesta: string; pending?: string };
 
 export const faqs: Faq[] = [
   {
-    pregunta: '¿Qué es Arko?',
+    pregunta: '¿Por qué los huevos son colorados?',
     respuesta:
-      'Arko es un restaurante de cocina nikkei en Carrer Enric Granados 63, 08008 Barcelona, en el Eixample. La técnica japonesa se encuentra con el producto mediterráneo y la herencia peruana.',
+      'El color de la cáscara depende de la raza de la gallina. Las gallinas de plumaje rojizo ponen huevos de cáscara colorada.',
   },
   {
-    pregunta: '¿Qué es la cocina nikkei?',
+    pregunta: '¿Cómo se crían las gallinas?',
     respuesta:
-      'Es la cocina que nace del encuentro entre Japón y Perú. En Arko unimos la técnica japonesa y la herencia peruana con el producto del mar y del mercado mediterráneo.',
+      'Nuestras gallinas salen al pasto durante el día y vuelven al gallinero a dormir y a poner. Así tienen espacio, sol y movimiento.',
+    pending: 'Confirmar cómo se crían las gallinas y con qué se alimentan.',
   },
   {
-    pregunta: '¿Cuánto cuesta cenar en Arko?',
+    pregunta: '¿Qué tan frescos llegan los huevos?',
+    respuesta: 'Recogemos los huevos a diario y los llevamos en los días siguientes a la recogida.',
+    pending: 'Confirmar cada cuánto se recoge y cuántos días pasan hasta la entrega.',
+  },
+  {
+    pregunta: '¿Cómo viene el pollo?',
+    respuesta: 'Puedes pedirlo entero o despresado. Llega limpio, empacado y listo para cocinar o congelar.',
+    pending: 'Confirmar presentación, peso aproximado y si llega fresco o congelado.',
+  },
+  {
+    pregunta: '¿Cómo hago un pedido?',
     respuesta:
-      'Puedes pedir a la carta o elegir una experiencia para dos: Short Experience por 150 € (75 € por persona) o Full Experience, de 11 pases, por 250 € (125 € por persona). El maridaje de vinos suma 100 € para dos.',
+      'Escríbenos por WhatsApp con lo que necesitas. Te confirmamos el precio y el día de entrega por el mismo chat.',
   },
   {
-    pregunta: '¿Es seguro comer pescado crudo?',
+    pregunta: '¿Hasta dónde hacen entregas?',
+    respuesta: `Entregamos en ${contacto.zonaEntrega}. Si estás fuera de esa zona, escríbenos y miramos cómo hacértelo llegar.`,
+    pending: 'Confirmar zona y días de entrega, y si el domicilio tiene costo.',
+  },
+  {
+    pregunta: '¿Cómo puedo pagar?',
+    respuesta: 'Puedes pagar en efectivo al recibir el pedido o por transferencia.',
+    pending: 'Confirmar medios de pago.',
+  },
+  {
+    pregunta: '¿Cómo conservo los huevos?',
     respuesta:
-      'El salmón y el atún que servimos son 100 % libres de anisakis, sin antibióticos ni hormonas.',
+      'En la nevera, dentro de la cubeta y con la punta hacia abajo. No los laves al guardarlos: lávalos justo antes de usarlos.',
   },
   {
-    pregunta: '¿Tenéis opciones sin gluten?',
+    pregunta: '¿Cómo conservo el pollo?',
     respuesta:
-      'Toda la soja que servimos en sala es sin gluten. Si tienes alguna alergia o intolerancia, llámanos al +34 938 29 95 72 antes de venir.',
-    pending: 'Validar con el restaurante la redacción sobre alergias.',
-  },
-  {
-    pregunta: '¿Qué horario tiene Arko?',
-    respuesta: 'Abrimos de lunes a domingo, de 13:00 a 00:00. La cocina sirve hasta las 23:00.',
-  },
-  {
-    pregunta: '¿Dónde está Arko?',
-    respuesta:
-      'En Carrer Enric Granados 63, 08008 Barcelona, en el corazón del Eixample. Reserva online o llama al +34 938 29 95 72.',
-  },
-  {
-    pregunta: '¿Hacéis grupos o eventos privados?',
-    respuesta: 'Sí. Escríbenos a hola@arkorestaurant.com y lo organizamos contigo.',
-  },
-  {
-    pregunta: '¿Puedo regalar una cena?',
-    respuesta:
-      'Sí. Vendemos vouchers digitales de la Short y la Full Experience, válidos 12 meses y sin fecha fija. El código llega por email al momento. La compra es final y no admite devolución.',
+      'En la nevera, úsalo en uno o dos días. Si no lo vas a cocinar pronto, congélalo el mismo día en porciones.',
   },
 ];
 
-export const faqsPendientes = [
-  '¿Puedo cancelar o cambiar mi reserva? Falta la política de cancelación.',
-  '¿Las experiencias se piden al reservar o en la mesa? Falta confirmarlo.',
-];
+export const faqsPendientes = ['¿Hacen pedidos al por mayor para tiendas o restaurantes? Falta confirmarlo.'];
