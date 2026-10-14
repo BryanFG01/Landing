@@ -4,7 +4,7 @@
 
 Landing de **Finca La Esperanza**: huevos colorados recién recogidos y pollo de campo, directo de la finca. Los pedidos se hacen por WhatsApp.
 
-La portada es un **paseo por la finca que avanza y retrocede con el scroll**: seis tramos de vídeo, del amanecer en los potreros hasta la cubeta lista para entregar. Debajo están los productos, los combos, las preguntas frecuentes, el pedido semanal y la llamada final para pedir.
+La portada es un **paseo por la finca que avanza y retrocede con el scroll**: seis tramos de vídeo, de la granja y los huevos recién recogidos hasta los pollitos al aire libre. Debajo están los productos, los combos, las preguntas frecuentes, el pedido semanal y la llamada final para pedir.
 
 **Stack:** [Astro 7](https://astro.build) · [Tailwind CSS 4](https://tailwindcss.com) · [GSAP ScrollTrigger](https://gsap.com/docs/v3/Plugins/ScrollTrigger/) · [Lenis](https://lenis.darkroom.engineering) · sharp
 
@@ -27,7 +27,7 @@ La web queda en `http://localhost:4321`.
 
 ## Cómo funciona el paseo
 
-- **Seis paradas, seis tramos.** Cada parada de `paseo.paradas` (en `src/data/finca.ts`) tiene su clip, que va de ella a la siguiente: el amanecer, las gallinas, los nidos, la recogida, el corral y la cubeta.
+- **Seis paradas, seis tramos.** Cada parada de `paseo.paradas` (en `src/data/finca.ts`) tiene su clip, que va de ella a la siguiente: la granja, el nacimiento, los pollitos, la crianza, la recogida y al aire libre. Los seis clips salen de un solo vídeo de 8 s partido en tramos iguales, así que cada uno termina donde empieza el siguiente.
 - **El scroll manda.** `world.ts` traduce la posición del scroll a un valor continuo y fija el `currentTime` del clip activo. El vídeo solo avanza cuando haces scroll.
 - **Los pósters tapan la carga.** Bajo cada vídeo está su primer fotograma. Mientras el clip no ha cargado se ve el póster, y el cambio no se nota.
 - **Carga por cercanía.** Los clips se descargan de uno en uno, empezando por el tramo actual y siguiendo por el más cercano.
