@@ -10,6 +10,8 @@ declare global {
 }
 
 gsap.registerPlugin(ScrollTrigger);
+// En móvil la barra del navegador cambia el alto al hacer scroll; recalcular ahí hace saltar el paseo.
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

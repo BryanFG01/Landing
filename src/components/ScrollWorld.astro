@@ -14,7 +14,7 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
   <!-- Escenario fijo: los clips del paseo ocupan toda la pantalla. Debajo, el primer fotograma de cada clip, con el mismo
        encuadre, para que el vídeo entre sin que se note el cambio. -->
   <div data-stage class="sticky top-0 h-lvh overflow-hidden bg-bg" style="--focus-x: 50%">
-    <div aria-hidden="true" class="absolute inset-0">
+    <div aria-hidden="true" class="media absolute inset-0">
       {
         paradas.map((parada, i) => (
           <div data-frame class="frame absolute inset-0" style={i === 0 ? undefined : 'opacity: 0'}>
@@ -57,7 +57,7 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
     <div aria-hidden="true" class="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-bg/60 to-transparent"></div>
     <div
       aria-hidden="true"
-      class="absolute inset-0 bg-linear-to-t from-bg from-15% via-bg/50 via-50% to-transparent to-80% lg:bg-linear-to-r lg:from-bg/85 lg:via-bg/35 lg:via-35% lg:to-transparent lg:to-65%"
+      class="absolute inset-0 bg-linear-to-t from-bg from-15% via-bg/50 via-50% to-transparent to-80% max-lg:from-30% max-lg:via-bg/70 max-lg:via-55% lg:bg-linear-to-r lg:from-bg/85 lg:via-bg/35 lg:via-35% lg:to-transparent lg:to-65%"
     >
     </div>
     <div aria-hidden="true" class="absolute inset-x-0 bottom-0 hidden h-1/2 bg-linear-to-t from-bg/80 to-transparent lg:block"></div>
@@ -216,6 +216,16 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
 <style>
   .frame {
     will-change: opacity, transform;
+  }
+
+  /* Móvil en vertical: el 16:9 a toda la altura solo deja ver una cuarta parte del ancho. El vídeo ocupa la parte de
+     arriba y se funde con el fondo, así se ve casi el doble de imagen y el texto queda debajo. */
+  @media (max-width: 1023.98px) and (orientation: portrait) {
+    .media {
+      bottom: auto;
+      height: 58svh;
+      mask-image: linear-gradient(to bottom, #000 72%, transparent);
+    }
   }
 
   .clips {

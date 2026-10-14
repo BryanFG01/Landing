@@ -35,9 +35,12 @@ export const seo = {
 
 // Paseo por la finca (scroll world): un clip 16:9 sin audio por tramo, que avanza o retrocede con el scroll.
 // Mientras el clip de un tramo no ha cargado se ve su primer fotograma (`poster`).
-// Para que el scrub sea fluido, cada clip necesita keyframes muy seguidos. El color va marcado como BT.709 con curva
-// sRGB: sin marcar, o con curva BT.709, el navegador pinta el vídeo más claro que el póster y el cambio se nota.
-// ffmpeg -i clip.mp4 -an -vf "scale=1920:-2" -c:v libx264 -preset slow -crf 28 -g 6 -keyint_min 6 -sc_threshold 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/finca-1.mp4
+// Para que el scrub sea fluido, cada clip necesita muchos fotogramas y keyframes muy seguidos. Los clips de 24 fps se
+// interpolan ×3 (72 fps): así los fotogramas originales caen justo en cada tercero y el primero y el último no cambian.
+// `tpad` evita que minterpolate pierda el último; `scd` hace que en los cortes de escena no se inventen fotogramas.
+// El color va marcado como BT.709 con curva sRGB: sin marcar, o con curva BT.709, el navegador pinta el vídeo más claro
+// que el póster y el cambio se nota. N = fotogramas del clip de 24 fps; trim=end_frame = (N - 1) × 3 + 1.
+// ffmpeg -i clip.mp4 -an -vf "scale=1920:-2,tpad=stop_mode=clone:stop=3,minterpolate=fps=72:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=fdiff:scd_threshold=6,trim=end_frame=97" -c:v libx264 -preset slow -crf 27 -g 3 -keyint_min 3 -sc_threshold 0 -bf 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/finca-1.mp4
 export type Parada = {
   id: string;
   lugar: string;

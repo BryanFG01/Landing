@@ -37,6 +37,9 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
   const ready = clips.map(() => false);
   let current = -1;
   let w = 0;
+  // Posición que pinta el vídeo: sigue a `w` con suavizado para que cada búsqueda caiga cerca de la anterior y el scrub
+  // no vaya a saltos cuando el scroll llega a trompicones (sobre todo con el dedo, donde Lenis no actúa).
+  let v = 0;
   let active = 0;
   let shown = -1;
   let time = 0;
@@ -93,12 +96,27 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
       if (!reduceMotion) frame.style.transform = `scale(${1 + 0.06 * clamp(w - i)})`;
     });
 
+    // Un salto de más de un tramo (enlace del raíl, recarga a media página) no se recorre: se va directo.
+    if (Math.abs(w - v) > 1) v = w;
+    scrub();
+  };
+
+  const scrub = () => {
     if (!clips.length) return;
-    active = Math.min(clips.length - 1, Math.floor(w));
+    active = Math.min(clips.length - 1, Math.floor(v));
     const { duration } = clips[active];
-    if (ready[active]) time = Math.min((w - active) * duration, duration - 0.05);
+    // A 72 fps cada fotograma dura ~14 ms: 10 ms antes del final cae dentro del último, que es el primero del siguiente.
+    if (ready[active]) time = Math.min((v - active) * duration, duration - 0.01);
     sync();
   };
+
+  // Persigue `w` a un ritmo que no depende de los fps de la pantalla.
+  gsap.ticker.add(() => {
+    if (v === w) return;
+    const d = w - v;
+    v = Math.abs(d) < 0.0005 ? w : v + d * (1 - Math.pow(0.7, gsap.ticker.deltaRatio()));
+    scrub();
+  });
 
   const span = ScrollTrigger.create({
     trigger: world,
