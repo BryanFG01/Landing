@@ -175,6 +175,14 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 
 **Imágenes.** Se suben desde el editor, se reducen en el navegador (máx. 1920 px, WebP) y se guardan en `admin.files` con `public = true`. Se sirven sin sesión en `/media/<id>` con caché de un año (la CDN de Vercel las guarda tras la primera visita). Las imágenes que vienen con el proyecto se nombran `asset:<clave>` (`src/data/assets.ts`) y siguen pasando por `astro:assets` (AVIF/WebP). Los **videos** no se suben desde el panel (Safari necesita peticiones parciales que una función no da bien): se eligen de `public/video/` o se pega una URL https.
 
+**Chat de ayuda** (Sitio web → General → Chat de ayuda). Botón flotante con una conversación guiada por botones, sin IA y sin costo:
+
+- **Preguntas:** las propias del chat y, si se activa, las del bloque "Preguntas frecuentes". Se muestran 5 y el resto con "Ver más".
+- **Pedido guiado:** productos y precios del bloque Productos (cantidades con + y −), nombre, dirección, entrega (opciones configurables) y nota opcional. Muestra un resumen con el total: los productos con precio fijo se suman; los que se cobran por peso (`/ lb`) se indican "según lo que pese".
+- **Envío:** abre WhatsApp con el mensaje armado según la plantilla del panel (variables `{marca} {pedido} {total} {nombre} {direccion} {entrega} {nota}`). La persona solo pulsa enviar.
+- **Se configura:** mostrarlo u ocultarlo, texto y lado del botón, nombre del asistente, bienvenida, preguntas, entregas, nota y plantilla del mensaje. Sale con Publicar, como el resto.
+- **Código:** reglas del pedido en `src/data/chat.ts` (puro), conversación en `src/scripts/chat.ts` y marco en `src/components/ChatBot.astro`. No usa React: la landing sigue ligera.
+
 **Textos con formato:** `**así**` pone negrita y un salto de línea parte el renglón (títulos del llamado final, notas).
 
 **Qué sigue siendo de código:** el diseño de cada bloque, las animaciones y crear un *tipo* de bloque nuevo. Para añadir un campo editable a un bloque basta con añadirlo a su tipo, a `SITE_DEFAULTS` y a `BLOCK_DEFS` en `src/data/sitio.ts`, y usarlo en su componente: el editor lo dibuja solo.

@@ -11,6 +11,8 @@ interface Props {
 const { bloque, site } = Astro.props;
 const { marca } = site;
 const pedir = links(site).pedir;
+// El texto "desliza" va abajo a la derecha: si el botón del chat también, se sube para no taparse.
+const chatOnRight = site.chat.activo === 'si' && site.chat.posicion === 'derecha';
 // El vídeo arranca en la primera parada y las demás lo continúan: se ve de corrido, sin cortes. Sin vídeo, el póster.
 const paradas = bloque.paradas.map((p, i) => ({
   ...p,
@@ -104,7 +106,10 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
     <p
       data-hint
       aria-hidden="true"
-      class="absolute right-8 bottom-8 hidden items-center gap-3 text-xs tracking-widest text-crema/70 uppercase lg:flex"
+      class:list={[
+        'absolute right-8 hidden items-center gap-3 text-xs tracking-widest text-crema/70 uppercase lg:flex',
+        chatOnRight ? 'bottom-24' : 'bottom-8',
+      ]}
     >
       {bloque.pista}
       <span class="hint-line relative block h-8 w-px overflow-hidden bg-crema/20"></span>

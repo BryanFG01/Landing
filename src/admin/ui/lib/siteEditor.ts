@@ -28,7 +28,13 @@ export type DeployResult = 'ok' | 'sin_hook' | 'error';
 
 export const FIRST_SECTION: Section = { kind: 'block', tipo: 'paseo' };
 
-export const SETTING_ICONS: Record<SettingKey, string> = { tema: 'palette', marca: 'star', contacto: 'chat', seo: 'file' };
+export const SETTING_ICONS: Record<SettingKey, string> = {
+  tema: 'palette',
+  marca: 'star',
+  contacto: 'map-pin',
+  seo: 'file',
+  chat: 'chat',
+};
 
 export const sectionKey = (s: Section) => (s.kind === 'block' ? s.tipo : s.key);
 export const isSection = (a: Section, b: Section) => sectionKey(a) === sectionKey(b);

@@ -61,6 +61,32 @@ export interface Seo {
   descripcion: string;
 }
 
+export const YES_NO = { si: 'Sí', no: 'No' } as const;
+export type YesNo = keyof typeof YES_NO;
+
+/** Chat de ayuda de la landing: preguntas con respuesta y un pedido guiado que se envía por WhatsApp. */
+export interface ChatConfig {
+  activo: YesNo;
+  /** Nombre que se ve en la cabecera del chat. */
+  nombre: string;
+  /** Primer mensaje. {marca} se cambia por el nombre. */
+  bienvenida: string;
+  /** Texto del botón flotante. */
+  boton: string;
+  posicion: 'derecha' | 'izquierda';
+  /** Ofrecer también las preguntas del bloque "Preguntas frecuentes". */
+  usarFaq: YesNo;
+  /** Preguntas propias del chat (además de las frecuentes, si se usan). */
+  preguntas: { pregunta: string; respuesta: string }[];
+  /** Ofrecer "Hacer un pedido" con los productos del bloque Productos. */
+  pedido: YesNo;
+  /** Opciones de entrega para elegir (vacío: no se pregunta). */
+  entregas: string[];
+  pedirNota: YesNo;
+  /** Mensaje de WhatsApp. Variables: {marca} {pedido} {total} {nombre} {direccion} {entrega} {nota}. */
+  mensaje: string;
+}
+
 export type Item = { valor: string; etiqueta: string };
 
 export const STOP_STYLES = {
@@ -173,6 +199,7 @@ export interface SiteContent {
   marca: Marca;
   contacto: Contacto;
   seo: Seo;
+  chat: ChatConfig;
   bloques: Bloque[];
 }
 
@@ -207,6 +234,20 @@ export const SITE_DEFAULTS: SiteContent = {
   seo: {
     titulo: 'El Agropecuario · Pollo campesino y huevos colorados a domicilio',
     descripcion: `Pollo campesino de piel amarilla natural, criado sin químicos ni aceleradores, y huevos colorados. Fresco del día, entero o despresado. Pide por WhatsApp: la libra de pollo a ${pollo} con domicilio incluido y el panal de huevos a ${panal}.`,
+  },
+  chat: {
+    activo: 'si',
+    nombre: 'Asistente',
+    bienvenida: 'Hola, soy el asistente de {marca}. Te ayudo a resolver dudas o a armar tu pedido para enviarlo por WhatsApp.',
+    boton: '¿Te ayudo a pedir?',
+    posicion: 'derecha',
+    usarFaq: 'si',
+    preguntas: [],
+    pedido: 'si',
+    entregas: [`Hoy (si confirmas antes de las 10:00${nbsp}a.${nbsp}m.)`, 'Mañana'],
+    pedirNota: 'si',
+    mensaje:
+      'Hola, {marca}. Quiero hacer este pedido:\n{pedido}\n{total}\n\nNombre: {nombre}\nDirección: {direccion}\nEntrega: {entrega}{nota}',
   },
   bloques: [
     {
@@ -644,7 +685,12 @@ export const BLOCK_DEFS: Record<TipoBloque, { nombre: string; descripcion: strin
 };
 
 /** Ajustes generales del sitio, en el mismo formato que los bloques. */
-export const SETTINGS_DEFS: { key: 'tema' | 'marca' | 'contacto' | 'seo'; nombre: string; descripcion: string; fields: FieldDef[] }[] = [
+export const SETTINGS_DEFS: {
+  key: 'tema' | 'marca' | 'contacto' | 'seo' | 'chat';
+  nombre: string;
+  descripcion: string;
+  fields: FieldDef[];
+}[] = [
   {
     key: 'tema',
     nombre: 'Colores y tipografía',
@@ -693,6 +739,41 @@ export const SETTINGS_DEFS: { key: 'tema' | 'marca' | 'contacto' | 'seo'; nombre
     fields: [
       { key: 'titulo', label: 'Título de la página', type: 'text', max: 70, help: 'Ideal: menos de 60 caracteres.' },
       { key: 'descripcion', label: 'Descripción', type: 'textarea', max: 300, help: 'Ideal: entre 120 y 160 caracteres.' },
+    ],
+  },
+  {
+    key: 'chat',
+    nombre: 'Chat de ayuda',
+    descripcion: 'Botón flotante con preguntas y un pedido guiado que se envía armado por WhatsApp. Los productos y precios salen del bloque Productos.',
+    fields: [
+      { key: 'activo', label: 'Mostrar el chat', type: 'select', options: YES_NO },
+      { key: 'boton', label: 'Texto del botón', type: 'text', max: 40 },
+      { key: 'posicion', label: 'Posición', type: 'select', options: { derecha: 'Abajo a la derecha', izquierda: 'Abajo a la izquierda' } },
+      { key: 'nombre', label: 'Nombre del asistente', type: 'text', max: 40 },
+      { key: 'bienvenida', label: 'Mensaje de bienvenida', type: 'textarea', max: 300, help: '{marca} se cambia por el nombre.' },
+      { key: 'usarFaq', label: 'Incluir las preguntas frecuentes de la página', type: 'select', options: YES_NO },
+      {
+        key: 'preguntas',
+        label: 'Preguntas propias del chat',
+        type: 'list',
+        itemLabel: 'Pregunta',
+        max: 20,
+        help: 'Se muestran antes que las preguntas frecuentes.',
+        fields: [
+          { key: 'pregunta', label: 'Pregunta', type: 'text', max: 120 },
+          { key: 'respuesta', label: 'Respuesta', type: 'textarea', max: 600, help: RICH },
+        ],
+      },
+      { key: 'pedido', label: 'Permitir hacer un pedido', type: 'select', options: YES_NO },
+      { key: 'entregas', label: 'Opciones de entrega (una por renglón)', type: 'lines', max: 80, help: 'Vacío: no se pregunta.' },
+      { key: 'pedirNota', label: 'Pedir una nota opcional', type: 'select', options: YES_NO },
+      {
+        key: 'mensaje',
+        label: 'Mensaje de WhatsApp',
+        type: 'textarea',
+        max: 600,
+        help: 'Variables: {marca} {pedido} {total} {nombre} {direccion} {entrega} {nota}.',
+      },
     ],
   },
 ];

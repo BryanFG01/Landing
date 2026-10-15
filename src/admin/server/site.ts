@@ -22,7 +22,8 @@ export async function getSiteState() {
     ),
   ]);
   const content = parseSite(draft?.value ?? published?.value ?? SITE_DEFAULTS).value;
-  const publishedContent = published ? parseSite(published.value).value : SITE_DEFAULTS;
+  // Los dos pasan por parseSite para comparar con el mismo orden de claves.
+  const publishedContent = parseSite(published?.value ?? SITE_DEFAULTS).value;
   return {
     content,
     unpublished: JSON.stringify(content) !== JSON.stringify(publishedContent),
