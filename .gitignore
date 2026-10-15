@@ -23,8 +23,8 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# wrangler
-.wrangler/
+# vercel
+.vercel/
 
 # archivos de trabajo locales (no forman parte del sitio)
 .claude/

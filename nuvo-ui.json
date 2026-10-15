@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "componentsDir": "src/components/ui",
+  "typescript": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/admin.css"
+  }
+}

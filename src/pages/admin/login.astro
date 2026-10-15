@@ -1,0 +1,13 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { LoginView } from '../../admin/ui/LoginView';
+
+export const prerender = false;
+
+// Con sesión iniciada no tiene sentido ver el login.
+if (Astro.locals.adminUser) return Astro.redirect('/admin');
+---
+
+<AdminLayout title="Entrar">
+  <LoginView client:only="react" />
+</AdminLayout>

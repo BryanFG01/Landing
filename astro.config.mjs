@@ -1,16 +1,32 @@
 // @ts-check
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig, envField, fontProviders } from 'astro/config';
 
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
+import react from '@astrojs/react';
+import vercel from '@astrojs/vercel';
 import { fotosPublicas, ogImage } from './src/data/imagenes.ts';
 
 // https://astro.build/config
 export default defineConfig({
   // URL de la landing. Canónica, sitemap, robots.txt, og:image y JSON-LD salen de aquí.
   site: 'http://localhost:4321',
+  // La landing sigue siendo estática (se prerenderiza). Solo /admin y /api/admin se ejecutan como funciones de Vercel,
+  // conectadas a Neon (PostgreSQL).
+  adapter: vercel(),
+  // Las sesiones del admin van en la base (admin.sessions): no se usan las sesiones de Astro.
+  session: false,
+  env: {
+    schema: {
+      // Cadena de Neon con pooling (-pooler). En local sale de .env; en Vercel, de las variables del proyecto.
+      DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
+    },
+  },
   integrations: [
+    react(),
     sitemap({
+      // El panel de administración no se indexa.
+      filter: (page) => !new URL(page).pathname.startsWith('/admin'),
       // La portada lleva sus imágenes en el sitemap: la de redes y las fotos de la finca.
       serialize(item) {
         if (new URL(item.url).pathname !== '/') return item;
