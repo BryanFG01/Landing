@@ -19,7 +19,9 @@ export default defineConfig({
   env: {
     schema: {
       // Cadena de Neon con pooling (-pooler). En local sale de .env; en Vercel, de las variables del proyecto.
-      DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
+      // Opcional para el build: la landing se prerenderiza sin base de datos. Se lee al abrir la primera conexión
+      // (src/admin/server/db.ts) y, si falta, el admin responde con un error claro.
+      DATABASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
   integrations: [

@@ -1,7 +1,7 @@
 // Conexión a Neon (PostgreSQL) para las funciones de Vercel: node-postgres con la cadena con pooling (-pooler) y el
 // pool enganchado a Vercel Fluid compute con attachDatabasePool, como recomienda Neon.
 import { attachDatabasePool } from '@vercel/functions';
-import { DATABASE_URL } from 'astro:env/server';
+import { getSecret } from 'astro:env/server';
 import pg from 'pg';
 
 // COUNT(*) y bigint llegan como texto; aquí siempre caben en un number.
@@ -11,7 +11,14 @@ let pool: pg.Pool | undefined;
 
 function getPool() {
   if (!pool) {
-    pool = new pg.Pool({ connectionString: DATABASE_URL, max: 5, idleTimeoutMillis: 10_000 });
+    // Se lee aquí y no al importar el módulo: el build (que prerenderiza la landing) no necesita la base.
+    const connectionString = getSecret('DATABASE_URL');
+    if (!connectionString) {
+      throw new Error(
+        'Falta DATABASE_URL: añade la cadena de Neon con pooling en las variables del proyecto (Vercel) o en .env (local).',
+      );
+    }
+    pool = new pg.Pool({ connectionString, max: 5, idleTimeoutMillis: 10_000 });
     attachDatabasePool(pool);
   }
   return pool;
