@@ -12,10 +12,14 @@ const ADMIN_ONLY = /^(\/api\/admin\/(modules|groups|users|sql|tables|settings|si
 /** Mensaje para el panel cuando la base falla. El detalle va a los logs (en Vercel: Logs del proyecto). */
 function dbFailure(error: unknown, isApi: boolean) {
   console.error('[admin] error de base de datos:', error);
+  const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
   const message =
     error instanceof DbConfigError
       ? 'El panel no está configurado: falta la conexión a la base de datos (DATABASE_URL).'
-      : 'No se pudo conectar con la base de datos. Inténtalo de nuevo en un momento.';
+      : // Tabla o columna inexistente: el código va por delante de la base.
+        code === '42P01' || code === '42703'
+        ? 'La base de datos no está actualizada: falta aplicar una migración (pnpm db:migrate con la base de producción).'
+        : 'No se pudo conectar con la base de datos. Inténtalo de nuevo en un momento.';
   if (isApi) return fail(503, message);
   return new Response(message, { status: 503, headers: { 'content-type': 'text/plain; charset=utf-8' } });
 }
