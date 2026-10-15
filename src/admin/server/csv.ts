@@ -1,7 +1,8 @@
-// Exportar e importar CSV. El CSV sale con punto y coma y BOM para que Excel en español lo abra con tildes y en
-// columnas; al importar se aceptan los mismos valores legibles que se exportan (etiquetas de listas, Sí/No…).
+// Exportar (Excel .xlsx por defecto, o CSV) e importar. Al importar se aceptan los mismos valores legibles que se
+// exportan (etiquetas de listas, Sí/No…) y las fechas que Excel guarda como número de serie.
 
 import type { FieldConfig, Option, RecordRow } from '../schema';
+import { buildXlsx } from '../xlsx';
 import type { LoadedModule } from './modules';
 import { relationOptions } from './sources';
 
@@ -20,10 +21,11 @@ const dateTime = new Intl.DateTimeFormat('sv-SE', {
 
 const labelOf = (options: Option[] | undefined, v: unknown) => options?.find((o) => o.value === String(v))?.label ?? String(v);
 
-function exportValue(v: unknown, field: FieldConfig | undefined, options: Option[] | undefined): string {
+/** Valor legible de una celda: etiquetas de listas y relaciones, Sí/No, fechas en hora de Colombia. Números, como número. */
+function exportValue(v: unknown, field: FieldConfig | undefined, options: Option[] | undefined): string | number {
   if (v === undefined || v === null || v === '') return '';
   if (typeof v === 'boolean') return v ? 'Sí' : 'No';
-  if (typeof v === 'number') return String(v).replace('.', ',');
+  if (typeof v === 'number') return field?.type === 'relation' ? labelOf(options, v) : v;
   if (Array.isArray(v)) return v.map((x) => labelOf(options, x)).join(' | ');
   if (typeof v === 'object') return 'name' in v ? String((v as { name: unknown }).name) : JSON.stringify(v);
   const s = String(v);
@@ -42,7 +44,8 @@ export async function fieldOptions(mod: LoadedModule) {
   return out;
 }
 
-export async function toCsv(mod: LoadedModule, rows: RecordRow[]) {
+/** Encabezados y celdas de la exportación (los mismos para Excel y CSV). */
+async function exportTable(mod: LoadedModule, rows: RecordRow[]) {
   const options = await fieldOptions(mod);
   const cols: { key: string; label: string; field?: FieldConfig }[] = [
     ...(mod.source_type === 'records' ? [{ key: 'id', label: 'ID' }] : []),
@@ -52,10 +55,23 @@ export async function toCsv(mod: LoadedModule, rows: RecordRow[]) {
   if (mod.source_type === 'table' && mod.source_pk && !mod.fields.some((f) => f.key === mod.source_pk)) {
     cols.unshift({ key: mod.source_pk, label: mod.source_pk });
   }
-  const lines = [cols.map((c) => cell(c.label)).join(SEP)];
-  for (const row of rows) {
-    lines.push(cols.map((c) => cell(exportValue(row[c.key], c.field, options.get(c.key)))).join(SEP));
-  }
+  return {
+    headers: cols.map((c) => c.label),
+    cells: rows.map((row) => cols.map((c) => exportValue(row[c.key], c.field, options.get(c.key)))),
+  };
+}
+
+/** Excel real: se abre en columnas con cualquier configuración regional. */
+export async function toXlsx(mod: LoadedModule, rows: RecordRow[]) {
+  const { headers, cells } = await exportTable(mod, rows);
+  return buildXlsx(mod.name, headers, cells);
+}
+
+/** CSV con punto y coma y BOM (Excel en español). Los decimales, con coma. */
+export async function toCsv(mod: LoadedModule, rows: RecordRow[]) {
+  const { headers, cells } = await exportTable(mod, rows);
+  const text = (v: string | number) => (typeof v === 'number' ? String(v).replace('.', ',') : v);
+  const lines = [headers.map(cell).join(SEP), ...cells.map((r) => r.map((v) => cell(text(v))).join(SEP))];
   return `﻿${lines.join('\r\n')}\r\n`;
 }
 
@@ -95,6 +111,10 @@ export function importValue(field: FieldConfig, raw: string, options: Option[] |
       if (/^(no|false|falso|0)$/i.test(s)) return false;
       return s;
     case 'date': {
+      // Fecha escrita en Excel: llega como número de serie (días desde el 30/12/1899).
+      if (/^\d{5}(\.\d+)?$/.test(s)) {
+        return new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(s)) * 86_400_000).toISOString().slice(0, 10);
+      }
       const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(s);
       if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
       return s.slice(0, 10);

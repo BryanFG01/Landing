@@ -38,11 +38,11 @@ export async function uploadFile(file: File) {
   return body.file as import('../schema').FileRef;
 }
 
-/** Descarga un archivo de la API (exportar CSV) con el nombre que manda el servidor. */
+/** Descarga un archivo de la API (exportar) con el nombre que manda el servidor. */
 export async function download(path: string) {
   const res = await fetch(`/api/admin${path}`, { credentials: 'same-origin' });
   if (!res.ok) throw new ApiError(res.status, (await res.json().catch(() => ({}))) as Record<string, unknown>);
-  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'descarga.csv';
+  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'descarga';
   const url = URL.createObjectURL(await res.blob());
   const a = Object.assign(document.createElement('a'), { href: url, download: name });
   document.body.append(a);

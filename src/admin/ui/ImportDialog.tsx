@@ -8,7 +8,8 @@ import { Select } from '../../components/ui/select';
 import { useToast } from '../../components/ui/toast';
 import type { FieldConfig } from '../schema';
 import { api, ApiError } from './api';
-import { normalize, parseCsv, templateCsv } from './csv';
+import { buildXlsx, readXlsx } from '../xlsx';
+import { normalize, parseCsv } from './csv';
 import { Icon } from './icons';
 
 const SKIP = '__skip__';
@@ -51,7 +52,15 @@ export function ImportDialog({
   async function pick(file: File | undefined) {
     if (!file) return;
     reset();
-    const parsed = parseCsv(await file.text());
+    let parsed: string[][];
+    try {
+      parsed = /\.xlsx$/i.test(file.name)
+        ? readXlsx(new Uint8Array(await file.arrayBuffer()), new DOMParser())
+        : parseCsv(await file.text());
+    } catch {
+      setErrors(['No se pudo leer el archivo. Usa un Excel (.xlsx) o un CSV.']);
+      return;
+    }
     if (parsed.length < 2) {
       setErrors(['El archivo no tiene filas debajo de los encabezados.']);
       return;
@@ -89,8 +98,10 @@ export function ImportDialog({
   }
 
   function downloadTemplate() {
-    const url = URL.createObjectURL(new Blob([templateCsv(importable.map((f) => f.label))], { type: 'text/csv' }));
-    const a = Object.assign(document.createElement('a'), { href: url, download: `plantilla-${moduleKey}.csv` });
+    const xlsx = buildXlsx(moduleName, importable.map((f) => f.label), []);
+    const blob = new Blob([xlsx as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: `plantilla-${moduleKey}.xlsx` });
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -106,7 +117,7 @@ export function ImportDialog({
         onOpenChange(o);
       }}
       title={`Importar a ${moduleName}`}
-      description="Sube un CSV (en Excel: Archivo → Guardar como → CSV). Se valida todo antes de guardar: si una fila tiene errores, no se importa nada."
+      description="Sube un Excel (.xlsx) o un CSV. Lo más fácil: exporta o descarga la plantilla, rellénala en Excel y súbela. Se valida todo antes de guardar: si una fila tiene errores, no se importa nada."
       maxWidth="lg"
       className="max-h-[85dvh] overflow-y-auto"
     >
@@ -115,16 +126,16 @@ export function ImportDialog({
           <input
             ref={input}
             type="file"
-            accept=".csv,text/csv,.txt"
+            accept=".xlsx,.csv,text/csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="sr-only"
             onChange={(e) => {
               pick(e.target.files?.[0]);
               e.target.value = '';
             }}
-            aria-label="Archivo CSV"
+            aria-label="Archivo Excel o CSV"
           />
           <Button variant="outline" onClick={() => input.current?.click()}>
-            <Icon name="upload" /> {fileName ? 'Elegir otro archivo' : 'Elegir archivo CSV'}
+            <Icon name="upload" /> {fileName ? 'Elegir otro archivo' : 'Elegir archivo (Excel o CSV)'}
           </Button>
           <Button variant="ghost" onClick={downloadTemplate}>
             <Icon name="download" /> Descargar plantilla

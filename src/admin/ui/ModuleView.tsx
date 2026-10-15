@@ -244,7 +244,7 @@ export function ModuleView({
               </Button>
             )}
             <Button variant="outline" onClick={exportCsv} disabled={exporting}>
-              <Icon name="download" /> {exporting ? 'Exportando…' : 'Exportar'}
+              <Icon name="download" /> {exporting ? 'Exportando…' : 'Exportar a Excel'}
             </Button>
             {canEdit && (
               <Button variant="outline" onClick={() => setImporting(true)}>

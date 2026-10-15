@@ -118,7 +118,7 @@ Mismos nombres que `columnConfigs` en ERPCloud:
 | `GET` `PUT` `DELETE` | `/api/admin/m/:key/:id` | Registro |
 | `GET` | `/api/admin/m/:key/options` | Opciones de los campos de relación |
 | `GET` `POST` · `PUT` `DELETE` | `/api/admin/users` · `/users/:id` | Usuarios, rol y permisos por módulo |
-| `GET` | `/api/admin/m/:key/export` | CSV con lo que cumple los filtros (`;` y BOM para Excel, hasta 10 000 filas) |
+| `GET` | `/api/admin/m/:key/export` | Excel (.xlsx) con lo que cumple los filtros, hasta 10 000 filas. `?formato=csv` para CSV (`;` y BOM) |
 | `POST` | `/api/admin/m/:key/import` | `{ rows: [{ campo: "texto" }] }`: valida todo y guarda todo o nada (hasta 5000 filas) |
 | `POST` · `GET` | `/api/admin/files` · `/files/:id` | Subir (multipart, 4 MB) y descargar fotos y adjuntos |
 | `POST` | `/api/admin/sql/run` | Consola SQL `{ sql, allow_write }` |
@@ -213,8 +213,8 @@ Tipos de campo **Foto** y **Archivo adjunto**. El archivo se sube al elegirlo y 
 
 ### Importar y exportar
 
-- **Exportar**: el CSV sale con los filtros y el orden actuales, etiquetas legibles (listas, relaciones, Sí/No) y se abre bien en Excel.
-- **Importar**: botón Importar → elegir CSV (en Excel: Guardar como → CSV) → emparejar columnas con campos (automático por nombre) → importar. "Descargar plantilla" da un CSV con los encabezados. Acepta `7.500`, `7500,50`, `Sí/No/1/0`, `DD/MM/AAAA`, etiquetas o valores de listas y varias opciones separadas por `|`. Si una fila falla no se guarda ninguna.
+- **Exportar a Excel**: un .xlsx real (`src/admin/xlsx.ts`, empaquetado con `fflate`) con los filtros y el orden actuales, etiquetas legibles (listas, relaciones, Sí/No), números como números, encabezado en negrita y fijo, y filtros. Se abre en columnas con cualquier configuración regional; un CSV no (Excel lo parte por `,` o por `;` según el país del equipo y, si no coincide, deja cada fila en la columna A). El CSV sigue disponible con `?formato=csv`.
+- **Importar**: botón Importar → elegir un Excel (.xlsx) o un CSV → emparejar columnas con campos (automático por nombre) → importar. El .xlsx se lee en el navegador. "Descargar plantilla" da un Excel con los encabezados. Acepta `7.500`, `7500,50`, `Sí/No/1/0`, `DD/MM/AAAA`, fechas de Excel, etiquetas o valores de listas y varias opciones separadas por `|`. Si una fila falla no se guarda ninguna.
 
 ### Apariencia (`/admin/apariencia`)
 

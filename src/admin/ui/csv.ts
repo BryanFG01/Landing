@@ -48,9 +48,3 @@ export const normalize = (s: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_|_$/g, '');
-
-/** CSV con solo los encabezados, para usarlo de plantilla. */
-export function templateCsv(headers: string[]) {
-  const cell = (v: string) => (/[";\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-  return `﻿${headers.map(cell).join(';')}\r\n`;
-}
