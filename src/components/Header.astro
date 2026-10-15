@@ -12,6 +12,8 @@ const { marca } = site;
 const links = linksFor(site);
 // El menú son los bloques visibles que tienen entrada (Inicio, Productos, Opiniones, Preguntas).
 const nav = menu(site);
+// Posición de la barra en escritorio (Sitio web → Colores y tipografía → Menú). En el celular, siempre al centro.
+const POSICION = { izquierda: 'lg:justify-start', centro: 'lg:justify-center', derecha: 'lg:justify-end' } as const;
 ---
 
 <a
@@ -22,7 +24,10 @@ const nav = menu(site);
 </a>
 
 <header
-  class="zona-menu pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-6 lg:justify-start lg:px-8 xl:px-20"
+  class:list={[
+    'zona-menu pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-6 lg:px-8 xl:px-20',
+    POSICION[site.tema.menuPosicion],
+  ]}
 >
   <div
     class="pointer-events-auto flex w-max items-center gap-6 rounded-full bg-bg/60 p-2 pl-6 ring-1 ring-crema/10 backdrop-blur-xl lg:gap-5"

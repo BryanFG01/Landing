@@ -45,6 +45,8 @@ export const ESQUINAS_TARJETAS = {
   rectas: { label: 'Rectas', radio: '0px', chico: '0px' },
 } as const;
 
+export const POSICIONES_MENU = { izquierda: 'A la izquierda', centro: 'Al centro', derecha: 'A la derecha' } as const;
+
 export interface Tema {
   fondo: string;
   texto: string;
@@ -58,6 +60,8 @@ export interface Tema {
   /** Menú (cabecera y menú del móvil). Vacío: los colores de la página. */
   menuFondo: string;
   menuTexto: string;
+  /** Dónde va la barra del menú en escritorio (en el celular, siempre al centro). */
+  menuPosicion: keyof typeof POSICIONES_MENU;
   /** Pie de página. Vacío: los colores de la página. */
   pieFondo: string;
   pieTexto: string;
@@ -278,6 +282,7 @@ export const SITE_DEFAULTS: SiteContent = {
     degradado: '#c5d3a6',
     menuFondo: '',
     menuTexto: '',
+    menuPosicion: 'izquierda',
     pieFondo: '',
     pieTexto: '',
     titulos: 'hina',
@@ -605,12 +610,32 @@ const COLORES_BLOQUE: FieldDef = {
 
 type BlockDef = { nombre: string; descripcion: string; ancla: string; menu?: string; fields: FieldDef[] };
 
-/** Todos los bloques terminan con sus colores propios. */
+/** En la portada, el fondo es el velo de color sobre el video. */
+// Sin degradado: el velo sobre el video es de un solo color.
+const COLORES_PORTADA: FieldDef = {
+  key: 'colores',
+  label: 'Colores de la portada',
+  type: 'group',
+  help: 'El fondo es el velo de color sobre el video. Vacíos: usa los colores de la página (Colores y tipografía).',
+  fields: [
+    { key: 'colorFondo', label: 'Fondo (velo sobre el video)', type: 'color', optional: true },
+    { key: 'colorTexto', label: 'Texto', type: 'color', optional: true },
+    { key: 'colorAcento', label: 'Acento (botón y detalles)', type: 'color', optional: true },
+  ],
+};
+
+/**
+ * Todos los bloques llevan sus colores propios: al final, salvo la portada, donde van justo después del diseño
+ * (diseño y velo van de la mano y abajo quedarían tras las paradas).
+ */
 const conColores = (defs: Record<TipoBloque, BlockDef>) =>
-  Object.fromEntries(Object.entries(defs).map(([k, d]) => [k, { ...d, fields: [...d.fields, COLORES_BLOQUE] }])) as Record<
-    TipoBloque,
-    BlockDef
-  >;
+  Object.fromEntries(
+    Object.entries(defs).map(([k, d]) => {
+      if (k !== 'paseo') return [k, { ...d, fields: [...d.fields, COLORES_BLOQUE] }];
+      const [disenio, ...rest] = d.fields;
+      return [k, { ...d, fields: [disenio, COLORES_PORTADA, ...rest] }];
+    }),
+  ) as Record<TipoBloque, BlockDef>;
 
 export const BLOCK_DEFS: Record<TipoBloque, BlockDef> = conColores({
   paseo: {
@@ -829,6 +854,13 @@ export const SETTINGS_DEFS: {
         type: 'group',
         help: 'Vacíos: los colores de la página.',
         fields: [
+          {
+            key: 'menuPosicion',
+            label: 'Posición del menú',
+            type: 'select',
+            options: POSICIONES_MENU,
+            help: 'En computador. En el celular va siempre al centro.',
+          },
           { key: 'menuFondo', label: 'Fondo del menú', type: 'color', optional: true },
           { key: 'menuTexto', label: 'Texto del menú', type: 'color', optional: true },
           { key: 'pieFondo', label: 'Fondo del pie de página', type: 'color', optional: true },

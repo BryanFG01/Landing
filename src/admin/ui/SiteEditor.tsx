@@ -82,6 +82,7 @@ export function SiteEditor() {
             {block && (
               <Switch
                 label="Visible"
+                description={block.tipo === 'paseo' ? 'La portada siempre se muestra: lleva el titular principal.' : undefined}
                 checked={block.visible}
                 disabled={block.tipo === 'paseo'}
                 onCheckedChange={() => site.toggleBlock(block.tipo)}
