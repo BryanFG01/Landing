@@ -96,11 +96,12 @@ export function AdminShell({
         defaultCollapsed={mobile}
         className="max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-40"
         logo={
-          <a href="/admin" className="flex items-center gap-2 font-semibold">
-            <span className="grid size-7 place-items-center rounded-md bg-primary text-primary-foreground">
-              <Icon name="egg" />
+          <a href="/admin" className="flex items-center gap-2.5">
+            <img src="/icon-192.png" alt="" width={36} height={36} className="size-9 shrink-0 rounded-full bg-white" />
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate font-display text-base">El Agropecuario</span>
+              <span className="block text-[10px] tracking-[0.18em] text-muted-foreground uppercase">Administración</span>
             </span>
-            <span className="truncate text-sm">Finca · Admin</span>
           </a>
         }
         footer={
@@ -183,7 +184,7 @@ export function PageHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-2xl leading-tight">{title}</h1>
           {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
         </div>
       </div>

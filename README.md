@@ -1,8 +1,8 @@
-# Finca La Esperanza · Landing
+# El Agropecuario · Landing
 
 <img src="public/og-image.jpg" alt="Canasta de mimbre con huevos colorados recién recogidos sobre un paño">
 
-Landing de **Finca La Esperanza**: huevos colorados recién recogidos y pollo de campo, directo de la finca. Los pedidos se hacen por WhatsApp.
+Landing de **El Agropecuario**, distribuidora de huevos y pollos: pollo campesino de piel amarilla natural y huevos colorados, a domicilio. Los pedidos se hacen por WhatsApp.
 
 La portada es un **paseo por la finca que avanza y retrocede con el scroll**: seis tramos de vídeo, de la granja y los huevos recién recogidos hasta los pollitos al aire libre. Debajo están los productos, los combos, las preguntas frecuentes, el pedido semanal y la llamada final para pedir.
 

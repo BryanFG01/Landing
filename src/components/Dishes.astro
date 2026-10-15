@@ -1,7 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import Pending from './Pending.astro';
-import { links, productos } from '../data/finca';
+import { links, precioPollo, productos } from '../data/finca';
 ---
 
 <section id="productos" data-spy="#productos" aria-labelledby="productos-title" class="px-4 py-24 md:px-12 xl:px-24">
@@ -24,7 +24,7 @@ import { links, productos } from '../data/finca';
       </a>
     </div>
 
-    <Pending class="mt-8">Catálogo, presentación y precios de cada producto. Fotos de producto: cada uno tiene su hueco ovalado listo.</Pending>
+    <Pending class="mt-8">Precio de los huevos. Fotos de producto: cada uno tiene su hueco ovalado listo.</Pending>
 
     <ol class="mt-12 divide-y divide-crema/10">
       {
@@ -45,5 +45,10 @@ import { links, productos } from '../data/finca';
         ))
       }
     </ol>
+
+    <p data-reveal class="mt-8 max-w-2xl text-sm text-crema/70">
+      El pollo no se vende por libra fija: se pesa completo y <strong class="text-crema">cada libra vale {precioPollo}</strong>,
+      entero o despresado.
+    </p>
   </div>
 </section>

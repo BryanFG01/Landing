@@ -1,7 +1,7 @@
 {
-  "name": "Finca La Esperanza",
-  "short_name": "La Esperanza",
-  "description": "Huevos colorados de finca y pollo de campo.",
+  "name": "El Agropecuario · Distribuidora de huevos y pollos",
+  "short_name": "El Agropecuario",
+  "description": "Pollo campesino y huevos colorados a domicilio. Pide por WhatsApp.",
   "lang": "es",
   "start_url": "/",
   "scope": "/",
@@ -11,6 +11,6 @@
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

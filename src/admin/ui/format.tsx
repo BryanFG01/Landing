@@ -55,7 +55,7 @@ export function formatCell(
       );
     case 'badge':
       return (
-        <Badge variant="info" size="sm">
+        <Badge variant="default" size="sm">
           {optionLabel(value, options)}
         </Badge>
       );

@@ -1,24 +1,25 @@
 import type { APIRoute } from 'astro';
-import { aLaMedida, combos, contacto, faqs, links, marca, productos, seo } from '../data/finca';
+import { contacto, faqs, links, marca, precioPollo, productos, seo } from '../data/finca';
 
 export const GET: APIRoute = ({ site }) => {
   if (!site) throw new Error('Falta site en astro.config.mjs');
   const home = new URL('/', site).href;
   const productLines = productos.map((p) => `- ${p.nombre}: ${p.precio}. ${p.detalle}.`).join('\n');
-  const comboLines = combos.map((c) => `- ${c.nombre}: ${c.precio}. ${c.descripcion}`).join('\n');
   const questions = faqs.map((faq) => `### ${faq.pregunta}\n\n${faq.respuesta}`).join('\n\n');
   const body = `# ${marca.nombre}
 
 > ${seo.description}
 
-${marca.lema}, directo de la finca. Los pedidos se hacen por WhatsApp.
+${marca.lema}: pollo campesino y huevos colorados a domicilio. Los pedidos se hacen por WhatsApp.
 
 ## Datos
 
 - Ubicación: ${contacto.ubicacion}
 - Zona de entrega: ${contacto.zonaEntrega}
-- Días de entrega: ${contacto.entregas}
-- Horario de atención: ${contacto.horario}
+- Entregas: ${contacto.entregas}
+- Horario de pedidos: ${contacto.horario}
+- Pago: ${contacto.pagos}
+- Precio del pollo: ${precioPollo} la libra, entero o despresado (se pesa completo)
 - Teléfono y WhatsApp: ${contacto.telefono}
 - Pedidos: ${links.pedir}
 - Instagram: ${links.instagram}
@@ -27,11 +28,6 @@ ${marca.lema}, directo de la finca. Los pedidos se hacen por WhatsApp.
 ## Productos
 
 ${productLines}
-
-## Combos
-
-${comboLines}
-- ${aLaMedida.nombre}: ${aLaMedida.descripcion}
 
 ## Preguntas frecuentes
 

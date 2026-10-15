@@ -1,7 +1,10 @@
 ---
+import { Image } from 'astro:assets';
+import logo from '../assets/marca/logo.png';
 import { marca } from '../data/finca';
 
-// Logo provisional en texto hasta tener el de la finca. El tamaño se da con clases de texto (text-lg, text-2xl…).
+// Logo redondo + nombre en texto (el logo es una ilustración: en pequeño, el nombre al lado es lo que se lee).
+// El tamaño se da con clases de texto (text-lg, text-2xl…): la imagen mide 2em y escala con él.
 interface Props {
   class?: string;
 }
@@ -9,4 +12,18 @@ interface Props {
 const { class: className = 'text-xl' } = Astro.props;
 ---
 
-<span class:list={['font-display leading-none whitespace-nowrap', className]}>{marca.nombre}</span>
+<span class:list={['inline-flex items-center gap-[0.5em] leading-none whitespace-nowrap', className]}>
+  <Image
+    src={logo}
+    alt=""
+    aria-hidden="true"
+    width={96}
+    height={96}
+    densities={[1, 2]}
+    format="webp"
+    loading="eager"
+    decoding="async"
+    class="size-[2em] shrink-0 rounded-full bg-white object-cover ring-1 ring-crema/20"
+  />
+  <span class="font-display">{marca.nombre}</span>
+</span>

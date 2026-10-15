@@ -11,44 +11,48 @@ import pollos from '../assets/photos/4-pollos.webp';
 import seleccion from '../assets/photos/5-seleccion.webp';
 import entrega from '../assets/photos/6-entrega.webp';
 // Primer fotograma de cada clip del paseo, sacado del propio MP4 para que encaje exactamente con él:
-// ffmpeg -i public/video/finca-1.mp4 -frames:v 1 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" finca-1.png
-import poster1 from '../assets/paseo/finca-1.webp';
-import poster2 from '../assets/paseo/finca-2.webp';
-import poster3 from '../assets/paseo/finca-3.webp';
-import poster4 from '../assets/paseo/finca-4.webp';
-import poster5 from '../assets/paseo/finca-5.webp';
-import poster6 from '../assets/paseo/finca-6.webp';
+// ffmpeg -i public/video/paseo-1.mp4 -frames:v 1 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" paseo-1.png
+// La parada 3 no tiene vídeo: su "póster" es la foto del huevo en la báscula.
+import poster1 from '../assets/paseo/paseo-1.webp';
+import poster2 from '../assets/paseo/paseo-2.webp';
+import poster3 from '../assets/paseo/paseo-3.webp';
+import poster4 from '../assets/paseo/paseo-4.webp';
+import poster5 from '../assets/paseo/paseo-5.webp';
+import poster6 from '../assets/paseo/paseo-6.webp';
 
 export const photos = { amanecer, gallinas, nidos, recogida, pollos, seleccion, entrega };
 
-// PENDIENTE: nombre provisional. Cambiándolo aquí cambia en toda la web (logo, títulos, SEO y JSON-LD).
+// Marca. Cambiándola aquí cambia en toda la web (logo, títulos, SEO y JSON-LD).
 export const marca = {
-  nombre: 'Finca La Esperanza',
-  lema: 'Huevos colorados y pollo de campo',
+  nombre: 'El Agropecuario',
+  lema: 'Distribuidora de huevos y pollos',
+  /** Frase corta de cierre (pie, botones secundarios). */
+  promesa: 'Fresco, listo y a tu puerta',
 };
 
 export const seo = {
-  title: `${marca.nombre} · Huevos colorados de finca y pollo de campo`,
+  title: `${marca.nombre} · Pollo campesino y huevos colorados a domicilio`,
   description:
-    'Huevos colorados recién recogidos y pollo de campo de buena calidad, directo de la finca. Haz tu pedido por WhatsApp y te lo llevamos.',
+    'Pollo campesino de piel amarilla natural, criado sin químicos ni aceleradores, y huevos colorados. Fresco del día, entero o despresado. Pide por WhatsApp: la libra de pollo a $4.500.',
 };
 
-// Paseo por la finca (scroll world): un clip 16:9 sin audio por tramo, que avanza o retrocede con el scroll.
-// Mientras el clip de un tramo no ha cargado se ve su primer fotograma (`poster`).
-// Para que el scrub sea fluido, cada clip necesita muchos fotogramas y keyframes muy seguidos. Los clips de 24 fps se
-// interpolan ×3 (72 fps): así los fotogramas originales caen justo en cada tercero y el primero y el último no cambian.
-// `tpad` evita que minterpolate pierda el último; `scd` hace que en los cortes de escena no se inventen fotogramas.
-// El color va marcado como BT.709 con curva sRGB: sin marcar, o con curva BT.709, el navegador pinta el vídeo más claro
-// que el póster y el cambio se nota. N = fotogramas del clip de 24 fps; trim=end_frame = (N - 1) × 3 + 1.
-// ffmpeg -i clip.mp4 -an -vf "scale=1920:-2,tpad=stop_mode=clone:stop=3,minterpolate=fps=72:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=fdiff:scd_threshold=6,trim=end_frame=97" -c:v libx264 -preset slow -crf 27 -g 3 -keyint_min 3 -sc_threshold 0 -bf 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/finca-1.mp4
+/** Precio del pollo por libra (entero o despresado, mismo precio). */
+export const precioPollo = '$4.500';
+
+// Paseo (scroll world): vídeos reales, verticales, grabados con el celular. Un tramo por parada; avanza o retrocede con
+// el scroll. Mientras el clip de un tramo no ha cargado se ve su primer fotograma (`poster`).
+// Para que el scrub sea fluido, cada clip necesita keyframes muy seguidos (-g 3, sin B-frames). A 30 fps cada tramo ya
+// tiene de 97 a 240 fotogramas, así que no hace falta interpolar. El color va marcado como BT.709 con curva sRGB: sin
+// marcar, el navegador pinta el vídeo más claro que el póster y el cambio se nota. Los originales están en media/video-real.
+// ffmpeg -ss 0 -to 8 -i original.mp4 -an -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30" -c:v libx264 -preset slow -crf 24 -g 3 -keyint_min 3 -sc_threshold 0 -bf 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/paseo-1.mp4
 export type Parada = {
   id: string;
   lugar: string;
-  /** Clip que va de esta parada a la siguiente. El de la última sigue hasta el final de la sección. */
-  clip: string;
-  /** Punto horizontal del vídeo (0 a 100) que queda a la vista en móvil, donde el 16:9 se recorta. */
+  /** Clip de este tramo. Sin clip, el tramo muestra solo su póster (una foto). */
+  clip?: string;
+  /** Punto horizontal (0 a 100) que queda a la vista cuando el vertical se recorta por los lados. */
   focus: number;
-  /** Primer fotograma del clip, 16:9 como el vídeo. Se ve mientras el clip carga y encaja con él al aparecer. */
+  /** Primer fotograma del clip (vertical, como el vídeo). Se ve mientras el clip carga y encaja con él al aparecer. */
   poster: ImageMetadata;
   alt: string;
 };
@@ -57,116 +61,136 @@ export const paseo: { paradas: Parada[] } = {
   paradas: [
     {
       id: 'inicio',
-      lugar: 'La granja',
-      clip: '/video/finca-1.mp4',
+      lugar: 'Los huevos',
+      clip: '/video/paseo-1.mp4',
       focus: 50,
       poster: poster1,
-      alt: 'Cajones de madera con huevos colorados sobre paja, frente al granero y los potreros de la finca',
+      alt: 'Cubetas de cartón llenas de huevos colorados',
     },
     {
       id: 'crianza',
-      lugar: 'El nacimiento',
-      clip: '/video/finca-2.mp4',
-      focus: 55,
+      lugar: 'Las gallinas',
+      clip: '/video/paseo-2.mp4',
+      focus: 50,
       poster: poster2,
-      alt: 'Un pollito rompe la cáscara de un huevo colorado sobre la paja',
+      alt: 'Gallinas coloradas comiendo verdura fresca en un comedero rojo',
     },
     {
       id: 'precios',
-      lugar: 'Los pollitos',
-      clip: '/video/finca-3.mp4',
-      focus: 65,
+      lugar: 'El peso',
+      focus: 50,
       poster: poster3,
-      alt: 'Pollitos amarillos dentro de un comedero redondo de madera con grano',
+      alt: 'Un huevo colorado sobre una báscula de cocina que marca 79 gramos, delante de una cubeta de huevos',
     },
     {
       id: 'frescura',
-      lugar: 'La crianza',
-      clip: '/video/finca-4.mp4',
-      focus: 25,
+      lugar: 'La selección',
+      clip: '/video/paseo-4.mp4',
+      focus: 50,
       poster: poster4,
-      alt: 'Unas manos sostienen un pollito sobre un cajón de grano, con el granero y los potreros detrás',
+      alt: 'Primeros planos de huevos colorados en su cubeta',
     },
     {
       id: 'pollo',
-      lugar: 'La recogida',
-      clip: '/video/finca-5.mp4',
-      focus: 45,
+      lugar: 'Los pollos',
+      clip: '/video/paseo-5.mp4',
+      focus: 50,
       poster: poster5,
-      alt: 'Cajones con huevos colorados recién recogidos y gallinas caminando por el gallinero',
+      alt: 'Pollos jóvenes alrededor de un comedero rojo con alimento',
     },
     {
       id: 'como-pedir',
-      lugar: 'Al aire libre',
-      clip: '/video/finca-6.mp4',
-      focus: 55,
+      lugar: 'Tu pedido',
+      clip: '/video/paseo-6.mp4',
+      focus: 50,
       poster: poster6,
-      alt: 'Un pollito entre gallinas coloradas que picotean grano sobre el pasto',
+      alt: 'Pollos jóvenes comiendo en el galpón',
     },
   ],
 };
 
-// PENDIENTE: número de WhatsApp real, con indicativo de país y sin espacios ni signos (57 para Colombia).
-const whatsapp = '570000000000';
+// WhatsApp con indicativo de país, sin espacios ni signos.
+const whatsapp = '573126643482';
 const wa = (mensaje: string) => `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
 
 export const links = {
-  pedir: wa(`Hola, ${marca.nombre}. Quiero hacer un pedido de huevos y pollo de campo.`),
+  pedir: wa(`Hola, ${marca.nombre}. Quiero hacer un pedido a domicilio.`),
+  pedirEntero: wa(`Hola, ${marca.nombre}. Quiero pedir un pollo entero. ¿Me confirmas disponibilidad, peso y domicilio?`),
+  pedirDespresado: wa(
+    `Hola, ${marca.nombre}. Quiero pedir un pollo despresado. ¿Me confirmas disponibilidad, peso y domicilio?`,
+  ),
   semanal: wa(`Hola, ${marca.nombre}. Me interesa el pedido fijo cada semana.`),
   telefono: `tel:+${whatsapp}`,
   // PENDIENTE: Instagram real, o quitarlo del pie si no hay.
   instagram: 'https://www.instagram.com/',
 };
 
-// PENDIENTE: todos los datos de contacto son provisionales.
 export const contacto = {
-  ubicacion: '[Vereda y municipio]',
-  zonaEntrega: '[Zona de entrega]',
-  telefono: '+57 000 000 0000',
+  // PENDIENTE: ciudad o municipio desde donde se despacha.
+  ubicacion: '[Ciudad]',
+  zonaEntrega: 'toda la ciudad y sus alrededores',
+  telefono: '+57 312 664 3482',
+  // PENDIENTE: cuenta de Instagram.
   instagram: '@[cuenta]',
-  horario: '[Días y horas de atención]',
-  entregas: '[Días de entrega]',
+  horario: 'Lunes a sábado, de 7:00\u00a0a.\u00a0m. a 6:00\u00a0p.\u00a0m.',
+  entregas: 'El mismo día si confirmas antes de las 10:00\u00a0a.\u00a0m.; después, al día siguiente',
+  /** Medios de pago, al recibir. Con mayúscula inicial; dentro de una frase, usar `pagosEnFrase`. */
+  pagos: 'Efectivo, Nequi, Llave o transferencia',
+  pagosEnFrase: 'efectivo, Nequi, Llave o transferencia',
 };
 
 export const nav = [
-  { label: 'La finca', href: '#crianza' },
+  { label: 'Inicio', href: '#inicio' },
   { label: 'Productos', href: '#productos' },
-  { label: 'Combos', href: '#combos' },
+  { label: 'Opiniones', href: '#opiniones' },
   { label: 'Preguntas', href: '#preguntas' },
 ];
 
 export type Producto = { nombre: string; detalle: string; precio: string };
 
-// PENDIENTE: confirmar el catálogo, cómo se entrega cada producto y sus precios.
+// El pollo no va por libra fija: se pesa completo y cada libra vale `precioPollo`, entero o despresado.
+// PENDIENTE: precio de los huevos.
 export const productos: Producto[] = [
   { nombre: 'Cubeta de huevos colorados', detalle: '30 huevos recogidos en la finca', precio: '$ —' },
   { nombre: 'Media cubeta', detalle: '15 huevos colorados', precio: '$ —' },
-  { nombre: 'Pollo entero de campo', detalle: 'Limpio y listo para cocinar', precio: '$ —' },
-  { nombre: 'Pollo despresado', detalle: 'Pechuga, perniles y alas, empacados por separado', precio: '$ —' },
-];
-
-// PENDIENTE: confirmar combos, qué incluyen y precios.
-export const combos = [
   {
-    nombre: 'Combo Casa',
-    descripcion: '1 cubeta de huevos colorados y 1 pollo entero de campo.',
-    precio: '$ —',
-    nota: 'Para la semana de una familia pequeña',
+    nombre: 'Pollo campesino entero',
+    detalle: 'Fresco del día, sin cortar. Se pesa completo y pagas lo que pese',
+    precio: `${precioPollo} / lb`,
   },
   {
-    nombre: 'Combo Familia',
-    descripcion: '2 cubetas de huevos colorados y 2 pollos de campo, enteros o despresados.',
-    precio: '$ —',
-    nota: 'Para familias grandes o para congelar',
-    etiqueta: 'Recomendado',
+    nombre: 'Pollo campesino despresado',
+    detalle: 'Despresado a mano en pechuga, piernas, alas, contramuslo y menudencias. Mismo precio por libra',
+    precio: `${precioPollo} / lb`,
   },
 ];
 
-export const aLaMedida = {
-  nombre: 'Pedido a la medida',
-  descripcion: 'Dinos cuántos huevos y cuánto pollo necesitas y lo armamos para ti.',
-  precio: 'Tú eliges',
-};
+/** Pollo campesino frente al de supermercado. */
+export const comparacion = [
+  { nuestro: 'Piel amarilla natural', otro: 'Piel pálida' },
+  { nuestro: 'Crianza libre en el campo', otro: 'Confinamiento industrial' },
+  { nuestro: 'Sin aceleradores de engorde', otro: 'Hormonas y químicos' },
+  { nuestro: 'Sabor y textura de antes', otro: 'Aguado y sin sabor' },
+  { nuestro: 'Entero o despresado a mano, tú eliges', otro: 'Empacado en fábrica, sin opción' },
+];
+
+/** Cómo llega el pollo del campo a la mesa. */
+export const procesoPollo = [
+  { titulo: 'Crianza libre', texto: 'En el campo, comiendo maíz y hierba, a su ritmo natural.' },
+  { titulo: 'Sacrificio del día', texto: 'Sin días de congelador: fresco, no dormido en la nevera.' },
+  { titulo: 'Entero o despresado', texto: 'Se pesa completo. Si lo pides despresado, lo cortamos a mano antes de empacar.' },
+  { titulo: 'En tu puerta', texto: 'Domicilio el mismo día, refrigerado y listo para cocinar.' },
+];
+
+/** Opiniones de clientes reales (confirmadas por el negocio). */
+export const testimonios = [
+  { texto: 'El caldo me quedó amarillito como el de mi mamá. Se nota que es pollo de verdad.', autor: 'Marcela P.' },
+  {
+    texto: 'Llevo tres meses pidiendo y ya no vuelvo al supermercado. El sabor es otro nivel.',
+    autor: 'Andrés G.',
+  },
+  { texto: 'Pedí por WhatsApp a las 9 y a las 12 ya lo tenía en la puerta. Fresquísimo.', autor: 'Laura R.' },
+];
 
 export type Faq = { pregunta: string; respuesta: string; pending?: string };
 
@@ -188,24 +212,38 @@ export const faqs: Faq[] = [
     pending: 'Confirmar cada cuánto se recoge y cuántos días pasan hasta la entrega.',
   },
   {
-    pregunta: '¿Cómo viene el pollo?',
-    respuesta: 'Puedes pedirlo entero o despresado. Llega limpio, empacado y listo para cocinar o congelar.',
-    pending: 'Confirmar presentación, peso aproximado y si llega fresco o congelado.',
+    pregunta: '¿Cuánto vale el pollo?',
+    respuesta: `La libra vale ${precioPollo}. No vendemos por libra fija: se pesa el pollo completo y lo que pese se multiplica por el precio de la libra.`,
+  },
+  {
+    pregunta: '¿Lo puedo pedir entero o despresado?',
+    respuesta:
+      'Las dos opciones, tú eliges. El precio por libra es el mismo; si lo pides despresado, lo cortamos a mano antes de despachar.',
+  },
+  {
+    pregunta: '¿Por qué la piel del pollo es amarilla?',
+    respuesta:
+      'Porque el pollo come maíz y pasto. No es un color inducido con químicos: es su color natural cuando se cría bien.',
   },
   {
     pregunta: '¿Cómo hago un pedido?',
     respuesta:
-      'Escríbenos por WhatsApp con lo que necesitas. Te confirmamos el precio y el día de entrega por el mismo chat.',
+      'Escríbenos por WhatsApp con lo que necesitas. Te confirmamos disponibilidad, peso, total y domicilio por el mismo chat.',
   },
   {
-    pregunta: '¿Hasta dónde hacen entregas?',
-    respuesta: `Entregamos en ${contacto.zonaEntrega}. Si estás fuera de esa zona, escríbenos y miramos cómo hacértelo llegar.`,
-    pending: 'Confirmar zona y días de entrega, y si el domicilio tiene costo.',
+    pregunta: '¿Cuál es la zona de cobertura?',
+    respuesta:
+      'Cubrimos toda la ciudad y sus alrededores. Escríbenos por WhatsApp y te confirmamos el domicilio para tu barrio.',
   },
   {
-    pregunta: '¿Cómo puedo pagar?',
-    respuesta: 'Puedes pagar en efectivo al recibir el pedido o por transferencia.',
-    pending: 'Confirmar medios de pago.',
+    pregunta: '¿A qué hora hacen entregas?',
+    respuesta:
+      'Recibimos pedidos de lunes a sábado de 7:00\u00a0a.\u00a0m. a 6:00\u00a0p.\u00a0m. Los pedidos confirmados antes de las 10:00\u00a0a.\u00a0m. se entregan el mismo día; los que llegan después, al día siguiente.',
+  },
+  {
+    pregunta: '¿Cómo pago?',
+    respuesta:
+      'Al recibir: efectivo, Nequi, Llave o transferencia. Te confirmamos el total por WhatsApp antes de despachar.',
   },
   {
     pregunta: '¿Cómo conservo los huevos?',

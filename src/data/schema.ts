@@ -1,4 +1,4 @@
-import { combos, contacto, faqs, links, marca, productos, seo } from './finca';
+import { contacto, faqs, links, marca, productos, seo } from './finca';
 import { fotosPublicas, ogImage } from './imagenes';
 
 export interface PageImage {
@@ -60,7 +60,7 @@ export function structuredData(site: URL) {
             .slice(0, 4)
             .map((photo) => ({ '@type': 'ImageObject', url: photo.loc, caption: photo.caption })),
         ],
-        logo: abs(site, '/icon-512.png'),
+        logo: abs(site, '/og-logo.png'),
         telephone,
         currenciesAccepted: 'COP',
         areaServed: contacto.zonaEntrega,
@@ -69,10 +69,7 @@ export function structuredData(site: URL) {
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
           name: 'Productos de la finca',
-          itemListElement: [
-            ...productos.map((p) => oferta(p.nombre, p.detalle, p.precio)),
-            ...combos.map((c) => oferta(c.nombre, c.descripcion, c.precio)),
-          ],
+          itemListElement: productos.map((p) => oferta(p.nombre, p.detalle, p.precio)),
         },
         mainEntityOfPage: { '@id': webpageId },
         potentialAction: {

@@ -1,29 +1,41 @@
 ---
-// Documento de las páginas del admin. No comparte nada con la landing (ni estilos, ni fuentes, ni scripts).
+// Documento de las páginas del admin. Comparte con la landing las fuentes y la paleta, pero no sus estilos ni scripts.
+import { Font } from 'astro:assets';
 import '../styles/admin.css';
 
 interface Props {
   title: string;
+  /** 'auto': el tema guardado o el del sistema. 'dark': siempre oscuro (el login, con el verde de la landing). */
+  theme?: 'auto' | 'dark';
 }
 
-const { title } = Astro.props;
+const { title, theme = 'auto' } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es-CO" class={theme === 'dark' ? 'dark' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#1d3324" />
     <title>{title} · Admin</title>
-    <!-- Tema antes de pintar: el guardado o, si no hay, el del sistema. -->
-    <script is:inline>
-      try {
-        const saved = localStorage.getItem('admin-theme');
-        const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.classList.toggle('dark', dark);
-      } catch {}
-    </script>
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192" />
+    <Font cssVariable="--font-hina" preload />
+    <Font cssVariable="--font-zen" preload />
+    {
+      theme === 'auto' && (
+        <script is:inline>
+          // Tema antes de pintar: el guardado o, si no hay, el del sistema.
+          try {
+            const saved = localStorage.getItem('admin-theme');
+            const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', dark);
+          } catch {}
+        </script>
+      )
+    }
   </head>
   <body>
     <slot />

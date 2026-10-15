@@ -17,9 +17,10 @@ const piecewise = (y: number, keys: Key[]) => {
 const clamp = gsap.utils.clamp(0, 1);
 
 // Paseo por la finca: el scroll mueve los clips (o las fotos, mientras el clip del tramo no ha cargado) y cada parada
-// muestra su texto. Cada parada tiene un clip que va de ella a la siguiente; el de la última sigue hasta el final.
-// `w` es la posición en el paseo: 0 en la primera parada, 1 en la segunda, 2.5 a medio camino entre la tercera y la
-// cuarta. Al acabar la sección vale `stops.length`, para que el último clip también tenga su tramo.
+// muestra su texto. `w` es la posición en el paseo: 0 en la primera parada, 1 en la segunda, 2.5 a medio camino entre
+// la tercera y la cuarta. Al acabar la sección vale `stops.length`.
+// Cada clip es el contenido de su parada, así que ocupa el mismo tramo que su texto: de la mitad del camino anterior a
+// la mitad del siguiente (el primero empieza en 0 y el último acaba al final de la sección). Vídeo y texto cambian a la vez.
 export function initWorld(world: HTMLElement, reduceMotion: boolean) {
   const stage = world.querySelector<HTMLElement>('[data-stage]');
   if (!stage) return;
@@ -89,11 +90,12 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
     if (fill) fill.style.transform = `scaleY(${at / last})`;
     if (hint) hint.style.opacity = String(clamp(1 - w * 4));
 
-    // Fotogramas (debajo de los clips): cada uno está entero y sin escalar justo en su parada, donde empieza su clip, así
-    // el vídeo entra encima sin que se note. Aparece en la segunda mitad del tramo anterior y se acerca al avanzar.
+    // Fotogramas (debajo de los clips): cada uno entra al empezar su tramo, donde empieza su clip, así el vídeo entra
+    // encima sin que se note. Se ven solos en los tramos sin vídeo o mientras el clip carga; se acercan al avanzar.
     frames.forEach((frame, i) => {
-      frame.style.opacity = String(i === 0 ? 1 : clamp((w - i + 0.5) / 0.5));
-      if (!reduceMotion) frame.style.transform = `scale(${1 + 0.06 * clamp(w - i)})`;
+      const start = i === 0 ? 0 : i - 0.5;
+      frame.style.opacity = String(i === 0 ? 1 : clamp((w - start) / 0.2));
+      if (!reduceMotion) frame.style.transform = `scale(${1 + 0.06 * clamp(w - start)})`;
     });
 
     // Un salto de más de un tramo (enlace del raíl, recarga a media página) no se recorre: se va directo.
@@ -103,10 +105,13 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
 
   const scrub = () => {
     if (!clips.length) return;
-    active = Math.min(clips.length - 1, Math.floor(v));
+    const lastClip = clips.length - 1;
+    active = Math.min(lastClip, Math.max(0, Math.floor(v + 0.5)));
+    const start = active === 0 ? 0 : active - 0.5;
+    const end = active === lastClip ? stops.length : active + 0.5;
     const { duration } = clips[active];
-    // A 72 fps cada fotograma dura ~14 ms: 10 ms antes del final cae dentro del último, que es el primero del siguiente.
-    if (ready[active]) time = Math.min((v - active) * duration, duration - 0.01);
+    // 10 ms antes del final: dentro del último fotograma (al final exacto algunos navegadores pintan negro).
+    if (ready[active]) time = Math.min(clamp((v - start) / (end - start)) * duration, duration - 0.01);
     sync();
   };
 
@@ -133,12 +138,14 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
 
   // Los clips se cargan de uno en uno: primero el del tramo actual y después el más cercano a la posición del scroll.
   // A igual distancia va antes el que viene por delante.
+  // Distancia de `w` al tramo del clip i ([i − 0.5, i + 0.5)); los de atrás pesan algo más.
   const distance = (i: number) => {
     if (i === active) return -1;
-    if (i > w) return i - w;
-    return w - (i + 1) + 0.5;
+    if (i - 0.5 > w) return i - 0.5 - w;
+    return w - (i + 0.5) + 0.5;
   };
-  const queue = clips.map((_, i) => i);
+  // Los tramos sin vídeo (solo foto) no se cargan: se quedan con su póster.
+  const queue = clips.map((_, i) => i).filter((i) => clips[i].dataset.src);
 
   const loadNext = async () => {
     queue.sort((a, b) => distance(a) - distance(b));

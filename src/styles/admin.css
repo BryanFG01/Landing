@@ -20,35 +20,45 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Mismas fuentes que la landing (se cargan en AdminLayout con <Font>). */
+  --font-display: var(--font-hina), 'Hina Mincho', serif;
+  --font-sans: var(--font-zen), 'Zen Kaku Gothic New', ui-sans-serif, system-ui, sans-serif;
+  /* Colores de marca, para usarlos tal cual (bg-finca, text-crema, bg-teja). */
+  --color-finca: #1d3324;
+  --color-crema: #f3eadb;
+  --color-teja: #d0703a;
 }
 
+/* Paleta de la landing: verde finca #1d3324, crema #f3eadb y teja #d0703a.
+   Claro: fondo crema muy suave, texto verde finca, acento teja oscurecido para que el texto blanco tenga ≥ 4.5:1. */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222 84% 5%;
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --border: 214 32% 91%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --ring: 221 83% 53%;
-  --radius: 0.5rem;
+  --background: 40 45% 98%;
+  --foreground: 140 27% 14%;
+  --primary: 22 71% 42%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 38 32% 93%;
+  --muted-foreground: 140 9% 38%;
+  --border: 38 24% 85%;
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 22 71% 42%;
+  --radius: 0.625rem;
   color-scheme: light;
 }
 
+/* Oscuro: el verde de la landing, algo más profundo para el fondo y más claro para superficies; texto crema y
+   acento teja con texto verde muy oscuro encima (≥ 4.5:1). */
 .dark {
-  --background: 235 52% 4%;
-  --foreground: 0 0% 96%;
-  --primary: 221 83% 58%;
-  --primary-foreground: 0 0% 100%;
-  --muted: 240 30% 12%;
-  --muted-foreground: 240 10% 55%;
-  --border: 240 20% 16%;
-  --destructive: 0 63% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --ring: 221 83% 58%;
+  --background: 140 28% 9%;
+  --foreground: 38 50% 91%;
+  --primary: 22 61% 52%;
+  --primary-foreground: 150 35% 7%;
+  --muted: 140 22% 15%;
+  --muted-foreground: 38 14% 66%;
+  --border: 140 18% 20%;
+  --destructive: 0 65% 58%;
+  --destructive-foreground: 150 35% 7%;
+  --ring: 22 61% 52%;
   color-scheme: dark;
 }
 
@@ -63,7 +73,21 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    /* Hina Mincho solo tiene un peso: sin negrita sintética en los títulos. */
+    font-synthesis: none;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Títulos con la tipografía de la landing. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: 0;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 
   ::-webkit-scrollbar {

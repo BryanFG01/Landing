@@ -1,0 +1,112 @@
+---
+import Icon from './Icon.astro';
+import poster from '../assets/paseo/paseo-5.webp';
+import { comparacion, marca, procesoPollo } from '../data/finca';
+---
+
+<!-- La diferencia del pollo campesino: comparación con el de supermercado y el proceso, del campo a la mesa. -->
+<section id="diferencia" aria-labelledby="diferencia-title" class="px-4 py-24 md:px-12 xl:px-24">
+  <div class="mx-auto max-w-6xl">
+    <div class="max-w-2xl">
+      <p data-reveal class="text-sm text-teja">La diferencia se nota</p>
+      <h2 id="diferencia-title" data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">
+        Pollo campesino frente al de supermercado
+      </h2>
+      <p data-reveal style="--d:200ms" class="mt-6 text-base text-crema/70 lg:text-lg">
+        Lo notas en el color de la piel, en la textura de la carne y en el caldo.
+      </p>
+    </div>
+
+    <div data-reveal class="mt-12 overflow-hidden rounded-3xl ring-1 ring-crema/15">
+      <table class="w-full text-left text-sm lg:text-base">
+        <caption class="sr-only">Comparación entre el pollo de {marca.nombre} y el pollo de supermercado</caption>
+        <thead class="bg-crema/[0.06] text-xs tracking-widest uppercase">
+          <tr>
+            <th scope="col" class="w-1/2 px-4 py-4 font-medium text-teja lg:px-8">{marca.nombre}</th>
+            <th scope="col" class="w-1/2 px-4 py-4 font-medium text-crema/50 lg:px-8">Supermercado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-crema/10">
+          {
+            comparacion.map((fila) => (
+              <tr>
+                <td class="px-4 py-4 align-top lg:px-8">
+                  <span class="flex items-start gap-2">
+                    <Icon name="check" class="mt-0.5 size-4 shrink-0 text-teja lg:size-5" />
+                    {fila.nuestro}
+                  </span>
+                </td>
+                <td class="px-4 py-4 align-top text-crema/50 lg:px-8">
+                  <span class="flex items-start gap-2">
+                    <Icon name="x" class="mt-0.5 size-4 shrink-0 lg:size-5" />
+                    <span class="line-through decoration-crema/30">{fila.otro}</span>
+                  </span>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-24 grid items-center gap-12 md:grid-cols-2">
+      <div data-reveal class="mirror-frame mask-arch mx-auto w-full max-w-sm">
+        <!-- Vídeo real de los pollos, en bucle y sin sonido. Se descarga y reproduce solo cuando está cerca de la
+             pantalla; mientras tanto (o con movimiento reducido) se ve su primer fotograma. -->
+        <video
+          data-autoplay
+          data-src="/video/paseo-5.mp4"
+          poster={poster.src}
+          muted
+          loop
+          playsinline
+          preload="none"
+          disablepictureinpicture
+          role="img"
+          aria-label="Pollos jóvenes comiendo alrededor de un comedero rojo"
+          class="block aspect-[4/5] w-full mask-arch object-cover"
+        ></video>
+      </div>
+      <div>
+        <p data-reveal class="text-sm text-teja">Del campo a tu mesa</p>
+        <h2 data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">Un proceso honesto, sin atajos</h2>
+        <ol class="mt-8 flex flex-col gap-6">
+          {
+            procesoPollo.map((paso, i) => (
+              <li data-reveal style={`--d:${150 + i * 80}ms`} class="flex gap-6">
+                <span class="font-display text-2xl text-teja tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3 class="text-xl lg:text-2xl">{paso.titulo}</h3>
+                  <p class="mt-1 text-base text-crema/70">{paso.texto}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Vídeo en bucle solo mientras se ve: se descarga al acercarse y se pausa al salir (IntersectionObserver, sin
+  // escuchar el scroll). Con movimiento reducido se queda el póster.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const video = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) {
+            if (!video.getAttribute('src')) video.src = video.dataset.src ?? '';
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        }
+      },
+      { rootMargin: '200px 0px' },
+    );
+    document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((video) => io.observe(video));
+  }
+</script>

@@ -1,6 +1,8 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { LoginView } from '../../admin/ui/LoginView';
+import foto from '../../assets/paseo/paseo-3.webp';
+import { marca } from '../../data/finca';
 
 export const prerender = false;
 
@@ -8,6 +10,6 @@ export const prerender = false;
 if (Astro.locals.adminUser) return Astro.redirect('/admin');
 ---
 
-<AdminLayout title="Entrar">
-  <LoginView client:only="react" />
+<AdminLayout title="Entrar" theme="dark">
+  <LoginView client:only="react" image={foto.src} brand={marca.nombre} tagline={marca.lema} />
 </AdminLayout>

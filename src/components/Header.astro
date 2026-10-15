@@ -41,6 +41,16 @@ import { contacto, links, marca, nav } from '../data/finca';
     </nav>
 
     <div class="flex items-center gap-1">
+      <!-- Acceso al panel: discreto, para no competir con "Pedir". En móvil solo el icono. -->
+      <a
+        href="/admin/login"
+        rel="nofollow"
+        aria-label="Ingresar al panel de administración"
+        class="flex h-9 items-center gap-2 rounded-full px-2.5 text-sm text-crema/70 transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-crema/10 hover:text-crema lg:px-3"
+      >
+        <Icon name="user" class="size-5" />
+        <span class="text-trim hidden lg:inline">Ingresar</span>
+      </a>
       <a href={links.pedir} class="btn btn-primary btn-sm px-4" rel="noopener" target="_blank">
         <span>Pedir</span>
       </a>
@@ -86,6 +96,10 @@ import { contacto, links, marca, nav } from '../data/finca';
       {contacto.telefono}
     </a>
     <p>{contacto.ubicacion} · {contacto.horario}</p>
+    <a href="/admin/login" rel="nofollow" class="link mt-2 inline-flex items-center gap-2">
+      <Icon name="user" />
+      Ingresar al panel
+    </a>
   </div>
 </div>
 

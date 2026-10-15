@@ -2,7 +2,7 @@
 import { Picture } from 'astro:assets';
 import Pending from './Pending.astro';
 import Stop from './Stop.astro';
-import { contacto, links, marca, paseo, productos } from '../data/finca';
+import { contacto, links, marca, paseo, precioPollo, productos } from '../data/finca';
 
 const { paradas } = paseo;
 const body = 'mt-4 max-w-md text-base text-crema/80 lg:text-lg';
@@ -11,8 +11,9 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
 ---
 
 <section id="recorrido" data-world aria-label="Paseo por la finca" class="relative">
-  <!-- Escenario fijo: los clips del paseo ocupan toda la pantalla. Debajo, el primer fotograma de cada clip, con el mismo
-       encuadre, para que el vídeo entre sin que se note el cambio. -->
+  <!-- Escenario fijo. Los vídeos son verticales (grabados con el celular): en móvil ocupan toda la pantalla; en
+       escritorio, la mitad derecha de borde a borde (pantalla dividida, el texto a la izquierda). Debajo de cada clip, su
+       primer fotograma con el mismo encuadre, para que el vídeo entre sin que se note el cambio. -->
   <div data-stage class="sticky top-0 h-lvh overflow-hidden bg-bg" style="--focus-x: 50%">
     <div aria-hidden="true" class="media absolute inset-0">
       {
@@ -22,8 +23,8 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
               src={parada.poster}
               alt=""
               formats={['avif', 'webp']}
-              widths={[828, 1280, 1920]}
-              sizes="(min-aspect-ratio: 16/9) 100vw, 178vh"
+              widths={[480, 720, 960]}
+              sizes="(min-width: 1024px) 50vw, 100vw"
               loading={i === 0 ? 'eager' : 'lazy'}
               fetchpriority={i === 0 ? 'high' : 'low'}
               decoding="async"
@@ -39,7 +40,7 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
           paradas.map((parada) => (
             <video
               data-clip
-              data-src={parada.clip}
+              data-src={parada.clip ?? ''}
               muted
               playsinline
               preload="none"
@@ -106,47 +107,50 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
         <span
           class="hero-title mt-4 block max-w-[680px] bg-linear-to-r from-crema to-[#c5d3a6] bg-clip-text pb-2 text-4xl text-transparent lg:text-6xl"
         >
-          Del campo a tu mesa,<br /> recién recogido
+          Del campo a tu mesa
         </span>
       </h1>
       <p class={body}>
-        Huevos colorados de gallinas criadas al aire libre y pollo de campo de buena calidad. Pides por WhatsApp y te lo
-        llevamos.
+        Pollo campesino de piel amarilla natural, criado sin químicos ni aceleradores, y huevos colorados de gallinas al
+        aire libre. Pides por WhatsApp y te lo llevamos el mismo día.
       </p>
       <a href={links.pedir} class="btn btn-primary mt-6" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
-      <ul class="mt-6 flex flex-wrap gap-2 text-xs text-crema/80" aria-label="Nuestro producto">
+      <ul class="mt-6 flex flex-wrap gap-2 text-xs text-crema/80" aria-label="Lo que ofrecemos">
+        <li class={pill}>Pollo a {precioPollo} la libra</li>
+        <li class={pill}>Domicilio el mismo día</li>
         <li class={pill}>Huevos colorados</li>
-        <li class={pill}>Gallinas al aire libre</li>
-        <li class={pill}>Pollo de campo</li>
       </ul>
     </Stop>
 
     <Stop index={1} eyebrow="Cómo criamos">
-      <h2 class={title}>Gallinas con espacio, sol y pasto</h2>
+      <h2 class={title}>Gallinas bien comidas, huevos con sabor</h2>
       <p class={body}>
-        Nuestras gallinas pasan el día afuera, picoteando y moviéndose a su ritmo. Por la tarde vuelven al gallinero a
-        dormir y a poner.
+        Nuestras gallinas comen grano y verdura fresca todos los días, con espacio para moverse a su ritmo.
       </p>
       <p class="mt-4 max-w-md text-sm text-crema/60">
-        Una gallina tranquila pone mejor huevo. Por eso cuidamos el espacio, el agua limpia y la comida de cada día.
+        Una gallina tranquila y bien alimentada pone mejor huevo. Por eso cuidamos el espacio, el agua limpia y la comida
+        de cada día.
       </p>
       <Pending class="mt-4 max-w-md">Confirmar cómo se crían las gallinas y con qué se alimentan.</Pending>
     </Stop>
 
     <Stop index={2} eyebrow="Precios claros">
       <h2 class={title}>Sabes lo que pagas antes de pedir</h2>
-      <p class={body}>Huevos y pollo con el precio a la vista desde el principio, sin sorpresas al recibir.</p>
-      <dl class="mt-6 grid w-full max-w-md grid-cols-3 gap-4">
-        {
-          productos.filter((_, i) => i !== 1).map((producto) => (
-            <div class="flex flex-col-reverse gap-1">
-              <dt class="text-xs text-crema/60">{producto.nombre}</dt>
-              <dd class="font-display text-2xl lg:text-4xl">{producto.precio}</dd>
-            </div>
-          ))
-        }
+      <p class={body}>
+        Todo se pesa. El pollo se pesa completo y cada libra vale {precioPollo}, entero o despresado. Y los huevos son
+        grandes: el de la foto marca 79 gramos.
+      </p>
+      <dl class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
+        <div class="flex flex-col-reverse gap-1">
+          <dt class="text-xs text-crema/60">Libra de pollo, entero o despresado</dt>
+          <dd class="font-display text-3xl lg:text-4xl">{precioPollo}</dd>
+        </div>
+        <div class="flex flex-col-reverse gap-1">
+          <dt class="text-xs text-crema/60">{productos[0].nombre}</dt>
+          <dd class="font-display text-3xl lg:text-4xl">{productos[0].precio}</dd>
+        </div>
       </dl>
-      <Pending class="mt-4 max-w-md">Precios de cada producto.</Pending>
+      <Pending class="mt-4 max-w-md">Precio de los huevos.</Pending>
       <a href="#productos" class="link mt-6 text-sm">Ver todos los productos</a>
     </Stop>
 
@@ -170,16 +174,15 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
     </Stop>
 
     <Stop index={4} eyebrow="Pollo de campo">
-      <h2 class={title}>Pollo criado sin afán</h2>
+      <h2 class={title}>Producción responsable, sabor auténtico del campo</h2>
       <p class={body}>
         Nuestros pollos crecen con espacio para caminar y luz natural. La carne queda firme y con el sabor del pollo de
         campo de toda la vida.
       </p>
       <div class="mt-6 flex items-end gap-4">
         <span class="font-display text-5xl text-teja lg:text-7xl">2</span>
-        <span class="max-w-48 pb-1 text-sm text-crema/70">Formas de llevarlo: entero o despresado</span>
+        <span class="max-w-48 pb-1 text-sm text-crema/70">Formas de llevarlo: entero o despresado a mano</span>
       </div>
-      <Pending class="mt-4 max-w-md">Confirmar cómo se crían los pollos y cómo se entregan.</Pending>
     </Stop>
 
     <Stop index={5} eyebrow="Cómo pedir">
@@ -196,18 +199,20 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
           <span class="font-display text-2xl text-teja">2</span>
           <div>
             <h3 class="text-lg">Confirmamos tu pedido</h3>
-            <p class="text-sm text-crema/70">Te decimos el total y el día de entrega.</p>
+            <p class="text-sm text-crema/70">Te decimos el peso, el total y la hora de entrega.</p>
           </div>
         </li>
         <li class="flex gap-4">
           <span class="font-display text-2xl text-teja">3</span>
           <div>
             <h3 class="text-lg">Lo recibes en casa</h3>
-            <p class="text-sm text-crema/70">Entregamos en {contacto.zonaEntrega}.</p>
+            <p class="text-sm text-crema/70">
+              Hoy mismo si confirmas antes de las 10:00&nbsp;a.&nbsp;m. Pagas al recibir: {contacto.pagosEnFrase}.
+            </p>
           </div>
         </li>
       </ol>
-      <Pending class="mt-4 max-w-md">Zona y días de entrega, y si el domicilio tiene costo.</Pending>
+      <Pending class="mt-4 max-w-md">Confirmar si el domicilio tiene costo.</Pending>
       <a href={links.pedir} class="btn btn-primary mt-6" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
     </Stop>
   </div>
@@ -218,13 +223,20 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
     will-change: opacity, transform;
   }
 
-  /* Móvil en vertical: el 16:9 a toda la altura solo deja ver una cuarta parte del ancho. El vídeo ocupa la parte de
-     arriba y se funde con el fondo, así se ve casi el doble de imagen y el texto queda debajo. */
-  @media (max-width: 1023.98px) and (orientation: portrait) {
+  /* Escritorio: pantalla dividida. El vídeo vertical llena la mitad derecha a toda la altura (en media pantalla apenas
+     se recorta y no pierde nitidez; a pantalla completa quedaría borroso, es de 576 px de ancho). Su borde izquierdo se
+     funde con el fondo para que no haya una línea dura entre el texto y el vídeo. */
+  @media (min-width: 1024px) {
     .media {
-      bottom: auto;
-      height: 58svh;
-      mask-image: linear-gradient(to bottom, #000 72%, transparent);
+      left: auto;
+      width: 48%;
+      mask-image: linear-gradient(to right, transparent, #000 24%);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .media {
+      width: 52%;
     }
   }
 
@@ -237,14 +249,15 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
     opacity: 1;
   }
 
-  /* Solo se ve el clip del tramo actual; el cambio entre clips es instantáneo porque comparten fotograma. */
+  /* Solo se ve el clip del tramo actual. Los clips son tomas distintas: al cambiar de tramo se funden en vez de cortar. */
   .clip {
     object-position: var(--focus-x) 50%;
-    visibility: hidden;
+    opacity: 0;
+    transition: opacity 500ms var(--ease-fluid);
   }
 
   .clip.is-shown {
-    visibility: visible;
+    opacity: 1;
   }
 
   .rail-label {
