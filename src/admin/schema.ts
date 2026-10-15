@@ -622,6 +622,8 @@ export interface Appearance {
   /** Login: título y frase sobre la foto. */
   login_title: string;
   login_text: string;
+  /** Login: foto de fondo subida desde el panel ("/media/<id>"). Vacío: la foto de siempre (la báscula). */
+  login_image: string;
 }
 
 export const DEFAULT_APPEARANCE: Appearance = {
@@ -635,6 +637,7 @@ export const DEFAULT_APPEARANCE: Appearance = {
   colores: 'web',
   login_title: 'Del campo a tu mesa',
   login_text: 'Gestiona productos, pedidos y todo lo que se ve en la web desde un solo lugar.',
+  login_image: '',
 };
 
 export const RADIUS_OPTIONS = [
@@ -646,6 +649,9 @@ export const RADIUS_OPTIONS = [
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 const LOGO_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+// La foto del login se sube como imagen pública (se ve sin sesión) — nunca una URL externa cualquiera.
+const MEDIA_PREFIX = '/media/';
+const isMediaRef = (s: string) => s.startsWith(MEDIA_PREFIX) && UUID_RE.test(s.slice(MEDIA_PREFIX.length));
 export const LOGO_MAX = 300_000;
 
 export function parseAppearance(input: unknown): { ok: true; value: Appearance } | { ok: false; errors: string[] } {
@@ -668,11 +674,15 @@ export function parseAppearance(input: unknown): { ok: true; value: Appearance }
     colores: pick<Appearance['colores']>(raw.colores, { web: 1, propios: 1 }, d.colores)!,
     login_title: text('login_title', 60) || d.login_title,
     login_text: text('login_text', 200),
+    login_image: str(raw.login_image),
   };
   if (!HEX_RE.test(value.primary)) errors.push('El color principal debe ser un color hex, por ejemplo #b7571f.');
   if (value.primary_dark && !HEX_RE.test(value.primary_dark)) errors.push('El color para modo oscuro no es válido.');
   if (value.logo && (!LOGO_RE.test(value.logo) || value.logo.length > LOGO_MAX)) {
     errors.push('El logo debe ser una imagen PNG, JPG o WebP pequeña.');
+  }
+  if (value.login_image && !isMediaRef(value.login_image)) {
+    errors.push('La foto del login debe subirse desde el panel.');
   }
   return errors.length ? { ok: false, errors } : { ok: true, value };
 }

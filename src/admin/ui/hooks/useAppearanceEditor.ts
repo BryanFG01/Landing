@@ -6,6 +6,7 @@ import { DEFAULT_APPEARANCE, LOGO_MAX, type Appearance } from '../../schema';
 import { api, ApiError, errorMessage } from '../api';
 import { isHexColor, logoDataUrl } from '../lib/images';
 import { useAppearance } from '../nav';
+import { useSiteImageUpload } from './useSiteImageUpload';
 
 /** Solo se aplica en vivo un borrador con colores válidos (mientras se escribe un hex queda a medias). */
 const previewable = (a: Appearance) => isHexColor(a.primary) && (!a.primary_dark || isHexColor(a.primary_dark));
@@ -39,6 +40,10 @@ export function useAppearanceEditor() {
     },
     [previewAppearance, setDraft],
   );
+
+  // Foto del login: se sube como imagen pública (/media/<id>) porque el login se ve sin sesión. No va en base64
+  // como el logo: la apariencia viaja en cada página del panel y una foto la haría pesada.
+  const loginImage = useSiteImageUpload((login_image) => update({ login_image }));
 
   async function pickLogo(file: File | undefined) {
     if (!file) return;
@@ -83,6 +88,8 @@ export function useAppearanceEditor() {
     dirty: JSON.stringify(draft) !== JSON.stringify(saved),
     update,
     pickLogo,
+    pickLoginImage: loginImage.upload,
+    uploadingLoginImage: loginImage.uploading,
     save,
     discard,
     resetToDefaults: () => update({ ...DEFAULT_APPEARANCE }),

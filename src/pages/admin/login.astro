@@ -32,7 +32,7 @@ const { tema, marca } = site;
 >
   <LoginView
     client:only="react"
-    image={foto.src}
+    image={appearance.login_image || foto.src}
     brand={appearance.name}
     tagline={marca.lema}
     logo={appearance.logo || '/icon-192.png'}

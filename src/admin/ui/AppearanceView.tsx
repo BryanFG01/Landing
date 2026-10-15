@@ -1,4 +1,4 @@
-// Apariencia del panel: nombre, logo, colores, redondeo y textos del login. Los cambios se ven en vivo en todo el
+// Apariencia del panel: nombre, logo, colores, redondeo y foto y textos del login. Los cambios se ven en vivo en todo el
 // panel. La lógica está en hooks/useAppearanceEditor.ts.
 import * as React from 'react';
 import { Badge } from '../../components/ui/badge';
@@ -139,14 +139,44 @@ function ColorsCard({ draft, update }: Readonly<{ draft: Appearance; update: Upd
   );
 }
 
-function LoginCard({ draft, update }: Readonly<{ draft: Appearance; update: Update }>) {
+interface LoginCardProps {
+  draft: Appearance;
+  update: Update;
+  onImage: (f: File) => void;
+  uploadingImage: boolean;
+}
+
+function LoginCard({ draft, update, onImage, uploadingImage }: Readonly<LoginCardProps>) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Login</CardTitle>
-        <CardDescription>Textos sobre la foto de la pantalla de entrada (en escritorio).</CardDescription>
+        <CardDescription>Foto y textos de la pantalla de entrada (los textos se ven en escritorio).</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-center gap-4">
+          {draft.login_image ? (
+            <img
+              src={draft.login_image}
+              alt="Foto actual del login"
+              className="h-16 w-24 shrink-0 rounded-md border border-border object-cover"
+            />
+          ) : (
+            <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-md border border-dashed border-border px-2 text-center text-xs text-muted-foreground">
+              Foto de siempre
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <FilePicker accept="image/png,image/jpeg,image/webp" label="Foto del login" onPick={onImage} disabled={uploadingImage}>
+              {uploadingImage ? 'Subiendo…' : 'Cambiar foto'}
+            </FilePicker>
+            {draft.login_image && (
+              <Button variant="ghost" size="sm" onClick={() => update({ login_image: '' })} disabled={uploadingImage}>
+                Usar la de siempre
+              </Button>
+            )}
+          </div>
+        </div>
         <Input label="Título" value={draft.login_title} maxLength={60} onChange={(e) => update({ login_title: e.target.value })} />
         <Textarea
           label="Frase"
@@ -188,7 +218,12 @@ export function AppearanceView() {
         <div className="space-y-6">
           <BrandCard draft={draft} update={update} onLogo={editor.pickLogo} />
           <ColorsCard draft={draft} update={update} />
-          <LoginCard draft={draft} update={update} />
+          <LoginCard
+            draft={draft}
+            update={update}
+            onImage={editor.pickLoginImage}
+            uploadingImage={editor.uploadingLoginImage}
+          />
           <Button variant="ghost" onClick={editor.resetToDefaults}>
             Volver a los valores originales
           </Button>
