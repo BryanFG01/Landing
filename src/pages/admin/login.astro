@@ -3,7 +3,9 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { LoginView } from '../../admin/ui/LoginView';
 import { getAppearance } from '../../admin/server/settings';
 import foto from '../../assets/paseo/bascula.webp';
-import { marca } from '../../data/finca';
+import { SITE_DEFAULTS } from '../../data/sitio';
+
+const marca = SITE_DEFAULTS.marca;
 
 export const prerender = false;
 

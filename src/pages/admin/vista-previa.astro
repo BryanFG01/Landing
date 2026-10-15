@@ -1,0 +1,22 @@
+---
+// Vista previa del borrador de Sitio web: la landing completa con el contenido sin publicar. Solo administradores (lo
+// comprueba el middleware). No se indexa y no se guarda en caché.
+import Layout from '../../layouts/Layout.astro';
+import Landing from '../../components/Landing.astro';
+import { getDraft } from '../../admin/server/site';
+
+export const prerender = false;
+
+const draft = await getDraft();
+Astro.locals.sitePreview = draft;
+---
+
+<Layout noindex>
+  <div
+    style="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:12px;align-items:center;padding:8px 16px;border-radius:9999px;background:#111;color:#fff;font:500 13px/1.4 system-ui,sans-serif;box-shadow:0 8px 24px rgb(0 0 0 / .35)"
+  >
+    Vista previa · sin publicar
+    <a href="/admin/sitio" style="color:#fbbf24">Volver al editor</a>
+  </div>
+  <Landing site={draft} />
+</Layout>

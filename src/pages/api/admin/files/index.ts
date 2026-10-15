@@ -12,8 +12,11 @@ const FILE_MAX = 4 * 1024 * 1024;
  * Sube un archivo (multipart, campo "file") y devuelve su referencia para guardarla en un campo de foto o archivo.
  * Pueden subir los administradores y los usuarios con permiso de edición en algún módulo.
  */
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, url }) => {
   const user = locals.adminUser!;
+  // ?publico=1: imagen de la landing (se sirve sin sesión en /media/<id>). Solo administradores.
+  const isPublic = url.searchParams.get('publico') === '1';
+  if (isPublic && user.role !== 'admin') return fail(403, 'Solo los administradores suben imágenes de la web.');
   if (user.role !== 'admin' && !(await one('SELECT 1 FROM admin.user_modules WHERE user_id = ? AND can_edit', [user.id]))) {
     return fail(403, 'No tienes permiso para subir archivos.');
   }
@@ -33,9 +36,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const name = (file.name || 'archivo').replace(/[\\/\0]/g, '_').slice(0, 200);
   const mime = (file.type || 'application/octet-stream').slice(0, 100);
+  if (isPublic && !/^image\/(png|jpeg|webp|gif|avif)$/.test(mime)) return fail(415, 'Solo imágenes PNG, JPG, WebP, GIF o AVIF.');
   const row = await one<{ id: string }>(
-    'INSERT INTO admin.files (name, mime, size, data, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id',
-    [name, mime, file.size, Buffer.from(await file.arrayBuffer()), user.id],
+    'INSERT INTO admin.files (name, mime, size, data, created_by, public) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+    [name, mime, file.size, Buffer.from(await file.arrayBuffer()), user.id, isPublic],
   );
   const ref: FileRef = { id: row!.id, name, mime, size: file.size };
   return json({ file: ref }, 201);

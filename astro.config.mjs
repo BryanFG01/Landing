@@ -22,6 +22,8 @@ export default defineConfig({
       // Opcional para el build: la landing se prerenderiza sin base de datos. Se lee al abrir la primera conexión
       // (src/admin/server/db.ts) y, si falta, el admin responde con un error claro.
       DATABASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
+      // Deploy Hook de Vercel (Settings → Git → Deploy Hooks). Con él, "Publicar" en Sitio web despliega la landing.
+      VERCEL_DEPLOY_HOOK: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
   integrations: [
@@ -64,6 +66,25 @@ export default defineConfig({
         ],
       },
     },
+    // Tipografías que se pueden elegir desde el panel (Sitio web → Colores y tipografía). Se descargan en el build y
+    // se sirven desde el propio dominio; la página solo carga las dos elegidas. La lista vive en FONTS (src/data/sitio.ts).
+    ...[
+      ['Playfair Display', '--font-playfair', 'serif'],
+      ['Fraunces', '--font-fraunces', 'serif'],
+      ['DM Serif Display', '--font-dmserif', 'serif'],
+      ['Lora', '--font-lora', 'serif'],
+      ['Manrope', '--font-manrope', 'sans-serif'],
+      ['Poppins', '--font-poppins', 'sans-serif'],
+      ['Nunito Sans', '--font-nunito', 'sans-serif'],
+    ].map(([name, cssVariable, fallback]) => ({
+      provider: fontProviders.google(),
+      name,
+      cssVariable,
+      weights: /** @type {[number, number]} */ ([400, 500]),
+      styles: /** @type {['normal']} */ (['normal']),
+      subsets: /** @type {[string]} */ (['latin']),
+      fallbacks: /** @type {[string]} */ ([fallback]),
+    })),
   ],
   vite: {
     plugins: [tailwindcss()],

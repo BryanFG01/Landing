@@ -1,16 +1,26 @@
 import type { APIRoute } from 'astro';
-import { contacto, faqs, links, marca, precioPanal, precioPollo, productos, seo } from '../data/finca';
+import { getSite } from '../data/contenido';
+import { bloque, links as linksFor, plain } from '../data/sitio';
 
-export const GET: APIRoute = ({ site }) => {
+export const GET: APIRoute = async ({ site }) => {
   if (!site) throw new Error('Falta site en astro.config.mjs');
+  const content = await getSite();
+  const { marca, contacto, seo } = content;
+  const links = linksFor(content);
+  const productos = bloque(content, 'productos');
+  const faqs = bloque(content, 'preguntas');
   const home = new URL('/', site).href;
-  const productLines = productos.map((p) => `- ${p.nombre}: ${p.precio}. ${p.detalle}.`).join('\n');
-  const questions = faqs.map((faq) => `### ${faq.pregunta}\n\n${faq.respuesta}`).join('\n\n');
+  const productLines = productos.visible
+    ? productos.items.map((p) => `- ${p.nombre}: ${p.precio}. ${p.detalle}.`).join('\n')
+    : '';
+  const questions = faqs.visible
+    ? faqs.items.map((faq) => `### ${faq.pregunta}\n\n${plain(faq.respuesta)}`).join('\n\n')
+    : '';
   const body = `# ${marca.nombre}
 
-> ${seo.description}
+> ${plain(seo.descripcion)}
 
-${marca.lema}: pollo campesino y huevos colorados a domicilio. Los pedidos se hacen por WhatsApp.
+${marca.lema}. Los pedidos se hacen por WhatsApp.
 
 ## Datos
 
@@ -19,21 +29,10 @@ ${marca.lema}: pollo campesino y huevos colorados a domicilio. Los pedidos se ha
 - Entregas: ${contacto.entregas}
 - Horario de pedidos: ${contacto.horario}
 - Pago: ${contacto.pagos}
-- Precio del pollo: ${precioPollo} la libra con domicilio incluido, entero o despresado (se pesa completo)
-- Precio del panal de 30 huevos colorados: ${precioPanal}
 - Teléfono y WhatsApp: ${contacto.telefono}
 - Pedidos: ${links.pedir}
-- Instagram: ${links.instagram}
-- Página: ${home}
-
-## Productos
-
-${productLines}
-
-## Preguntas frecuentes
-
-${questions}
-`;
+${contacto.instagram && contacto.instagramUrl ? `- Instagram: ${contacto.instagramUrl}\n` : ''}- Página: ${home}
+${productLines ? `\n## Productos\n\n${productLines}\n` : ''}${questions ? `\n## Preguntas frecuentes\n\n${questions}\n` : ''}`;
   return new Response(body, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });

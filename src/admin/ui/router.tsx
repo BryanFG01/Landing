@@ -21,7 +21,9 @@ const current = () => location.pathname.replace(/\/+$/, '') + location.search ||
 
 /** Solo se navega en cliente dentro del panel; el login y lo demás cargan página. */
 const isAppPath = (pathname: string) =>
-  (pathname === '/admin' || pathname.startsWith('/admin/')) && !pathname.startsWith('/admin/login');
+  (pathname === '/admin' || pathname.startsWith('/admin/')) &&
+  !pathname.startsWith('/admin/login') &&
+  !pathname.startsWith('/admin/vista-previa');
 
 export function RouterProvider({ children }: { children: React.ReactNode }) {
   const [path, setPath] = React.useState(current);

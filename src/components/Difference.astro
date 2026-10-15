@@ -1,34 +1,39 @@
 ---
 import Icon from './Icon.astro';
-import poster from '../assets/paseo/pollos.webp';
-import { comparacion, marca, procesoPollo } from '../data/finca';
+import { imageUrl } from '../data/assets';
+import type { BloqueDiferencia, SiteContent } from '../data/sitio';
+
+interface Props {
+  bloque: BloqueDiferencia;
+  site: SiteContent;
+}
+
+const { bloque, site } = Astro.props;
+const { marca } = site;
 ---
 
-<!-- La diferencia del pollo campesino: comparación con el de supermercado y el proceso, del campo a la mesa. -->
+<!-- La diferencia: comparación con la competencia y el proceso, del campo a la mesa. -->
 <section id="diferencia" aria-labelledby="diferencia-title" class="px-4 py-24 md:px-12 xl:px-24">
   <div class="mx-auto max-w-6xl">
     <div class="max-w-2xl">
-      <p data-reveal class="text-sm text-teja">La diferencia se nota</p>
-      <h2 id="diferencia-title" data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">
-        Pollo campesino frente al de supermercado
-      </h2>
-      <p data-reveal style="--d:200ms" class="mt-6 text-base text-crema/70 lg:text-lg">
-        Lo notas en el color de la piel, en la textura de la carne y en el caldo.
-      </p>
+      <p data-reveal class="text-sm text-teja">{bloque.eyebrow}</p>
+      <h2 id="diferencia-title" data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">{bloque.titulo}</h2>
+      {bloque.texto && <p data-reveal style="--d:200ms" class="mt-6 text-base text-crema/70 lg:text-lg">{bloque.texto}</p>}
     </div>
 
+    {bloque.filas.length > 0 && (
     <div data-reveal class="mt-12 overflow-hidden rounded-3xl ring-1 ring-crema/15">
       <table class="w-full text-left text-sm lg:text-base">
-        <caption class="sr-only">Comparación entre el pollo de {marca.nombre} y el pollo de supermercado</caption>
+        <caption class="sr-only">Comparación entre {marca.nombre} y {bloque.nombreOtro}</caption>
         <thead class="bg-crema/[0.06] text-xs tracking-widest uppercase">
           <tr>
             <th scope="col" class="w-1/2 px-4 py-4 font-medium text-teja lg:px-8">{marca.nombre}</th>
-            <th scope="col" class="w-1/2 px-4 py-4 font-medium text-crema/50 lg:px-8">Supermercado</th>
+            <th scope="col" class="w-1/2 px-4 py-4 font-medium text-crema/50 lg:px-8">{bloque.nombreOtro}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-crema/10">
           {
-            comparacion.map((fila) => (
+            bloque.filas.map((fila) => (
               <tr>
                 <td class="px-4 py-4 align-top lg:px-8">
                   <span class="flex items-start gap-2">
@@ -48,31 +53,46 @@ import { comparacion, marca, procesoPollo } from '../data/finca';
         </tbody>
       </table>
     </div>
+    )}
 
     <div class="mt-24 grid items-center gap-12 md:grid-cols-2">
       <div data-reveal class="mirror-frame mask-arch mx-auto w-full max-w-sm">
-        <!-- Vídeo real de los pollos, en bucle y sin sonido. Se descarga y reproduce solo cuando está cerca de la
-             pantalla; mientras tanto (o con movimiento reducido) se ve su primer fotograma. -->
-        <video
-          data-autoplay
-          data-src="/video/pollos.mp4"
-          poster={poster.src}
-          muted
-          loop
-          playsinline
-          preload="none"
-          disablepictureinpicture
-          role="img"
-          aria-label="Pollos jóvenes comiendo alrededor de un comedero rojo"
-          class="block aspect-[4/5] w-full mask-arch object-cover"
-        ></video>
+        <!-- Vídeo en bucle y sin sonido. Se descarga y reproduce solo cuando está cerca de la pantalla; mientras tanto
+             (o con movimiento reducido) se ve la imagen. Sin vídeo, solo la imagen. -->
+        {
+          bloque.video ? (
+            <video
+              data-autoplay
+              data-src={bloque.video}
+              poster={imageUrl(bloque.poster.src)}
+              muted
+              loop
+              playsinline
+              preload="none"
+              disablepictureinpicture
+              role="img"
+              aria-label={bloque.poster.alt}
+              class="block aspect-[4/5] w-full mask-arch object-cover"
+            />
+          ) : (
+            bloque.poster.src && (
+              <img
+                src={imageUrl(bloque.poster.src)}
+                alt={bloque.poster.alt}
+                loading="lazy"
+                decoding="async"
+                class="block aspect-[4/5] w-full mask-arch object-cover"
+              />
+            )
+          )
+        }
       </div>
       <div>
-        <p data-reveal class="text-sm text-teja">Del campo a tu mesa</p>
-        <h2 data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">Un proceso honesto, sin atajos</h2>
+        <p data-reveal class="text-sm text-teja">{bloque.eyebrow2}</p>
+        <h2 data-reveal style="--d:100ms" class="mt-4 text-3xl lg:text-5xl">{bloque.titulo2}</h2>
         <ol class="mt-8 flex flex-col gap-6">
           {
-            procesoPollo.map((paso, i) => (
+            bloque.pasos.map((paso, i) => (
               <li data-reveal style={`--d:${150 + i * 80}ms`} class="flex gap-6">
                 <span class="font-display text-2xl text-teja tabular-nums">{String(i + 1).padStart(2, '0')}</span>
                 <div>

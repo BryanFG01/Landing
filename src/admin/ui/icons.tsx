@@ -39,6 +39,7 @@ import paperclip from '@phosphor-icons/core/assets/regular/paperclip.svg?raw';
 import table from '@phosphor-icons/core/assets/regular/table.svg?raw';
 import lock from '@phosphor-icons/core/assets/regular/lock-simple.svg?raw';
 import eye from '@phosphor-icons/core/assets/regular/eye.svg?raw';
+import eyeSlash from '@phosphor-icons/core/assets/regular/eye-slash.svg?raw';
 import code from '@phosphor-icons/core/assets/regular/code.svg?raw';
 import * as React from 'react';
 
@@ -83,6 +84,7 @@ const SVG = {
   table,
   lock,
   eye,
+  'eye-slash': eyeSlash,
   code,
 } as const;
 

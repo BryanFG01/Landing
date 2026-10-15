@@ -1,29 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ScrollWorld from '../components/ScrollWorld.astro';
-import Tagline from '../components/Tagline.astro';
-import Dishes from '../components/Dishes.astro';
-import Difference from '../components/Difference.astro';
-import Testimonials from '../components/Testimonials.astro';
-import Faq from '../components/Faq.astro';
-import Gift from '../components/Gift.astro';
-import FinalCta from '../components/FinalCta.astro';
-import { seo } from '../data/finca';
+import Landing from '../components/Landing.astro';
+import { getSite } from '../data/contenido';
 import { structuredData } from '../data/schema';
 
+// Se prerenderiza con el contenido publicado desde el panel (Sitio web → Publicar lanza un nuevo despliegue).
 const site = Astro.site;
 if (!site) throw new Error('Falta site en astro.config.mjs');
-const jsonLd = JSON.stringify(structuredData(site)).replaceAll('<', '\\u003c');
+const content = await getSite();
+const jsonLd = JSON.stringify(structuredData(site, content)).replaceAll('<', '\\u003c');
 ---
 
-<Layout title={seo.title} description={seo.description}>
+<Layout>
   <script slot="head" type="application/ld+json" set:html={jsonLd} />
-  <ScrollWorld />
-  <Tagline />
-  <Dishes />
-  <Difference />
-  <Testimonials />
-  <Faq />
-  <Gift />
-  <FinalCta />
+  <Landing site={content} />
 </Layout>

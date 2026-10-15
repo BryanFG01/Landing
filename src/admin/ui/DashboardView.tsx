@@ -40,6 +40,9 @@ const ACTIONS: Record<string, string> = {
   group_create: 'creó un grupo del menú',
   sql: 'ejecutó SQL en la consola',
   appearance_update: 'cambió la apariencia',
+  site_draft: 'editó el borrador de la web',
+  site_publish: 'publicó la web',
+  site_restore: 'recuperó una versión de la web',
 };
 
 const fmt = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' });

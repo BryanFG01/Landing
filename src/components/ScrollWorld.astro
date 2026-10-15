@@ -1,10 +1,24 @@
 ---
-import { Picture } from 'astro:assets';
-import Pending from './Pending.astro';
+import Media from './Media.astro';
 import Stop from './Stop.astro';
-import { contacto, links, marca, paseo, precioPanal, precioPollo } from '../data/finca';
+import { links, rich, type BloquePaseo, type SiteContent } from '../data/sitio';
 
-const { paradas } = paseo;
+interface Props {
+  bloque: BloquePaseo;
+  site: SiteContent;
+}
+
+const { bloque, site } = Astro.props;
+const { marca } = site;
+const pedir = links(site).pedir;
+// El vídeo arranca en la primera parada y las demás lo continúan: se ve de corrido, sin cortes. Sin vídeo, el póster.
+const paradas = bloque.paradas.map((p, i) => ({
+  ...p,
+  id: i === 0 ? 'inicio' : `parada-${i + 1}`,
+  clip: i === 0 ? bloque.video : '',
+  auto: i === 0 && !!bloque.video,
+  continua: i > 0 && !!bloque.video,
+}));
 const body = 'mt-4 max-w-md text-base text-crema/80 lg:text-lg';
 const title = 'mt-4 max-w-xl text-4xl lg:text-5xl xl:text-6xl';
 const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur-md';
@@ -17,18 +31,16 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
   <div data-stage class="sticky top-0 h-lvh overflow-hidden bg-bg" style="--focus-x: 50%">
     <div aria-hidden="true" class="media absolute inset-0">
       {
-        paradas.map((parada, i) => (
+        paradas.map((_, i) => (
           <div data-frame class="frame absolute inset-0" style={i === 0 ? undefined : 'opacity: 0'}>
-            <Picture
-              src={parada.poster}
+            <Media
+              img={bloque.poster}
               alt=""
-              formats={['avif', 'webp']}
               widths={[480, 720, 960]}
               sizes="(min-width: 1024px) 50vw, 100vw"
               loading={i === 0 ? 'eager' : 'lazy'}
               fetchpriority={i === 0 ? 'high' : 'low'}
-              decoding="async"
-              pictureAttributes={{ class: 'block size-full' }}
+              pictureClass="block size-full"
               class="size-full object-cover"
               style="object-position: var(--focus-x) 50%"
             />
@@ -40,10 +52,10 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
           paradas.map((parada) => (
             <video
               data-clip
-              data-src={parada.clip ?? ''}
-              data-auto={parada.reproduccion === 'auto' ? '' : undefined}
+              data-src={parada.clip}
+              data-auto={parada.auto ? '' : undefined}
               data-continua={parada.continua ? '' : undefined}
-              loop={parada.reproduccion === 'auto'}
+              loop={parada.auto}
               muted
               playsinline
               preload="none"
@@ -94,129 +106,104 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
       aria-hidden="true"
       class="absolute right-8 bottom-8 hidden items-center gap-3 text-xs tracking-widest text-crema/70 uppercase lg:flex"
     >
-      Desliza para recorrer la finca
+      {bloque.pista}
       <span class="hint-line relative block h-8 w-px overflow-hidden bg-crema/20"></span>
     </p>
   </div>
 
-  <!-- Paradas: cada una deja su texto abajo a la izquierda mientras el paseo avanza. -->
+  <!-- Paradas: cada una deja su texto abajo a la izquierda mientras el paseo avanza. El contenido sale del panel
+       (Sitio web); el estilo de cada parada elige cómo se pintan sus datos. La primera lleva el h1: la marca y el
+       producto van dentro para que el titular principal diga qué es y qué vende. -->
   <div class="relative z-10 -mt-[100lvh]">
-    <Stop index={0} spy="#inicio">
-      <!-- La marca y el producto van dentro del h1 para que el titular principal diga qué es y qué vende. -->
-      <h1 class="mt-4">
-        <span class="block font-sans text-xs font-medium tracking-widest text-teja uppercase">
-          {marca.nombre} · {marca.lema}
-        </span>
-        <span
-          class="hero-title mt-4 block max-w-[680px] bg-linear-to-r from-crema to-[#c5d3a6] bg-clip-text pb-2 text-4xl text-transparent lg:text-6xl"
+    {
+      paradas.map((p, i) => (
+        <Stop
+          id={p.id}
+          index={i}
+          total={paradas.length}
+          lugar={p.lugar}
+          eyebrow={i === 0 ? undefined : p.eyebrow || undefined}
+          spy={i === 0 ? '#inicio' : undefined}
         >
-          Del campo a tu mesa
-        </span>
-      </h1>
-      <p class={body}>
-        Pollo campesino de piel amarilla natural, criado sin químicos ni aceleradores, y huevos colorados de gallinas al
-        aire libre. Pides por WhatsApp y te lo llevamos el mismo día.
-      </p>
-      <a href={links.pedir} class="btn btn-primary mt-6" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
-      <ul class="mt-6 flex flex-wrap gap-2 text-xs text-crema/80" aria-label="Lo que ofrecemos">
-        <li class={pill}>Pollo a {precioPollo} la libra, domicilio incluido</li>
-        <li class={pill}>Panal de huevos a {precioPanal}</li>
-        <li class={pill}>Entrega el mismo día</li>
-      </ul>
-    </Stop>
+          {i === 0 ? (
+            <h1 class="mt-4">
+              <span class="block font-sans text-xs font-medium tracking-widest text-teja uppercase">
+                {p.eyebrow || `${marca.nombre} · ${marca.lema}`}
+              </span>
+              <span class="hero-title mt-4 block max-w-[680px] bg-linear-to-r from-crema to-[#c5d3a6] bg-clip-text pb-2 text-4xl text-transparent lg:text-6xl">
+                {p.titulo}
+              </span>
+            </h1>
+          ) : (
+            <h2 class={title}>{p.titulo}</h2>
+          )}
+          {p.texto && <p class={body} set:html={rich(p.texto)} />}
+          {p.nota && <p class="mt-4 max-w-md text-sm text-crema/60" set:html={rich(p.nota)} />}
 
-    <Stop index={1} eyebrow="Cómo criamos">
-      <h2 class={title}>Gallinas bien comidas, huevos con sabor</h2>
-      <p class={body}>
-        Nuestras gallinas comen grano y verdura fresca todos los días, con espacio para moverse a su ritmo.
-      </p>
-      <p class="mt-4 max-w-md text-sm text-crema/60">
-        Una gallina tranquila y bien alimentada pone mejor huevo. Por eso cuidamos el espacio, el agua limpia y la comida
-        de cada día.
-      </p>
-      <Pending class="mt-4 max-w-md">Confirmar cómo se crían las gallinas y con qué se alimentan.</Pending>
-    </Stop>
+          {p.estilo === 'chips' && p.items.length > 0 && (
+            <ul class="mt-6 flex flex-wrap gap-2 text-xs text-crema/80" aria-label="Lo que ofrecemos">
+              {p.items.map((it) => (
+                <li class={pill}>{it.valor}</li>
+              ))}
+            </ul>
+          )}
 
-    <Stop index={2} eyebrow="Precios claros">
-      <h2 class={title}>Sabes lo que pagas antes de pedir</h2>
-      <p class={body}>
-        Todo se pesa. El pollo se pesa completo y cada libra vale {precioPollo}, entero o despresado, con el domicilio
-        incluido. Te confirmamos el total por WhatsApp antes de despachar.
-      </p>
-      <dl class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
-        <div class="flex flex-col-reverse gap-1">
-          <dt class="text-xs text-crema/60">Libra de pollo, con domicilio incluido</dt>
-          <dd class="font-display text-3xl lg:text-4xl">{precioPollo}</dd>
-        </div>
-        <div class="flex flex-col-reverse gap-1">
-          <dt class="text-xs text-crema/60">Panal de 30 huevos colorados</dt>
-          <dd class="font-display text-3xl lg:text-4xl">{precioPanal}</dd>
-        </div>
-      </dl>
-      <a href="#productos" class="link mt-6 text-sm">Ver todos los productos</a>
-    </Stop>
+          {p.estilo === 'cifras' && p.items.length > 0 && (
+            <dl class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
+              {p.items.map((it) => (
+                <div class="flex flex-col-reverse gap-1">
+                  <dt class="text-xs text-crema/60">{it.etiqueta}</dt>
+                  <dd class="font-display text-3xl lg:text-4xl">{it.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
 
-    <Stop index={3} eyebrow="Frescura">
-      <h2 class={title}>Huevos de días, no de semanas</h2>
-      <p class={body}>
-        Recogemos los huevos cada día, los revisamos uno a uno y los empacamos en cubetas para que lleguen enteros a tu
-        casa.
-      </p>
-      <ul class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
-        <li class="flex flex-col gap-1 rounded-2xl bg-bg/40 p-4 ring-1 ring-crema/15 backdrop-blur-md">
-          <span class="font-display text-2xl lg:text-3xl">A diario</span>
-          <span class="text-xs text-crema/70 lg:text-sm">Recogida de huevos en la finca</span>
-        </li>
-        <li class="flex flex-col gap-1 rounded-2xl bg-bg/40 p-4 ring-1 ring-crema/15 backdrop-blur-md">
-          <span class="font-display text-2xl lg:text-3xl">Uno a uno</span>
-          <span class="text-xs text-crema/70 lg:text-sm">Revisados antes de empacar</span>
-        </li>
-      </ul>
-      <Pending class="mt-4 max-w-md">Confirmar cada cuánto se recoge y cuántos días pasan hasta la entrega.</Pending>
-    </Stop>
+          {p.estilo === 'tarjetas' && p.items.length > 0 && (
+            <ul class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
+              {p.items.map((it) => (
+                <li class="flex flex-col gap-1 rounded-2xl bg-bg/40 p-4 ring-1 ring-crema/15 backdrop-blur-md">
+                  <span class="font-display text-2xl lg:text-3xl">{it.valor}</span>
+                  <span class="text-xs text-crema/70 lg:text-sm">{it.etiqueta}</span>
+                </li>
+              ))}
+            </ul>
+          )}
 
-    <Stop index={4} eyebrow="Pollo de campo">
-      <h2 class={title}>Producción responsable, sabor auténtico del campo</h2>
-      <p class={body}>
-        Nuestros pollos crecen con espacio para caminar y luz natural. La carne queda firme y con el sabor del pollo de
-        campo de toda la vida.
-      </p>
-      <div class="mt-6 flex items-end gap-4">
-        <span class="font-display text-5xl text-teja lg:text-7xl">2</span>
-        <span class="max-w-48 pb-1 text-sm text-crema/70">Formas de llevarlo: entero o despresado a mano</span>
-      </div>
-    </Stop>
+          {p.estilo === 'numero' && p.items[0] && (
+            <div class="mt-6 flex items-end gap-4">
+              <span class="font-display text-5xl text-teja lg:text-7xl">{p.items[0].valor}</span>
+              <span class="max-w-48 pb-1 text-sm text-crema/70">{p.items[0].etiqueta}</span>
+            </div>
+          )}
 
-    <Stop index={5} eyebrow="Cómo pedir">
-      <h2 class={title}>Tu pedido, en tres pasos</h2>
-      <ol class="mt-6 flex max-w-md flex-col gap-4">
-        <li class="flex gap-4">
-          <span class="font-display text-2xl text-teja">1</span>
-          <div>
-            <h3 class="text-lg">Escríbenos por WhatsApp</h3>
-            <p class="text-sm text-crema/70">Dinos qué productos quieres y cuántos.</p>
-          </div>
-        </li>
-        <li class="flex gap-4">
-          <span class="font-display text-2xl text-teja">2</span>
-          <div>
-            <h3 class="text-lg">Confirmamos tu pedido</h3>
-            <p class="text-sm text-crema/70">Te decimos el peso, el total y la hora de entrega.</p>
-          </div>
-        </li>
-        <li class="flex gap-4">
-          <span class="font-display text-2xl text-teja">3</span>
-          <div>
-            <h3 class="text-lg">Lo recibes en casa</h3>
-            <p class="text-sm text-crema/70">
-              Hoy mismo si confirmas antes de las 10:00&nbsp;a.&nbsp;m. Pagas al recibir: {contacto.pagosEnFrase}.
-            </p>
-          </div>
-        </li>
-      </ol>
-      <Pending class="mt-4 max-w-md">Confirmar si el domicilio tiene costo en pedidos solo de huevos.</Pending>
-      <a href={links.pedir} class="btn btn-primary mt-6" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
-    </Stop>
+          {p.estilo === 'pasos' && p.items.length > 0 && (
+            <ol class="mt-6 flex max-w-md flex-col gap-4">
+              {p.items.map((it, n) => (
+                <li class="flex gap-4">
+                  <span class="font-display text-2xl text-teja">{n + 1}</span>
+                  <div>
+                    <h3 class="text-lg">{it.valor}</h3>
+                    {it.etiqueta && <p class="text-sm text-crema/70">{it.etiqueta}</p>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {p.boton === 'whatsapp' && (
+            <a href={pedir} class="btn btn-primary mt-6" rel="noopener" target="_blank">
+              <span>Pedir por WhatsApp</span>
+            </a>
+          )}
+          {p.boton === 'productos' && (
+            <a href="#productos" class="link mt-6 text-sm">
+              Ver todos los productos
+            </a>
+          )}
+        </Stop>
+      ))
+    }
   </div>
 </section>
 

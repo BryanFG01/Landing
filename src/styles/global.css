@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "lenis/dist/lenis.css";
 
-@theme inline {
+/* Sin "inline": las utilidades usan var(--font-display) y el tema del panel las puede cambiar (Layout.astro). */
+@theme {
   --font-display: var(--font-hina), serif;
   --font-sans: var(--font-zen), sans-serif;
 }

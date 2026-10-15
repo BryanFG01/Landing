@@ -125,10 +125,43 @@ Mismos nombres que `columnConfigs` en ERPCloud:
 | `POST` | `/api/admin/sql/preview` | Probar la consulta de un módulo: columnas y 20 filas |
 | `GET` | `/api/admin/tables` | Tablas y vistas del esquema `datos`, con campos sugeridos |
 | `GET` `PUT` | `/api/admin/settings/appearance` | Apariencia |
+| `GET` `PUT` | `/api/admin/site` | Contenido de la landing: estado y borrador |
+| `POST` | `/api/admin/site/publish` · `/site/restore` | Publicar (y lanzar el Deploy Hook) · recuperar una versión al borrador |
+| `GET` | `/media/:id` | Imágenes públicas de la landing (sin sesión) |
 
 `filters` va como JSON en la query, por nombre de filtro: `{"estado":["pendiente"],"entrega":{"from":"2026-10-01"}}`.
 
 Solo administradores: `/modules`, `/groups`, `/users`, `/sql`, `/tables`, `/settings` (lo corta `src/middleware.ts`). En `/m/:key` se comprueba el permiso del usuario en ese módulo.
+
+---
+
+## Sitio web: editar la landing desde el panel (`/admin/sitio`)
+
+Todo lo que se ve en la landing sale de un documento de contenido (`src/data/sitio.ts`), editable por bloques:
+
+| Sección | Qué se cambia |
+| --- | --- |
+| Colores y tipografía | Fondo, texto y acento; tipografía de títulos y de textos (lista cerrada en `FONTS`, servidas desde el propio dominio). Avisa si el contraste es bajo |
+| Marca | Nombre, lema, promesa, frase del pie y logo |
+| Contacto y pedidos | WhatsApp y mensaje al pulsar "Pedir", teléfono, ciudad, zona, horario, entregas, pagos, Instagram |
+| Google y redes (SEO) | Título y descripción de la página |
+| Bloques | Paseo con video, Frase, Productos, La diferencia, Opiniones, Preguntas, Pedido semanal, Llamado final: textos, listas (añadir, quitar y reordenar), fotos, video, mostrar u ocultar y **orden** de los bloques |
+
+**Cómo se publica.** La landing sigue siendo estática (rápida y sin depender de la base para cargar):
+
+1. Los cambios se guardan como **borrador** (`admin.settings`, clave `site_draft`).
+2. **Vista previa** (`/admin/vista-previa`) muestra la landing completa con el borrador. Solo administradores.
+3. **Publicar** copia el borrador a `site_published`, guarda la versión en `admin.site_versions` (las 50 últimas, con "Recuperar") y llama al **Deploy Hook** de Vercel. El build lee `site_published` y genera la página (1–2 min).
+
+Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si la base está configurada pero falla durante el build, el build falla a propósito, para no publicar el contenido por defecto encima del bueno.
+
+**Configurar el Deploy Hook (una vez):** Vercel → proyecto → Settings → Git → Deploy Hooks → crear uno para la rama de producción (`main`) → copiar la URL → Settings → Environment Variables → `VERCEL_DEPLOY_HOOK` (Production) → Redeploy. Sin él, "Publicar" guarda pero la web cambia en el siguiente despliegue normal.
+
+**Imágenes.** Se suben desde el editor, se reducen en el navegador (máx. 1920 px, WebP) y se guardan en `admin.files` con `public = true`. Se sirven sin sesión en `/media/<id>` con caché de un año (la CDN de Vercel las guarda tras la primera visita). Las imágenes que vienen con el proyecto se nombran `asset:<clave>` (`src/data/assets.ts`) y siguen pasando por `astro:assets` (AVIF/WebP). Los **videos** no se suben desde el panel (Safari necesita peticiones parciales que una función no da bien): se eligen de `public/video/` o se pega una URL https.
+
+**Textos con formato:** `**así**` pone negrita y un salto de línea parte el renglón (títulos del llamado final, notas).
+
+**Qué sigue siendo de código:** el diseño de cada bloque, las animaciones y crear un *tipo* de bloque nuevo. Para añadir un campo editable a un bloque basta con añadirlo a su tipo, a `SITE_DEFAULTS` y a `BLOCK_DEFS` en `src/data/sitio.ts`, y usarlo en su componente: el editor lo dibuja solo.
 
 ---
 

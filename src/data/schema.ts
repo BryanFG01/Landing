@@ -1,5 +1,6 @@
-import { contacto, faqs, links, marca, productos, seo } from './finca';
+import { imageUrl } from './assets';
 import { fotosPublicas, ogImage } from './imagenes';
+import { bloque, links as linksFor, plain, type SiteContent } from './sitio';
 
 export interface PageImage {
   loc: string;
@@ -17,15 +18,21 @@ function precio(label: string) {
   return digits ? { price: digits, priceCurrency: 'COP' } : {};
 }
 
-export function pageImages(site: URL): PageImage[] {
+export function pageImages(site: URL, nombre: string): PageImage[] {
   return fotosPublicas.map((foto) => ({
     loc: abs(site, foto.src),
-    title: `${foto.lugar} · ${marca.nombre}`,
+    title: `${foto.lugar} · ${nombre}`,
     caption: foto.alt,
   }));
 }
 
-export function structuredData(site: URL) {
+/** JSON-LD de la portada a partir del contenido publicado desde el panel. */
+export function structuredData(site: URL, content: SiteContent) {
+  const { marca, contacto } = content;
+  const seo = { title: content.seo.titulo, description: plain(content.seo.descripcion) };
+  const links = linksFor(content);
+  const productos = bloque(content, 'productos');
+  const faqs = bloque(content, 'preguntas');
   const home = new URL('/', site).href;
   const businessId = new URL('/#negocio', site).href;
   const websiteId = new URL('/#website', site).href;
@@ -56,11 +63,11 @@ export function structuredData(site: URL) {
         url: home,
         image: [
           shareImage,
-          ...pageImages(site)
+          ...pageImages(site, marca.nombre)
             .slice(0, 4)
             .map((photo) => ({ '@type': 'ImageObject', url: photo.loc, caption: photo.caption })),
         ],
-        logo: abs(site, '/og-logo.png'),
+        logo: abs(site, marca.logo.src.startsWith('/media/') ? imageUrl(marca.logo.src) : '/og-logo.png'),
         telephone,
         currenciesAccepted: 'COP',
         areaServed: contacto.zonaEntrega,
@@ -69,7 +76,7 @@ export function structuredData(site: URL) {
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
           name: 'Productos de la finca',
-          itemListElement: productos.map((p) => oferta(p.nombre, p.detalle, p.precio)),
+          itemListElement: productos.visible ? productos.items.map((p) => oferta(p.nombre, p.detalle, p.precio)) : [],
         },
         mainEntityOfPage: { '@id': webpageId },
         potentialAction: {
@@ -103,18 +110,23 @@ export function structuredData(site: URL) {
         mainEntity: { '@id': businessId },
         primaryImageOfPage: shareImage,
       },
-      {
-        '@type': 'FAQPage',
-        '@id': new URL('/#faq', site).href,
-        url: new URL('/#preguntas', site).href,
-        inLanguage: 'es-CO',
-        isPartOf: { '@id': webpageId },
-        mainEntity: faqs.map((faq) => ({
-          '@type': 'Question',
-          name: faq.pregunta,
-          acceptedAnswer: { '@type': 'Answer', text: faq.respuesta },
-        })),
-      },
+      // Solo si las preguntas se ven en la página (Google no admite FAQ ocultas).
+      ...(faqs.visible && faqs.items.length
+        ? [
+            {
+              '@type': 'FAQPage',
+              '@id': new URL('/#faq', site).href,
+              url: new URL('/#preguntas', site).href,
+              inLanguage: 'es-CO',
+              isPartOf: { '@id': webpageId },
+              mainEntity: faqs.items.map((faq) => ({
+                '@type': 'Question',
+                name: faq.pregunta,
+                acceptedAnswer: { '@type': 'Answer', text: plain(faq.respuesta) },
+              })),
+            },
+          ]
+        : []),
     ],
   };
 }

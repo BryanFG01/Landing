@@ -15,6 +15,7 @@ import { ModulesList } from './ModulesList';
 import { ModuleView } from './ModuleView';
 import { AppearanceProvider, NavProvider, useNav, type Nav } from './nav';
 import { RouterProvider, useApiData, useRouter } from './router';
+import { SiteEditor } from './SiteEditor';
 import { SqlConsole } from './SqlConsole';
 import { UsersView } from './UsersView';
 
@@ -28,10 +29,11 @@ type Route =
   | { name: 'users' }
   | { name: 'sql' }
   | { name: 'appearance' }
+  | { name: 'site' }
   | { name: 'not-found' };
 
 /** Rutas de configuración: solo administradores. */
-const ADMIN_ROUTES = new Set<Route['name']>(['modules', 'editor', 'users', 'sql', 'appearance']);
+const ADMIN_ROUTES = new Set<Route['name']>(['modules', 'editor', 'users', 'sql', 'appearance', 'site']);
 
 function matchRoute(path: string): Route {
   const p = path.split('?')[0].replace(/\/+$/, '') || '/admin';
@@ -40,6 +42,7 @@ function matchRoute(path: string): Route {
   if (p === '/admin/usuarios') return { name: 'users' };
   if (p === '/admin/sql') return { name: 'sql' };
   if (p === '/admin/apariencia') return { name: 'appearance' };
+  if (p === '/admin/sitio') return { name: 'site' };
   let m = p.match(/^\/admin\/m\/([a-z][a-z0-9_]{1,47})$/);
   if (m) return { name: 'module', key: m[1] };
   m = p.match(/^\/admin\/modulos\/(nuevo|\d+)$/);
@@ -176,6 +179,11 @@ function Routes({ user }: { user: AdminUser }) {
       title = 'Apariencia';
       breadcrumb = [home, { label: title }];
       content = <AppearanceView />;
+      break;
+    case 'site':
+      title = 'Sitio web';
+      breadcrumb = [home, { label: title }];
+      content = <SiteEditor />;
       break;
     default:
       title = 'No encontrado';

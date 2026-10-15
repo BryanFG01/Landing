@@ -7,7 +7,7 @@ import { fail } from './admin/server/http';
 const PUBLIC = new Set(['/admin/login', '/api/admin/auth/login']);
 // API que solo pueden usar los administradores (configurar el panel). Los usuarios solo usan /m/<módulo>, /files,
 // /nav y /dashboard, y allí se comprueba el permiso de cada módulo.
-const ADMIN_ONLY = /^\/api\/admin\/(modules|groups|users|sql|tables|settings)(\/|$)/;
+const ADMIN_ONLY = /^(\/api\/admin\/(modules|groups|users|sql|tables|settings|site)|\/admin\/vista-previa)(\/|$)/;
 
 /** Mensaje para el panel cuando la base falla. El detalle va a los logs (en Vercel: Logs del proyecto). */
 function dbFailure(error: unknown, isApi: boolean) {

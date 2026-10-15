@@ -1,12 +1,17 @@
 ---
 import Spiral from './Spiral.astro';
+import type { BloqueFrase } from '../data/sitio';
 
-// La promesa de la finca, partida en líneas por donde se parte la idea.
-const lines = ['Sin afanes:', 'gallinas al sol,', 'huevos recién recogidos,', 'pollo de campo de verdad.'];
+interface Props {
+  bloque: BloqueFrase;
+}
+
+// La promesa de la finca, partida en líneas por donde se parte la idea (cada línea se escribe en el panel).
+const lines = Astro.props.bloque.lineas;
 const text = lines.join(' ');
 ---
 
-<section aria-label="Nuestra filosofía" class="relative overflow-hidden px-4 py-24 md:px-12 xl:px-24">
+<section id="frase" aria-label="Nuestra filosofía" class="relative overflow-hidden px-4 py-24 md:px-12 xl:px-24">
   <Spiral
     draw
     rings={16}

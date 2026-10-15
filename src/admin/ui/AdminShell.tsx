@@ -20,6 +20,7 @@ import { useRouter } from './router';
 
 /** Entradas de Configuración, solo para administradores. */
 export const SETTINGS_LINKS = [
+  { label: 'Sitio web', href: '/admin/sitio', icon: 'storefront' },
   { label: 'Constructor de módulos', href: '/admin/modulos', icon: 'wrench' },
   { label: 'Consola SQL', href: '/admin/sql', icon: 'terminal' },
   { label: 'Usuarios y permisos', href: '/admin/usuarios', icon: 'user-gear' },

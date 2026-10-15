@@ -1,19 +1,27 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
-import { contacto, links, marca, nav } from '../data/finca';
+import { enFrase, links as linksFor, menu, type SiteContent } from '../data/sitio';
 
+interface Props {
+  site: SiteContent;
+}
+
+const { site } = Astro.props;
+const { contacto, marca } = site;
+const links = linksFor(site);
+const nav = menu(site);
 const year = new Date().getFullYear();
 ---
 
 <footer class="px-4 pt-24 pb-12 md:px-12 xl:px-24">
   <div class="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
     <div class="flex flex-col gap-4">
-      <Logo class="self-start text-2xl text-crema" />
+      <Logo site={site} class="self-start text-2xl text-crema" />
       <p class="max-w-xs text-sm text-crema/70">
-        {marca.lema}. Pollo campesino y huevos colorados: de nuestra tierra a tu mesa.
+        {marca.lema}. {marca.pie}
       </p>
-      <p class="text-xs tracking-widest text-teja uppercase">{marca.promesa}</p>
+      {marca.promesa && <p class="text-xs tracking-widest text-teja uppercase">{marca.promesa}</p>}
       <nav aria-label="Secciones">
         <ul class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {
@@ -35,7 +43,7 @@ const year = new Date().getFullYear();
       <p class="inline-flex items-start gap-2 text-crema/70">
         <Icon name="truck" class="mt-0.5 size-4 shrink-0" />Cubrimos {contacto.zonaEntrega}
       </p>
-      <p class="text-crema/70">Pago al recibir: {contacto.pagosEnFrase}</p>
+      <p class="text-crema/70">Pago al recibir: {enFrase(contacto.pagos)}</p>
     </div>
 
     <div class="flex flex-col gap-2 text-sm">
@@ -54,10 +62,14 @@ const year = new Date().getFullYear();
         <Icon name="phone" />
         {contacto.telefono}
       </a>
-      <a href={links.instagram} class="link inline-flex items-center gap-2 self-start" rel="noopener" target="_blank">
-        <Icon name="instagram" />
-        {contacto.instagram}
-      </a>
+      {
+        contacto.instagram && contacto.instagramUrl && (
+          <a href={contacto.instagramUrl} class="link inline-flex items-center gap-2 self-start" rel="noopener" target="_blank">
+            <Icon name="instagram" />
+            {contacto.instagram}
+          </a>
+        )
+      }
     </div>
   </div>
 

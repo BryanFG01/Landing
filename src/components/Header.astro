@@ -1,7 +1,17 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
-import { contacto, links, marca, nav } from '../data/finca';
+import { links as linksFor, menu, type SiteContent } from '../data/sitio';
+
+interface Props {
+  site: SiteContent;
+}
+
+const { site } = Astro.props;
+const { marca } = site;
+const links = linksFor(site);
+// El menú son los bloques visibles que tienen entrada (Inicio, Productos, Opiniones, Preguntas).
+const nav = menu(site);
 ---
 
 <a
@@ -18,7 +28,7 @@ import { contacto, links, marca, nav } from '../data/finca';
     class="pointer-events-auto flex w-max items-center gap-6 rounded-full bg-bg/60 p-2 pl-6 ring-1 ring-crema/10 backdrop-blur-xl lg:gap-5"
   >
     <a href="#inicio" class="flex h-9 items-center rounded-full text-crema" aria-label={`${marca.nombre}, volver al inicio`}>
-      <Logo class="text-lg" />
+      <Logo site={site} class="text-lg" />
     </a>
 
     <nav aria-label="Principal" class="relative hidden lg:block">
@@ -93,9 +103,9 @@ import { contacto, links, marca, nav } from '../data/finca';
   <div class="menu-item flex flex-col items-center gap-2 text-sm text-crema/70" style={`--i:${nav.length + 1}`}>
     <a href={links.telefono} class="link inline-flex items-center gap-2">
       <Icon name="phone" />
-      {contacto.telefono}
+      {site.contacto.telefono}
     </a>
-    <p>{contacto.ubicacion} · {contacto.horario}</p>
+    <p>{site.contacto.ubicacion} · {site.contacto.horario}</p>
     <a href="/admin/login" rel="nofollow" class="link mt-2 inline-flex items-center gap-2">
       <Icon name="user" />
       Ingresar al panel
