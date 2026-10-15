@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ params, url, locals }) => {
     const body = csv ? await toCsv(r.mod, rows) : await toXlsx(r.mod, rows);
     await audit({ userId: locals.adminUser!.id, action: 'export', moduleId: r.mod.id, detail: { rows: rows.length, csv } });
     const date = new Date().toISOString().slice(0, 10);
-    return new Response(body, {
+    return new Response(typeof body === 'string' ? body : new Blob([body as Uint8Array<ArrayBuffer>]), {
       headers: {
         'content-type': csv
           ? 'text/csv; charset=utf-8'

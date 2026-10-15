@@ -27,10 +27,15 @@ const ACTIONS: Record<string, string> = {
   site_draft: 'editó el borrador de la web',
   site_publish: 'publicó la web',
   site_restore: 'recuperó una versión de la web',
+  web_order: 'hizo un pedido por el chat en',
 };
 
 /** Frase de la actividad reciente para una acción de la auditoría. */
 export const describeAction = (action: string) => ACTIONS[action] ?? action;
+
+/** Quién hizo la acción: el usuario del panel o, en los pedidos de la web, un cliente. */
+export const activityActor = (a: { action: string; user: string | null }) =>
+  a.user ?? (a.action === 'web_order' ? 'Un cliente' : 'Alguien');
 
 /** Texto del contador de un módulo en el inicio. */
 export function recordsLabel(records: number | null, sourceType: string) {

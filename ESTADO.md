@@ -14,7 +14,7 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 | Panel: base (login, sesiones, menú, módulos, CRUD) | 100 % | En producción |
 | Panel: fase 2 (tablas, consultas SQL, consola, permisos, archivos, Excel, apariencia) | 100 % | En producción |
 | Sitio web editable desde el panel | 90 % | Funciona; falta configurar el Deploy Hook de Vercel |
-| Base de datos e infraestructura | 85 % | 4 migraciones aplicadas en producción; faltan Deploy Hook y rama Develop por caducar |
+| Base de datos e infraestructura | 85 % | 5 migraciones aplicadas en producción; faltan Deploy Hook y rama Develop por caducar |
 | Seguridad | 75 % | Falta rotar la contraseña de Neon y cambiar la del usuario temporal |
 | Calidad de código | 90 % | Refactorizado con reglas de Clean Code; las pruebas automáticas no están en el repositorio |
 | Documentación | 90 % | `ADMIN.md`, `SCROLL-VIDEO.md`, skill de Clean Code |
@@ -31,6 +31,7 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 - **Chat de ayuda:**
   - Botón flotante con preguntas frecuentes y un pedido guiado: productos, cantidades, datos y entrega.
   - Termina abriendo WhatsApp con el pedido armado y el total estimado.
+  - Cada pedido queda registrado en el panel (módulo "Pedidos de la web") con su número, estado y datos del cliente.
   - Se configura desde el panel y no tiene costo, porque no usa IA.
 - **Diseño responsive:** pantalla dividida en escritorio, video a pantalla completa en móvil y menú hamburguesa.
 - **SEO:**
@@ -72,7 +73,7 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
   - `admin`: usuarios, sesiones, módulos, registros, auditoría, ajustes, archivos, permisos y versiones del sitio.
   - `datos`: tablas de negocio y la vista `registros`.
 - **Aislamiento:** lo que escribe la gente se ejecuta con roles sin acceso a `admin` (`admin_datos_editor` y `admin_datos_lector`), con tiempo máximo por sentencia.
-- **Migraciones aplicadas en producción:** `0001` a `0004`.
+- **Migraciones aplicadas en producción:** `0001` a `0005`.
 
 ### Código
 
@@ -84,7 +85,7 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 - **Arquitectura por capas:** dominio, servidor, API, hooks, `lib` y componentes. Los `.tsx` solo pintan; la lógica está en hooks y en `.ts`. Las reglas están en `.claude/skills/clean-code/SKILL.md` y en `ADMIN.md`.
 - **Verificado el 15/10/2026:**
   - El build compila y TypeScript no reporta errores en todo el proyecto.
-  - Pasan las pruebas de punta a punta de la API (fase 2 y Sitio web) y los recorridos en el navegador del panel y de la landing, en escritorio y móvil.
+  - Pasan las pruebas de punta a punta de la API (fase 2, Sitio web y pedidos del chat) y los recorridos en el navegador del panel y de la landing, en escritorio y móvil.
 
 ---
 

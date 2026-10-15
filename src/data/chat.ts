@@ -28,6 +28,8 @@ export interface ChatData {
   productos: ChatProduct[];
   entregas: string[];
   pedirNota: boolean;
+  /** Guardar el pedido en el panel al enviarlo. */
+  registrar: boolean;
   mensaje: string;
 }
 
@@ -67,6 +69,7 @@ export function buildChatData(site: SiteContent, logo: string): ChatData {
     productos: products,
     entregas: c.entregas,
     pedirNota: c.pedirNota === 'si',
+    registrar: c.registrar === 'si',
     mensaje: c.mensaje,
   };
 }
@@ -77,6 +80,7 @@ export type Quantities = Record<string, number>;
 
 export interface OrderDetails {
   nombre: string;
+  telefono: string;
   direccion: string;
   entrega: string;
   nota: string;
@@ -122,6 +126,7 @@ export function orderMessage(data: ChatData, qty: Quantities, details: OrderDeta
     pedido: s.lines.join('\n'),
     total: totalText(s),
     nombre: details.nombre,
+    telefono: details.telefono,
     direccion: details.direccion,
     entrega: details.entrega || 'Lo antes posible',
     nota: details.nota ? `\nNota: ${details.nota}` : '',
@@ -133,3 +138,87 @@ export function orderMessage(data: ChatData, qty: Quantities, details: OrderDeta
 }
 
 export const whatsappUrl = (phone: string, text: string) => `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+
+/** Teléfono válido para un pedido: 7 a 15 dígitos (con o sin +, espacios o guiones). */
+export const isPhone = (s: string) => /^\+?[\d\s-]{7,20}$/.test(s.trim()) && s.replace(/\D/g, '').length >= 7;
+
+// ─── Pedido enviado desde la web al panel ────────────────────────────────────
+
+/** Lo que manda el chat al servidor. Los precios no viajan: el servidor los toma de lo publicado. */
+export interface WebOrderInput {
+  items: { id: string; qty: number }[];
+  nombre: string;
+  telefono: string;
+  direccion: string;
+  entrega: string;
+  nota: string;
+  /** Campo trampa: invisible para personas; si llega relleno, es un bot. */
+  website?: string;
+}
+
+/** Registro del módulo "Pedidos de la web" (claves de campo de db/migrations/0005_pedidos_web.sql). */
+export interface WebOrderRecord {
+  cliente: string;
+  telefono: string;
+  productos: string;
+  total?: number;
+  estado: 'pendiente';
+  entrega: string;
+  direccion: string;
+  nota: string;
+  origen: string;
+}
+
+const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+
+/**
+ * Valida un pedido de la web contra el contenido publicado (productos, precios y opciones de entrega). Devuelve el
+ * registro listo para guardar, `bot` si cayó en la trampa, o los errores.
+ */
+export function parseWebOrder(
+  input: unknown,
+  data: ChatData,
+): { ok: true; value: WebOrderRecord } | { ok: false; bot?: boolean; errors: string[] } {
+  const raw = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
+  if (text(raw.website, 200)) return { ok: false, bot: true, errors: [] };
+
+  const qty: Quantities = {};
+  for (const item of Array.isArray(raw.items) ? raw.items : []) {
+    const { id, qty: n } = (item ?? {}) as { id?: unknown; qty?: unknown };
+    const count = Number(n);
+    if (typeof id === 'string' && data.productos.some((p) => p.id === id) && Number.isInteger(count) && count > 0) {
+      qty[id] = Math.min(MAX_QTY, count);
+    }
+  }
+  const details = {
+    nombre: text(raw.nombre, 80),
+    telefono: text(raw.telefono, 20),
+    direccion: text(raw.direccion, 160),
+    entrega: text(raw.entrega, 120),
+    nota: text(raw.nota, 160),
+  };
+
+  const errors: string[] = [];
+  if (!selectedProducts(data.productos, qty).length) errors.push('Elige al menos un producto.');
+  if (!details.nombre) errors.push('Falta el nombre.');
+  if (!isPhone(details.telefono)) errors.push('El teléfono no es válido.');
+  if (!details.direccion) errors.push('Falta la dirección.');
+  if (details.entrega && !data.entregas.includes(details.entrega)) errors.push('La entrega elegida no existe.');
+  if (errors.length) return { ok: false, errors };
+
+  const s = summarize(data.productos, qty);
+  return {
+    ok: true,
+    value: {
+      cliente: details.nombre,
+      telefono: details.telefono,
+      productos: s.lines.map((l) => l.replace(/^•\s*/, '')).join('\n'),
+      ...(s.total ? { total: s.total } : {}),
+      estado: 'pendiente',
+      entrega: details.entrega,
+      direccion: details.direccion,
+      nota: details.nota,
+      origen: 'Chat de la web',
+    },
+  };
+}

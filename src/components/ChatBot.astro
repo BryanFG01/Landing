@@ -317,6 +317,13 @@ const side = site.chat.posicion === 'izquierda' ? 'left' : 'right';
   .chat-input:focus-visible {
     box-shadow: inset 0 0 0 2px var(--color-teja);
   }
+  .chat-hint {
+    font-size: 0.75rem;
+    color: color-mix(in oklab, var(--color-teja) 80%, white);
+  }
+  .chat-hint:empty {
+    display: none;
+  }
   .chat-send {
     border-radius: 9999px;
     background: var(--color-teja);

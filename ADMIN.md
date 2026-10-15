@@ -178,10 +178,13 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 **Chat de ayuda** (Sitio web → General → Chat de ayuda). Botón flotante con una conversación guiada por botones, sin IA y sin costo:
 
 - **Preguntas:** las propias del chat y, si se activa, las del bloque "Preguntas frecuentes". Se muestran 5 y el resto con "Ver más".
-- **Pedido guiado:** productos y precios del bloque Productos (cantidades con + y −), nombre, dirección, entrega (opciones configurables) y nota opcional. Muestra un resumen con el total: los productos con precio fijo se suman; los que se cobran por peso (`/ lb`) se indican "según lo que pese".
-- **Envío:** abre WhatsApp con el mensaje armado según la plantilla del panel (variables `{marca} {pedido} {total} {nombre} {direccion} {entrega} {nota}`). La persona solo pulsa enviar.
-- **Se configura:** mostrarlo u ocultarlo, texto y lado del botón, nombre del asistente, bienvenida, preguntas, entregas, nota y plantilla del mensaje. Sale con Publicar, como el resto.
-- **Código:** reglas del pedido en `src/data/chat.ts` (puro), conversación en `src/scripts/chat.ts` y marco en `src/components/ChatBot.astro`. No usa React: la landing sigue ligera.
+- **Pedido guiado:** productos y precios del bloque Productos (cantidades con + y −), nombre, número de WhatsApp (validado), dirección, entrega (opciones configurables) y nota opcional. Muestra un resumen con el total: los productos con precio fijo se suman; los que se cobran por peso (`/ lb`) se indican "según lo que pese".
+- **Envío:** abre WhatsApp con el mensaje armado según la plantilla del panel (variables `{marca} {pedido} {total} {nombre} {telefono} {direccion} {entrega} {nota}`). La persona solo pulsa enviar.
+- **Registro en el panel:** al pulsar enviar, el pedido también se guarda en el módulo **Pedidos de la web** (grupo Ventas, migración `0005`) con estado *pendiente*, y el chat le muestra al cliente su número de pedido. Aparece en la actividad del inicio como "Un cliente hizo un pedido por el chat". Se apaga con "Guardar los pedidos en el panel".
+  - `POST /api/pedido` (público): solo acepta peticiones desde la propia web (cabecera `Origin`), recalcula productos y precios con lo publicado (no se fía de lo que manda el navegador), valida teléfono y entrega, descarta bots con un campo trampa y limita a 5 pedidos por IP cada 10 min y 120 por hora en total (`audit_log`, acción `web_order`, IP guardada como SHA-256).
+  - Si el registro falla o el módulo no existe, WhatsApp se abre igual: el pedido nunca se pierde.
+- **Se configura:** mostrarlo u ocultarlo, texto y lado del botón, nombre del asistente, bienvenida, preguntas, entregas, nota, registro en el panel y plantilla del mensaje. Sale con Publicar, como el resto.
+- **Código:** reglas del pedido en `src/data/chat.ts` (puro, también valida el pedido en el servidor), conversación en `src/scripts/chat.ts`, marco en `src/components/ChatBot.astro` y guardado en `src/admin/server/webOrders.ts`. No usa React: la landing sigue ligera.
 
 **Textos con formato:** `**así**` pone negrita y un salto de línea parte el renglón (títulos del llamado final, notas).
 

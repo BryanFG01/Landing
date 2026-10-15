@@ -2,6 +2,7 @@
 // a paso que termina abriendo WhatsApp con el mensaje armado. Las reglas del pedido (precios, total, mensaje) están en
 // src/data/chat.ts; aquí solo se pinta y se lleva el paso actual.
 import {
+  isPhone,
   MAX_QTY,
   orderMessage,
   selectedProducts,
@@ -20,6 +21,29 @@ const TYPING_MS = 450;
 const BTN = 'chat-choice';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/**
+ * Envía el pedido al panel. Devuelve su número, o null si no se guardó (sin conexión, límite, módulo borrado): el
+ * pedido sigue llegando por WhatsApp igual.
+ */
+async function registerOrder(qty: Quantities, details: OrderDetails): Promise<number | null> {
+  const items = Object.entries(qty)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => ({ id, qty: n }));
+  try {
+    const res = await fetch('/api/pedido', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items, ...details, website: '' }),
+      // Sigue aunque la persona cambie de pestaña a WhatsApp.
+      keepalive: true,
+    });
+    const body = (await res.json().catch(() => ({}))) as { id?: number };
+    return res.ok && typeof body.id === 'number' ? body.id : null;
+  } catch {
+    return null;
+  }
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?: string) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -37,7 +61,8 @@ function initChat(root: HTMLElement) {
 
   let started = false;
   let qty: Quantities = {};
-  let details: OrderDetails = { nombre: '', direccion: '', entrega: '', nota: '' };
+  const emptyDetails = (): OrderDetails => ({ nombre: '', telefono: '', direccion: '', entrega: '', nota: '' });
+  let details = emptyDetails();
 
   // ─── Mensajes ──────────────────────────────────────────────────────────────
 
@@ -131,7 +156,7 @@ function initChat(root: HTMLElement) {
   async function startOrder() {
     say('user', 'Quiero hacer un pedido');
     qty = {};
-    details = { nombre: '', direccion: '', entrega: '', nota: '' };
+    details = emptyDetails();
     actions.replaceChildren();
     await botSay('Perfecto. ¿Qué quieres pedir? Elige las cantidades.');
     showPicker();
@@ -171,8 +196,16 @@ function initChat(root: HTMLElement) {
     await botSay('¿A nombre de quién va el pedido?');
     askText('Tu nombre', (v) => {
       details.nombre = v;
-      void askAddress();
+      void askPhone();
     });
+  }
+
+  async function askPhone() {
+    await botSay('¿A qué número de WhatsApp te confirmamos?');
+    askText('Tu número de WhatsApp', (v) => {
+      details.telefono = v;
+      void askAddress();
+    }, { type: 'tel', validate: (v) => (isPhone(v) ? '' : 'Escribe un número válido, por ejemplo 310 555 0101.') });
   }
 
   async function askAddress() {
@@ -209,27 +242,43 @@ function initChat(root: HTMLElement) {
     }, { optional: true });
   }
 
+  interface AskOptions {
+    optional?: boolean;
+    type?: 'text' | 'tel';
+    /** Mensaje de error, o vacío si el valor es válido. */
+    validate?: (value: string) => string;
+  }
+
   /** Campo de texto con enviar (y "Omitir" si es opcional). */
-  function askText(placeholder: string, onDone: (value: string) => void, { optional = false } = {}) {
+  function askText(placeholder: string, onDone: (value: string) => void, { optional = false, type = 'text', validate }: AskOptions = {}) {
     const form = el('form', 'chat-form');
     const input = el('input', 'chat-input');
+    input.type = type;
     input.placeholder = placeholder;
     input.setAttribute('aria-label', placeholder);
     input.maxLength = 160;
     input.required = !optional;
-    input.autocomplete = 'on';
+    input.autocomplete = type === 'tel' ? 'tel' : 'on';
+    if (type === 'tel') input.inputMode = 'tel';
     const send = el('button', 'chat-send', 'Enviar');
     send.type = 'submit';
+    const hint = el('p', 'chat-hint');
+    hint.setAttribute('role', 'alert');
     form.append(input, send);
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const value = input.value.trim();
       if (!value && !optional) return input.focus();
+      const problem = value && validate ? validate(value) : '';
+      if (problem) {
+        hint.textContent = problem;
+        return input.focus();
+      }
       if (value) say('user', value);
       actions.replaceChildren();
       onDone(value);
     });
-    const nodes: HTMLElement[] = [form];
+    const nodes: HTMLElement[] = [form, hint];
     if (optional) {
       nodes.push(
         group(
@@ -252,6 +301,7 @@ function initChat(root: HTMLElement) {
       totalText(s),
       '',
       `Nombre: ${details.nombre}`,
+      `WhatsApp: ${details.telefono}`,
       `Dirección: ${details.direccion}`,
       ...(details.entrega ? [`Entrega: ${details.entrega}`] : []),
       ...(details.nota ? [`Nota: ${details.nota}`] : []),
@@ -259,10 +309,18 @@ function initChat(root: HTMLElement) {
     await botSay(lines.join('\n'));
     const send = whatsappLink('Enviar pedido por WhatsApp', orderMessage(data, qty, details));
     send.addEventListener('click', () => {
-      void botSay('Listo. Se abrió WhatsApp con tu pedido: solo dale enviar y te confirmamos el total y la hora.');
+      // WhatsApp se abre ya (el enlace sigue su curso); el registro va en paralelo y no lo frena.
       setActions(group(choice('Volver al inicio', () => showMenu())));
+      void finishOrder();
     });
     setActions(group(send, choice('Cambiar el pedido', startOrder), choice('Volver al inicio', () => showMenu())));
+  }
+
+  /** Guarda el pedido en el panel (si está activado) y lo cuenta en el chat. */
+  async function finishOrder() {
+    const done = 'Se abrió WhatsApp con tu pedido: solo dale enviar y te confirmamos el total y la hora.';
+    const order = data.registrar ? await registerOrder(qty, details) : null;
+    await botSay(order ? `Listo, tu pedido quedó registrado con el número ${order}. ${done}` : `Listo. ${done}`);
   }
 
   // ─── Abrir y cerrar ────────────────────────────────────────────────────────

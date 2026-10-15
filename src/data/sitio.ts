@@ -83,7 +83,9 @@ export interface ChatConfig {
   /** Opciones de entrega para elegir (vacío: no se pregunta). */
   entregas: string[];
   pedirNota: YesNo;
-  /** Mensaje de WhatsApp. Variables: {marca} {pedido} {total} {nombre} {direccion} {entrega} {nota}. */
+  /** Guardar cada pedido en el módulo "Pedidos de la web" del panel (además de abrir WhatsApp). */
+  registrar: YesNo;
+  /** Mensaje de WhatsApp. Variables: {marca} {pedido} {total} {nombre} {telefono} {direccion} {entrega} {nota}. */
   mensaje: string;
 }
 
@@ -246,8 +248,9 @@ export const SITE_DEFAULTS: SiteContent = {
     pedido: 'si',
     entregas: [`Hoy (si confirmas antes de las 10:00${nbsp}a.${nbsp}m.)`, 'Mañana'],
     pedirNota: 'si',
+    registrar: 'si',
     mensaje:
-      'Hola, {marca}. Quiero hacer este pedido:\n{pedido}\n{total}\n\nNombre: {nombre}\nDirección: {direccion}\nEntrega: {entrega}{nota}',
+      'Hola, {marca}. Quiero hacer este pedido:\n{pedido}\n{total}\n\nNombre: {nombre}\nWhatsApp: {telefono}\nDirección: {direccion}\nEntrega: {entrega}{nota}',
   },
   bloques: [
     {
@@ -768,11 +771,18 @@ export const SETTINGS_DEFS: {
       { key: 'entregas', label: 'Opciones de entrega (una por renglón)', type: 'lines', max: 80, help: 'Vacío: no se pregunta.' },
       { key: 'pedirNota', label: 'Pedir una nota opcional', type: 'select', options: YES_NO },
       {
+        key: 'registrar',
+        label: 'Guardar los pedidos en el panel',
+        type: 'select',
+        options: YES_NO,
+        help: 'Cada pedido queda como Pendiente en el módulo "Pedidos de la web".',
+      },
+      {
         key: 'mensaje',
         label: 'Mensaje de WhatsApp',
         type: 'textarea',
         max: 600,
-        help: 'Variables: {marca} {pedido} {total} {nombre} {direccion} {entrega} {nota}.',
+        help: 'Variables: {marca} {pedido} {total} {nombre} {telefono} {direccion} {entrega} {nota}.',
       },
     ],
   },

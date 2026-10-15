@@ -5,7 +5,7 @@ import { Card } from '../../components/ui/card';
 import { StatCard } from '../../components/ui/stat-card';
 import type { AdminUser, DashboardStats } from '../schema';
 import { Icon, iconComponent } from './icons';
-import { describeAction, formatDateTime, recordsLabel } from './lib/format';
+import { activityActor, describeAction, formatDateTime, recordsLabel } from './lib/format';
 import { PageHeader } from './PageHeader';
 import { useRouter } from './router';
 
@@ -49,7 +49,7 @@ function NoModules({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
 function ActivityItem({ activity: a }: Readonly<{ activity: Activity }>) {
   return (
     <p className="px-4 py-3 text-sm">
-      <span className="font-medium">{a.user ?? 'Alguien'}</span>{' '}
+      <span className="font-medium">{activityActor(a)}</span>{' '}
       <span className="text-muted-foreground">{describeAction(a.action)}</span>{' '}
       {a.module && <span className="font-medium">{a.module}</span>}
       <span className="block text-xs text-muted-foreground">{formatDateTime(a.created_at)}</span>
