@@ -64,11 +64,11 @@ export function useSiteEditor() {
   const dirty = !!content && JSON.stringify(content) !== saved;
   useUnsavedWarning(dirty);
 
-  async function saveDraft(): Promise<boolean> {
-    if (!content) return false;
+  async function saveDraft(next: SiteContent | null = content): Promise<boolean> {
+    if (!next) return false;
     setErrors([]);
     try {
-      const r = await api<{ content: SiteContent }>('/site', { method: 'PUT', body: content });
+      const r = await api<{ content: SiteContent }>('/site', { method: 'PUT', body: next });
       setContent(r.content);
       setSaved(JSON.stringify(r.content));
       setState((s) => (s ? { ...s, unpublished: true } : s));
@@ -133,13 +133,23 @@ export function useSiteEditor() {
 
   const edit = (fn: (c: SiteContent) => SiteContent) => setContent((c) => (c ? fn(c) : c));
 
-  /** Aplica la plantilla en confirmación al contenido (queda como cambio sin guardar, como cualquier edición). */
-  function applyTemplate() {
+  /**
+   * Aplica la plantilla y la guarda en el borrador al momento: así cualquier vista previa (también una pestaña abierta
+   * de antes, al recargarla) la muestra. Sigue sin publicarse hasta pulsar Publicar.
+   */
+  async function applyTemplate() {
     const p = confirmingTemplate;
-    if (!p) return;
-    edit((c) => aplicarPlantilla(c, p));
-    setConfirmingTemplate(null);
-    toast({ variant: 'success', title: `Plantilla "${p.nombre}" aplicada. Mírala en Vista previa y publica cuando te guste.` });
+    if (!p || !content) return;
+    const next = aplicarPlantilla(content, p);
+    setContent(next);
+    setBusy('save');
+    try {
+      const ok = await saveDraft(next);
+      if (ok) toast({ variant: 'success', title: `Plantilla "${p.nombre}" guardada en el borrador. Mírala en Vista previa y publica cuando te guste.` });
+    } finally {
+      setBusy('');
+      setConfirmingTemplate(null);
+    }
   }
 
   return {

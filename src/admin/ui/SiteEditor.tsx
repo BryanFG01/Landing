@@ -110,10 +110,10 @@ export function SiteEditor() {
       <ConfirmDialog
         open={!!site.confirmingTemplate}
         title={`¿Usar la plantilla "${site.confirmingTemplate?.nombre ?? ''}"?`}
-        description="Cambia los colores, botones, menú, pie, esquinas y tipografías, también los colores propios de cada bloque. Tus textos, fotos y el orden no cambian. Queda como cambio sin guardar: revísalo en Vista previa antes de publicar."
+        description="Cambia los colores, botones, menú, pie, esquinas, tipografías y la portada, también los colores propios de cada bloque. Tus textos, fotos y el orden no cambian. Se guarda en el borrador (con tus otros cambios): revísalo en Vista previa y publica cuando te guste."
         confirmLabel="Usar plantilla"
-        busyLabel="Aplicando…"
-        busy={false}
+        busyLabel="Guardando…"
+        busy={site.busy === 'save'}
         onConfirm={site.applyTemplate}
         onCancel={site.cancelTemplate}
       />
