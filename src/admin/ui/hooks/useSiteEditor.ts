@@ -6,6 +6,8 @@ import type { Bloque, SiteContent } from '../../../data/sitio';
 import { api, ApiError, errorMessage } from '../api';
 import { useAppearance } from '../nav';
 import {
+  blocksWithOwnColors,
+  clearBlockColors,
   FIRST_SECTION,
   moveBlock,
   panelThemeOf,
@@ -167,6 +169,8 @@ export function useSiteEditor() {
     view: content ? sectionView(content, section) : null,
     warnings: content ? sectionWarnings(content, section) : [],
     templates: content ? templateCards(content) : [],
+    ownColorBlocks: content ? blocksWithOwnColors(content) : [],
+    clearBlockColors: () => edit(clearBlockColors),
     confirmingTemplate,
     askTemplate: (id: string) => setConfirmingTemplate(PLANTILLAS.find((p) => p.id === id) ?? null),
     cancelTemplate: () => setConfirmingTemplate(null),

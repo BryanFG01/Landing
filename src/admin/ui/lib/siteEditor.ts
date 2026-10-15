@@ -100,6 +100,18 @@ export function toggleBlock(content: SiteContent, tipo: Bloque['tipo']): SiteCon
   return { ...content, bloques: content.bloques.map((b) => (b.tipo === tipo ? { ...b, visible: !b.visible } : b)) as Bloque[] };
 }
 
+const hasOwnColors = (b: Bloque) => !!(b.colorFondo || b.colorFondo2 || b.colorTexto || b.colorAcento);
+
+/** Nombres de los bloques con colores propios: no cambian al tocar los colores de la página. */
+export const blocksWithOwnColors = (content: SiteContent) =>
+  content.bloques.filter(hasOwnColors).map((b) => BLOCK_DEFS[b.tipo].nombre);
+
+/** Todos los bloques pasan a usar los colores de la página (el diseño de la portada no cambia). */
+export const clearBlockColors = (content: SiteContent): SiteContent => ({
+  ...content,
+  bloques: content.bloques.map((b) => ({ ...b, colorFondo: '', colorFondo2: '', colorTexto: '', colorAcento: '' })),
+});
+
 /** Avisos de contraste del tema (WCAG): texto 4,5:1, acento sobre el fondo 3:1. */
 export function themeWarnings(t: Tema): string[] {
   const warnings: string[] = [];

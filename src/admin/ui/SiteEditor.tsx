@@ -90,7 +90,20 @@ export function SiteEditor() {
           </div>
 
           {section.kind === 'setting' && section.key === 'tema' ? (
-            <ThemeSample tema={content.tema} brand={content.marca.nombre} warnings={site.warnings} />
+            <>
+              {site.ownColorBlocks.length > 0 && (
+                <Alert variant="info" title="Algunos bloques tienen sus propios colores">
+                  <p>
+                    {site.ownColorBlocks.join(', ')}: no cambian con estos colores (los puso la plantilla o se eligieron en
+                    cada bloque, en "Colores del bloque").
+                  </p>
+                  <Button className="mt-3" size="sm" variant="outline" onClick={site.clearBlockColors}>
+                    Usar los colores de la página en todos los bloques
+                  </Button>
+                </Alert>
+              )}
+              <ThemeSample tema={content.tema} brand={content.marca.nombre} warnings={site.warnings} />
+            </>
           ) : (
             site.warnings.map((w) => (
               <Alert key={w} variant="warning">
