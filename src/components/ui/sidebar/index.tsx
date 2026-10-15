@@ -240,13 +240,18 @@ function Sidebar({
       className={cn("relative shrink-0", className)}
       style={{ width: collapsed ? 0 : width, transition: "width 300ms ease-in-out" }}
     >
-      {/* Div de recorte: fija el ancho real del panel */}
-      <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width }}>
+      {/* Div de recorte: fija el ancho real del panel. Plegado no recibe clics: si no, en móvil (donde el menú se
+          superpone al contenido) tapaba con un rectángulo invisible los botones de la izquierda de la página. */}
+      <div
+        className={cn("absolute inset-y-0 left-0 overflow-hidden", collapsed && "pointer-events-none")}
+        style={{ width }}
+      >
 
-        {/* Panel deslizante */}
+        {/* Panel deslizante. Plegado es inert: sus enlaces no se alcanzan con el tabulador. */}
         <nav
           role="navigation"
           aria-label="Navegación principal"
+          inert={collapsed}
           className={cn(
             "flex h-full flex-col border-r border-border bg-background",
             "transition-transform duration-300 ease-in-out",
