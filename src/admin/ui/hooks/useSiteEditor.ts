@@ -1,6 +1,7 @@
 // Editor de Sitio web: carga el borrador, lo guarda, abre la vista previa, publica y recupera versiones.
 import * as React from 'react';
 import { useToast } from '../../../components/ui/toast';
+import { aplicarPlantilla, PLANTILLAS, type Plantilla } from '../../../data/plantillas';
 import type { Bloque, SiteContent } from '../../../data/sitio';
 import { api, ApiError, errorMessage } from '../api';
 import {
@@ -8,8 +9,9 @@ import {
   moveBlock,
   PUBLISH_TOAST,
   sectionView,
+  sectionWarnings,
   statusBadge,
-  themeWarnings,
+  templateCards,
   toggleBlock,
   type DeployResult,
   type Section,
@@ -38,6 +40,7 @@ export function useSiteEditor() {
   const [busy, setBusy] = React.useState<Busy>('');
   const [errors, setErrors] = React.useState<string[]>([]);
   const [confirmingPublish, setConfirmingPublish] = React.useState(false);
+  const [confirmingTemplate, setConfirmingTemplate] = React.useState<Plantilla | null>(null);
   const [loadError, setLoadError] = React.useState('');
 
   const load = React.useCallback(async () => {
@@ -125,6 +128,15 @@ export function useSiteEditor() {
 
   const edit = (fn: (c: SiteContent) => SiteContent) => setContent((c) => (c ? fn(c) : c));
 
+  /** Aplica la plantilla en confirmación al contenido (queda como cambio sin guardar, como cualquier edición). */
+  function applyTemplate() {
+    const p = confirmingTemplate;
+    if (!p) return;
+    edit((c) => aplicarPlantilla(c, p));
+    setConfirmingTemplate(null);
+    toast({ variant: 'success', title: `Plantilla "${p.nombre}" aplicada. Mírala en Vista previa y publica cuando te guste.` });
+  }
+
   return {
     loadError,
     ready: !!content && !!state,
@@ -138,7 +150,12 @@ export function useSiteEditor() {
     section,
     setSection,
     view: content ? sectionView(content, section) : null,
-    warnings: content ? themeWarnings(content.tema) : [],
+    warnings: content ? sectionWarnings(content, section) : [],
+    templates: content ? templateCards(content) : [],
+    confirmingTemplate,
+    askTemplate: (id: string) => setConfirmingTemplate(PLANTILLAS.find((p) => p.id === id) ?? null),
+    cancelTemplate: () => setConfirmingTemplate(null),
+    applyTemplate,
     updateSection: (value: Record<string, unknown>) => edit((c) => sectionView(c, section).apply(value)),
     moveBlock: (i: number, delta: number) => edit((c) => moveBlock(c, i, delta)),
     toggleBlock: (tipo: Bloque['tipo']) => edit((c) => toggleBlock(c, tipo)),

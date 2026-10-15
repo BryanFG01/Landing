@@ -32,6 +32,7 @@ import x from '@phosphor-icons/core/assets/regular/x.svg?raw';
 import database from '@phosphor-icons/core/assets/regular/database.svg?raw';
 import terminal from '@phosphor-icons/core/assets/regular/terminal-window.svg?raw';
 import palette from '@phosphor-icons/core/assets/regular/palette.svg?raw';
+import swatches from '@phosphor-icons/core/assets/regular/swatches.svg?raw';
 import upload from '@phosphor-icons/core/assets/regular/upload-simple.svg?raw';
 import download from '@phosphor-icons/core/assets/regular/download-simple.svg?raw';
 import image from '@phosphor-icons/core/assets/regular/image.svg?raw';
@@ -77,6 +78,7 @@ const SVG = {
   database,
   terminal,
   palette,
+  swatches,
   upload,
   download,
   image,

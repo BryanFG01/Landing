@@ -62,6 +62,8 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 - **Apariencia:** nombre, logo, colores, esquinas, tema por defecto y textos del login, con vista previa en vivo.
 - **Sitio web:**
   - Edita la landing por bloques: textos, listas, fotos, video, colores, tipografías, orden y visibilidad.
+  - **4 plantillas de diseño** (Finca, Órbita, Atardecer y Lima), cada una con colores, tipografía, esquinas, menú, pie y su propia portada. El login se viste con la plantilla publicada.
+  - Colores propios por bloque, menú y pie; diseño de portada elegible; avisos de contraste.
   - También el chat de ayuda: preguntas, pasos del pedido y mensaje de WhatsApp.
   - Borrador, vista previa, publicar (redespliega la web vía Deploy Hook) y recuperar versiones anteriores.
 - **Auditoría** de cada cambio (`admin.audit_log`).

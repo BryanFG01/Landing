@@ -8,7 +8,7 @@ import Testimonials from './Testimonials.astro';
 import Faq from './Faq.astro';
 import Gift from './Gift.astro';
 import FinalCta from './FinalCta.astro';
-import type { SiteContent, TipoBloque } from '../data/sitio';
+import { bloqueCss, type SiteContent, type TipoBloque } from '../data/sitio';
 
 interface Props {
   site: SiteContent;
@@ -33,6 +33,14 @@ const COMPONENTS: Record<TipoBloque, typeof ScrollWorld> = {
     .filter((b) => b.visible)
     .map((b) => {
       const Block = COMPONENTS[b.tipo];
-      return <Block bloque={b as never} site={site} />;
+      // Con colores propios, el bloque va envuelto: el envoltorio pinta el fondo y redefine los colores del tema.
+      const style = bloqueCss(b, site.tema);
+      return style ? (
+        <div data-colores={b.tipo} style={style}>
+          <Block bloque={b as never} site={site} />
+        </div>
+      ) : (
+        <Block bloque={b as never} site={site} />
+      );
     })
 }

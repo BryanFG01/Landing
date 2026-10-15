@@ -708,6 +708,47 @@ function foregroundFor(hsl: [number, number, number]) {
 
 const hslVar = ([h, s, l]: [number, number, number]) => `${h} ${s}% ${l}%`;
 
+/** Mezcla dos colores hex: `t` = 0 da `a`, 1 da `b`. */
+function mixHex(a: string, b: string, t: number) {
+  const ch = (hex: string) => [16, 8, 0].map((s) => (Number.parseInt(hex.slice(1), 16) >> s) & 255);
+  const [x, y] = [ch(a), ch(b)];
+  return `#${x.map((c, i) => Math.round(c + (y[i] - c) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Colores de la web que usa el login (los de la plantilla publicada). */
+export interface LoginTheme {
+  fondo: string;
+  texto: string;
+  acento: string;
+  textoBoton: string;
+}
+
+/** ¿Fondo claro? Decide si el login va en modo claro u oscuro. */
+export const isLightTheme = (t: LoginTheme) => HEX_RE.test(t.fondo) && luminance(hexToHsl(t.fondo)) > 0.4;
+
+/**
+ * Variables CSS del login a partir de los colores de la web: fondo, texto, acento y texto de botones. Van después de
+ * las de Apariencia y con más especificidad, así el login se ve como la plantilla publicada y el resto del panel no cambia.
+ */
+export function loginThemeCss(t: LoginTheme) {
+  if (![t.fondo, t.texto, t.acento, t.textoBoton].every((c) => HEX_RE.test(c))) return '';
+  const v = (hex: string) => hslVar(hexToHsl(hex));
+  const vars = {
+    '--background': v(t.fondo),
+    '--foreground': v(t.texto),
+    '--muted': v(mixHex(t.fondo, t.texto, 0.08)),
+    '--muted-foreground': v(mixHex(t.fondo, t.texto, 0.68)),
+    '--border': v(mixHex(t.fondo, t.texto, 0.18)),
+    '--primary': v(t.acento),
+    '--ring': v(t.acento),
+    '--primary-foreground': v(t.textoBoton),
+  };
+  const body = Object.entries(vars)
+    .map(([k, val]) => `${k}:${val}`)
+    .join(';');
+  return `html:root,html:root.dark{${body}}`;
+}
+
 /** Variables CSS del tema a partir de la apariencia guardada. */
 export function appearanceCss(a: Appearance) {
   const light = hexToHsl(HEX_RE.test(a.primary) ? a.primary : DEFAULT_APPEARANCE.primary);

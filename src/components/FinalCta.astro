@@ -28,11 +28,11 @@ const { pedir, telefono } = links(site);
     <h2 id="final-title" data-reveal style="--d:100ms" class="mt-12 text-4xl lg:text-6xl" set:html={rich(bloque.titulo)} />
     <p data-reveal style="--d:200ms" class="mt-6 text-base text-crema/70 lg:text-lg" set:html={rich(bloque.texto)} />
     <dl data-reveal style="--d:250ms" class="mt-8 grid w-full gap-4 text-left text-sm sm:grid-cols-2">
-      <div class="rounded-2xl p-4 ring-1 ring-crema/15">
+      <div class="rounded-(--radius-card-sm) p-4 ring-1 ring-crema/15">
         <dt class="text-xs tracking-widest text-teja uppercase">Horario de pedidos</dt>
         <dd class="mt-1">{contacto.horario}</dd>
       </div>
-      <div class="rounded-2xl p-4 ring-1 ring-crema/15">
+      <div class="rounded-(--radius-card-sm) p-4 ring-1 ring-crema/15">
         <dt class="text-xs tracking-widest text-teja uppercase">Medios de pago</dt>
         <dd class="mt-1">{contacto.pagos}</dd>
       </div>

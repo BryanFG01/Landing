@@ -1,4 +1,5 @@
-// Login del panel con la identidad de la landing: foto de la finca, verde, crema y teja, y Hina Mincho en los títulos.
+// Login del panel con la identidad de la landing: foto de la finca y los colores y tipografías de la plantilla publicada
+// (los pone src/pages/admin/login.astro).
 import * as React from 'react';
 import { Login } from '../../components/ui/login';
 import { useLogin } from './hooks/useLogin';
@@ -31,9 +32,9 @@ export function LoginView({ image, brand, tagline, logo, title, text }: Readonly
             <span aria-hidden="true">←</span> Volver al sitio
           </a>
           <div className="hidden max-w-md lg:block">
-            <p className="text-xs font-medium tracking-[0.2em] text-teja uppercase">{tagline}</p>
-            <h2 className="mt-4 text-5xl leading-[1.1] text-crema">{title}</h2>
-            {text && <p className="mt-4 text-sm text-crema/70">{text}</p>}
+            <p className="text-xs font-medium tracking-[0.2em] text-primary uppercase">{tagline}</p>
+            <h2 className="mt-4 text-5xl leading-[1.1] text-foreground">{title}</h2>
+            {text && <p className="mt-4 text-sm text-foreground/70">{text}</p>}
           </div>
         </div>
       </aside>

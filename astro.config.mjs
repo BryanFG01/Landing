@@ -85,6 +85,20 @@ export default defineConfig({
       subsets: /** @type {[string]} */ (['latin']),
       fallbacks: /** @type {[string]} */ ([fallback]),
     })),
+    // Las de las plantillas llevan también fino (300) y negrita (700), para el grosor de títulos que eligen.
+    ...[
+      ['Rubik', '--font-rubik'],
+      ['Inter Tight', '--font-intertight'],
+      ['DM Sans', '--font-dmsans'],
+    ].map(([name, cssVariable]) => ({
+      provider: fontProviders.google(),
+      name,
+      cssVariable,
+      weights: /** @type {[number, number, number, number]} */ ([300, 400, 500, 700]),
+      styles: /** @type {['normal']} */ (['normal']),
+      subsets: /** @type {[string]} */ (['latin']),
+      fallbacks: /** @type {[string]} */ (['sans-serif']),
+    })),
   ],
   vite: {
     plugins: [tailwindcss()],

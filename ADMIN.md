@@ -186,6 +186,30 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 - **Se configura:** mostrarlo u ocultarlo, texto y lado del botón, nombre del asistente, bienvenida, preguntas, entregas, nota, registro en el panel y plantilla del mensaje. Sale con Publicar, como el resto.
 - **Código:** reglas del pedido en `src/data/chat.ts` (puro, también valida el pedido en el servidor), conversación en `src/scripts/chat.ts`, marco en `src/components/ChatBot.astro` y guardado en `src/admin/server/webOrders.ts`. No usa React: la landing sigue ligera.
 
+**Plantillas** (Sitio web → General → Plantillas). Cambian de una vez el aspecto de la web sin tocar textos, fotos ni el orden de los bloques. Aplicar una deja el cambio sin guardar; se revisa en Vista previa y sale con Publicar.
+
+| Plantilla | Aspecto | Portada |
+|---|---|---|
+| Finca | La original: verde finca, crema y teja, Hina Mincho | Dividida |
+| Órbita | Azul cielo, paneles azul marino, botones naranja en degradado, Rubik 700 | Panel redondeado con margen |
+| Atardecer | Blanco y berenjena, acento fucsia, franja con degradado rosa a amarillo, Inter Tight 700 | Centrada sobre el video |
+| Lima | Blanco cálido y verde bosque, lima en las franjas oscuras, DM Sans 300, tarjetas rectas | Clara, con el video en una tarjeta |
+
+- **Qué cambia una plantilla:**
+  - **Tema** (Colores y tipografía, en grupos): fondo, texto y acento de la página; segundo color del titular; texto de los botones y su degradado opcional; esquinas de botones y tarjetas; colores del menú y del pie; tipografías y grosor de los títulos.
+  - **Colores de cada bloque** (al final de cada bloque, "Colores del bloque"): fondo (con degradado opcional), texto y acento. Vacíos: los del tema.
+  - **Diseño de la portada** (bloque Portada → "Diseño de la portada"): dividida, panel, centrada o tarjeta. Solo cambia dónde van el video y el texto; el recorrido con scroll es el mismo.
+- **El login** del panel se viste con la plantilla **publicada** (fondo, texto, acento, texto de botones y tipografías). El resto del panel sigue con Apariencia.
+- **Retoques:** después de aplicar una plantilla se puede cambiar cualquier color; la galería deja de marcarla "En uso". El editor avisa si algún texto queda con poco contraste (WCAG), en el tema y en cada bloque.
+- **Código:**
+  - Las plantillas son datos: `src/data/plantillas.ts`. Añadir una es añadir un objeto con su tema, sus colores por bloque y su portada.
+  - Las referencias de estilo de cada una están en `.claude/skills/plantilla-<id>/SKILL.md`.
+  - **Cómo funciona:** todos los colores de la landing salen de variables CSS (`--color-bg`, `--color-crema`, `--color-teja`, `--btn-bg`, `--color-on-teja`, `--radius-*`…).
+    - `temaCss` las define para la página.
+    - `bloqueCss` las redefine dentro del envoltorio de un bloque con colores propios.
+    - `.zona-menu` y `.zona-pie` hacen lo mismo con el menú y el pie.
+    - Por eso los componentes no cambian con cada plantilla.
+
 **Textos con formato:** `**así**` pone negrita y un salto de línea parte el renglón (títulos del llamado final, notas).
 
 **Qué sigue siendo de código:** el diseño de cada bloque, las animaciones y crear un *tipo* de bloque nuevo. Para añadir un campo editable a un bloque basta con añadirlo a su tipo, a `SITE_DEFAULTS` y a `BLOCK_DEFS` en `src/data/sitio.ts`, y usarlo en su componente: el editor lo dibuja solo.

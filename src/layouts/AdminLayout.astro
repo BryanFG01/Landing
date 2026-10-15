@@ -3,17 +3,27 @@
 // Los colores y el redondeo se pueden cambiar desde Apariencia (admin.settings): aquí se aplican antes de pintar.
 import { Font } from 'astro:assets';
 import { appearanceCss, DEFAULT_APPEARANCE, type Appearance } from '../admin/schema';
+import { FONTS, type FontKey } from '../data/sitio';
 import '../styles/admin.css';
 
 interface Props {
   title: string;
-  /** 'auto': el tema guardado, el de Apariencia o el del sistema. 'dark': siempre oscuro (el login). */
-  theme?: 'auto' | 'dark';
+  /** 'auto': el tema guardado, el de Apariencia o el del sistema. 'dark' / 'light': fijo (el login, según la web). */
+  theme?: 'auto' | 'dark' | 'light';
   appearance?: Appearance;
+  /** CSS extra después de Apariencia (el login con los colores de la web). */
+  extraCss?: string;
+  /** Tipografías de la web para títulos y textos (el login). Sin ellas, las de siempre. */
+  fonts?: { titulos: FontKey; cuerpo: FontKey; peso: string };
 }
 
-const { title, theme = 'auto', appearance = DEFAULT_APPEARANCE } = Astro.props;
-const css = appearanceCss(appearance);
+const { title, theme = 'auto', appearance = DEFAULT_APPEARANCE, extraCss = '', fonts } = Astro.props;
+const stack = (k: FontKey) => `var(${FONTS[k].css}), ${FONTS[k].fallback}`;
+const fontCss = fonts
+  ? `html:root{--font-display:${stack(fonts.titulos)};--font-sans:${stack(fonts.cuerpo)}}h1,h2{font-weight:${fonts.peso}}`
+  : '';
+const fontVars = fonts ? [...new Set([FONTS[fonts.titulos].css, FONTS[fonts.cuerpo].css])] : ['--font-hina', '--font-zen'];
+const css = appearanceCss(appearance) + extraCss + fontCss;
 const favicon = appearance.logo || '/icon-192.png';
 ---
 
@@ -27,8 +37,7 @@ const favicon = appearance.logo || '/icon-192.png';
     <title>{title} · {appearance.name}</title>
     {appearance.logo ? <link rel="icon" href={favicon} /> : <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />}
     <link rel="icon" type="image/png" href={favicon} sizes="192x192" />
-    <Font cssVariable="--font-hina" preload />
-    <Font cssVariable="--font-zen" preload />
+    {fontVars.map((v) => <Font cssVariable={v as '--font-hina'} preload />)}
     <style id="admin-appearance" set:html={css} is:inline></style>
     {
       theme === 'auto' && (

@@ -20,16 +20,61 @@ export const FONTS = {
   manrope: { label: 'Manrope', css: '--font-manrope', fallback: 'sans-serif', uso: 'ambos' },
   poppins: { label: 'Poppins', css: '--font-poppins', fallback: 'sans-serif', uso: 'ambos' },
   nunito: { label: 'Nunito Sans', css: '--font-nunito', fallback: 'sans-serif', uso: 'ambos' },
+  rubik: { label: 'Rubik', css: '--font-rubik', fallback: 'sans-serif', uso: 'ambos' },
+  intertight: { label: 'Inter Tight', css: '--font-intertight', fallback: 'sans-serif', uso: 'ambos' },
+  dmsans: { label: 'DM Sans', css: '--font-dmsans', fallback: 'sans-serif', uso: 'ambos' },
 } as const;
 
 export type FontKey = keyof typeof FONTS;
+
+export const PESOS_TITULOS = { '300': 'Fino', '400': 'Normal', '500': 'Medio', '600': 'Seminegrita', '700': 'Negrita' } as const;
+
+/** Esquinas de los botones: radio en CSS. */
+export const ESQUINAS_BOTONES = {
+  pildora: { label: 'Píldora (totalmente redondos)', radio: '9999px' },
+  redondeados: { label: 'Redondeados', radio: '16px' },
+  suaves: { label: 'Esquinas suaves', radio: '6px' },
+  rectos: { label: 'Rectos', radio: '0px' },
+} as const;
+
+/** Esquinas de tarjetas y recuadros: radio grande (tarjetas) y pequeño (recuadros dentro de un bloque). */
+export const ESQUINAS_TARJETAS = {
+  grandes: { label: 'Muy redondeadas', radio: '24px', chico: '16px' },
+  medias: { label: 'Redondeadas', radio: '14px', chico: '10px' },
+  suaves: { label: 'Esquinas suaves', radio: '10px', chico: '6px' },
+  rectas: { label: 'Rectas', radio: '0px', chico: '0px' },
+} as const;
 
 export interface Tema {
   fondo: string;
   texto: string;
   acento: string;
+  /** Texto de los botones de acento. */
+  textoBoton: string;
+  /** Segundo color del botón (degradado). Vacío: botón de un solo color. */
+  acento2: string;
+  /** Segundo color del titular de la portada (degradado). Vacío: del color del texto. */
+  degradado: string;
+  /** Menú (cabecera y menú del móvil). Vacío: los colores de la página. */
+  menuFondo: string;
+  menuTexto: string;
+  /** Pie de página. Vacío: los colores de la página. */
+  pieFondo: string;
+  pieTexto: string;
   titulos: FontKey;
   cuerpo: FontKey;
+  pesoTitulos: keyof typeof PESOS_TITULOS;
+  botones: keyof typeof ESQUINAS_BOTONES;
+  tarjetas: keyof typeof ESQUINAS_TARJETAS;
+}
+
+/** Colores propios de un bloque. Vacíos: los del tema. */
+export interface ColoresBloque {
+  colorFondo?: string;
+  /** Con él, el fondo es un degradado del primero a este. */
+  colorFondo2?: string;
+  colorTexto?: string;
+  colorAcento?: string;
 }
 
 export interface Marca {
@@ -117,14 +162,25 @@ export interface Parada {
   boton: keyof typeof STOP_BUTTONS;
 }
 
-interface Base {
+interface Base extends ColoresBloque {
   /** Identificador estable del bloque (no cambia al reordenar). */
   id: string;
   visible: boolean;
 }
 
+/** Disposición de la portada: cambia dónde van el video y el texto, no el recorrido con scroll. */
+export const DISENIOS_PORTADA = {
+  dividida: 'Dividida: texto a la izquierda, video a media pantalla',
+  panel: 'Panel: un gran panel redondeado con margen alrededor',
+  centrada: 'Centrada: video a pantalla completa y titular al centro',
+  tarjeta: 'Tarjeta: portada clara con el video en una tarjeta flotante',
+} as const;
+
+export type DisenioPortada = keyof typeof DISENIOS_PORTADA;
+
 export interface BloquePaseo extends Base {
   tipo: 'paseo';
+  disenio: DisenioPortada;
   video: string;
   poster: Img;
   pista: string;
@@ -213,7 +269,23 @@ const nbsp = ' ';
 
 export const SITE_DEFAULTS: SiteContent = {
   version: 1,
-  tema: { fondo: '#1d3324', texto: '#f3eadb', acento: '#d0703a', titulos: 'hina', cuerpo: 'zen' },
+  tema: {
+    fondo: '#1d3324',
+    texto: '#f3eadb',
+    acento: '#d0703a',
+    textoBoton: '#1d3324',
+    acento2: '',
+    degradado: '#c5d3a6',
+    menuFondo: '',
+    menuTexto: '',
+    pieFondo: '',
+    pieTexto: '',
+    titulos: 'hina',
+    cuerpo: 'zen',
+    pesoTitulos: '400',
+    botones: 'pildora',
+    tarjetas: 'grandes',
+  },
   marca: {
     nombre: 'El Agropecuario',
     lema: 'Distribuidora de huevos y pollos',
@@ -257,6 +329,7 @@ export const SITE_DEFAULTS: SiteContent = {
       id: 'paseo',
       tipo: 'paseo',
       visible: true,
+      disenio: 'dividida',
       video: '/video/pollos.mp4',
       poster: { src: 'asset:pollos', alt: 'Pollos jóvenes comiendo alrededor de un comedero rojo' },
       pista: 'Desliza para recorrer la finca',
@@ -504,20 +577,49 @@ export const SITE_DEFAULTS: SiteContent = {
 // ─── Definición de campos para el editor ─────────────────────────────────────
 
 export type FieldDef =
-  | { key: string; label: string; type: 'text' | 'textarea' | 'color' | 'video' | 'image' | 'lines'; help?: string; max?: number }
+  | { key: string; label: string; type: 'text' | 'textarea' | 'video' | 'image' | 'lines'; help?: string; max?: number }
+  /** `optional`: se puede dejar vacío (y entonces se usa el color del tema). */
+  | { key: string; label: string; type: 'color'; help?: string; optional?: boolean }
   | { key: string; label: string; type: 'font'; uso: 'titulos' | 'cuerpo'; help?: string }
   | { key: string; label: string; type: 'select'; options: Record<string, string>; help?: string }
-  | { key: string; label: string; type: 'list'; fields: FieldDef[]; itemLabel: string; help?: string; max?: number; min?: number };
+  | { key: string; label: string; type: 'list'; fields: FieldDef[]; itemLabel: string; help?: string; max?: number; min?: number }
+  /** Solo agrupa campos en el editor: sus valores van en el mismo objeto, no anidados. */
+  | { key: string; label: string; type: 'group'; fields: FieldDef[]; help?: string };
 
 const RICH = 'Usa **así** para poner una parte en negrita.';
 
-export const BLOCK_DEFS: Record<TipoBloque, { nombre: string; descripcion: string; ancla: string; menu?: string; fields: FieldDef[] }> = {
+const labels = (o: Record<string, { label: string }>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v.label]));
+
+const COLORES_BLOQUE: FieldDef = {
+  key: 'colores',
+  label: 'Colores del bloque',
+  type: 'group',
+  help: 'Vacíos: usa los colores de la página (Colores y tipografía).',
+  fields: [
+    { key: 'colorFondo', label: 'Fondo', type: 'color', optional: true },
+    { key: 'colorFondo2', label: 'Segundo color del fondo (degradado)', type: 'color', optional: true },
+    { key: 'colorTexto', label: 'Texto', type: 'color', optional: true },
+    { key: 'colorAcento', label: 'Acento (botones y detalles)', type: 'color', optional: true },
+  ],
+};
+
+type BlockDef = { nombre: string; descripcion: string; ancla: string; menu?: string; fields: FieldDef[] };
+
+/** Todos los bloques terminan con sus colores propios. */
+const conColores = (defs: Record<TipoBloque, BlockDef>) =>
+  Object.fromEntries(Object.entries(defs).map(([k, d]) => [k, { ...d, fields: [...d.fields, COLORES_BLOQUE] }])) as Record<
+    TipoBloque,
+    BlockDef
+  >;
+
+export const BLOCK_DEFS: Record<TipoBloque, BlockDef> = conColores({
   paseo: {
     nombre: 'Paseo con video (portada)',
     descripcion: 'La portada: el video de fondo y las paradas que cambian al hacer scroll.',
     ancla: 'inicio',
     menu: 'Inicio',
     fields: [
+      { key: 'disenio', label: 'Diseño de la portada', type: 'select', options: DISENIOS_PORTADA, help: 'Cada plantilla trae el suyo; aquí lo puedes cambiar.' },
       { key: 'video', label: 'Video de fondo', type: 'video', help: 'Archivo .mp4 vertical dentro de public/video, o una URL https.' },
       { key: 'poster', label: 'Imagen mientras carga el video', type: 'image' },
       { key: 'pista', label: 'Texto "desliza" (escritorio)', type: 'text', max: 60 },
@@ -685,7 +787,7 @@ export const BLOCK_DEFS: Record<TipoBloque, { nombre: string; descripcion: strin
       { key: 'boton', label: 'Texto del botón', type: 'text', max: 40 },
     ],
   },
-};
+});
 
 /** Ajustes generales del sitio, en el mismo formato que los bloques. */
 export const SETTINGS_DEFS: {
@@ -697,13 +799,52 @@ export const SETTINGS_DEFS: {
   {
     key: 'tema',
     nombre: 'Colores y tipografía',
-    descripcion: 'Se aplican a toda la página.',
+    descripcion: 'Se aplican a toda la página. Cada bloque puede tener además sus propios colores. Para cambiar todo de una vez, usa Plantillas.',
     fields: [
-      { key: 'fondo', label: 'Fondo', type: 'color' },
-      { key: 'texto', label: 'Texto', type: 'color' },
-      { key: 'acento', label: 'Acento (botones y detalles)', type: 'color' },
-      { key: 'titulos', label: 'Tipografía de títulos', type: 'font', uso: 'titulos' },
-      { key: 'cuerpo', label: 'Tipografía de textos', type: 'font', uso: 'cuerpo' },
+      {
+        key: 'pagina',
+        label: 'Página',
+        type: 'group',
+        fields: [
+          { key: 'fondo', label: 'Fondo', type: 'color' },
+          { key: 'texto', label: 'Texto', type: 'color' },
+          { key: 'acento', label: 'Acento (botones y detalles)', type: 'color' },
+          { key: 'degradado', label: 'Segundo color del titular de la portada', type: 'color', optional: true, help: 'Vacío: sin degradado.' },
+        ],
+      },
+      {
+        key: 'botones',
+        label: 'Botones',
+        type: 'group',
+        fields: [
+          { key: 'textoBoton', label: 'Texto de los botones', type: 'color' },
+          { key: 'acento2', label: 'Segundo color (degradado)', type: 'color', optional: true, help: 'Vacío: botón de un solo color.' },
+          { key: 'botones', label: 'Esquinas de los botones', type: 'select', options: labels(ESQUINAS_BOTONES) },
+          { key: 'tarjetas', label: 'Esquinas de tarjetas y recuadros', type: 'select', options: labels(ESQUINAS_TARJETAS) },
+        ],
+      },
+      {
+        key: 'menu',
+        label: 'Menú y pie de página',
+        type: 'group',
+        help: 'Vacíos: los colores de la página.',
+        fields: [
+          { key: 'menuFondo', label: 'Fondo del menú', type: 'color', optional: true },
+          { key: 'menuTexto', label: 'Texto del menú', type: 'color', optional: true },
+          { key: 'pieFondo', label: 'Fondo del pie de página', type: 'color', optional: true },
+          { key: 'pieTexto', label: 'Texto del pie de página', type: 'color', optional: true },
+        ],
+      },
+      {
+        key: 'tipografia',
+        label: 'Tipografía',
+        type: 'group',
+        fields: [
+          { key: 'titulos', label: 'Tipografía de títulos', type: 'font', uso: 'titulos' },
+          { key: 'pesoTitulos', label: 'Grosor de los títulos', type: 'select', options: PESOS_TITULOS, help: 'Si la tipografía no tiene ese grosor, se usa el más cercano.' },
+          { key: 'cuerpo', label: 'Tipografía de textos', type: 'font', uso: 'cuerpo' },
+        ],
+      },
     ],
   },
   {
@@ -810,6 +951,14 @@ function okVideo(src: string) {
   return src === '' || /^\/video\/[\w.-]+\.(mp4|webm)$/.test(src) || /^https:\/\/[^\s"'<>]+$/.test(src);
 }
 
+/** Color hex. Si es opcional, vacío significa "el del tema". */
+function cleanColor(optional: boolean | undefined, value: unknown, fallback: unknown, where: string, errors: string[]) {
+  if (typeof value === 'string' && HEX_RE.test(value)) return value.toLowerCase();
+  if (optional && (value === '' || (value === undefined && fallback === undefined))) return '';
+  if (value !== undefined) errors.push(`${where}: color no válido.`);
+  return fallback;
+}
+
 /**
  * Normaliza un valor según su definición, partiendo del valor por defecto. Lo que no encaja se queda con el valor
  * por defecto y se anota en `errors` (para el editor). Nunca devuelve tipos inesperados a la landing.
@@ -833,9 +982,10 @@ function cleanField(def: FieldDef, value: unknown, fallback: unknown, where: str
         .map((l) => l.slice(0, def.max ?? 200));
     }
     case 'color':
-      if (typeof value === 'string' && HEX_RE.test(value)) return value.toLowerCase();
-      if (value !== undefined) errors.push(`${where}: color no válido.`);
-      return fallback;
+      return cleanColor(def.optional, value, fallback, where, errors);
+    case 'group':
+      // Los grupos se resuelven en cleanObject (sus campos van en el mismo objeto).
+      return undefined;
     case 'font':
       return typeof value === 'string' && value in FONTS ? value : fallback;
     case 'select':
@@ -871,7 +1021,10 @@ function cleanField(def: FieldDef, value: unknown, fallback: unknown, where: str
 function cleanObject(fields: FieldDef[], value: unknown, fallback: Record<string, unknown>, where: string, errors: string[]) {
   const v = isObj(value) ? value : {};
   const out: Record<string, unknown> = {};
-  for (const f of fields) out[f.key] = cleanField(f, v[f.key], fallback[f.key], `${where} · ${f.label}`, errors);
+  for (const f of fields) {
+    if (f.type === 'group') Object.assign(out, cleanObject(f.fields, v, fallback, where, errors));
+    else out[f.key] = cleanField(f, v[f.key], fallback[f.key], `${where} · ${f.label}`, errors);
+  }
   return out;
 }
 
@@ -879,7 +1032,8 @@ function cleanObject(fields: FieldDef[], value: unknown, fallback: Record<string
 export function emptyItem(fields: FieldDef[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const f of fields) {
-    if (f.type === 'list' || f.type === 'lines') out[f.key] = [];
+    if (f.type === 'group') Object.assign(out, emptyItem(f.fields));
+    else if (f.type === 'list' || f.type === 'lines') out[f.key] = [];
     else if (f.type === 'image') out[f.key] = { src: '', alt: '' };
     else if (f.type === 'select') out[f.key] = Object.keys(f.options)[0];
     else out[f.key] = '';
@@ -987,8 +1141,60 @@ export function contrast(a: string, b: string) {
   return (x + 0.05) / (y + 0.05);
 }
 
-/** Variables CSS del tema (colores y tipografías). */
+/** Fondo claro u oscuro, para que el navegador pinte barras de desplazamiento y controles a juego. */
+const esquema = (fondo: string) => (HEX_RE.test(fondo) && lum(fondo) > 0.4 ? 'light' : 'dark');
+
+/** El más legible sobre `fondo`, entre los candidatos. */
+const legible = (fondo: string, ...candidatos: string[]) =>
+  candidatos.reduce((mejor, c) => (contrast(c, fondo) > contrast(mejor, fondo) ? c : mejor));
+
+const fondoBoton = (a: string, a2: string) => (a2 ? `linear-gradient(180deg, ${a}, ${a2})` : a);
+
+/** Variables CSS del tema: colores de la página, botones, menú, pie, esquinas y tipografías. */
 export function temaCss(t: Tema) {
   const f = (k: FontKey) => `var(${FONTS[k].css}), ${FONTS[k].fallback}`;
-  return `:root{--color-bg:${t.fondo};--color-crema:${t.texto};--color-teja:${t.acento};--font-display:${f(t.titulos)};--font-sans:${f(t.cuerpo)}}`;
+  const tarjetas = ESQUINAS_TARJETAS[t.tarjetas];
+  const vars: Record<string, string> = {
+    'color-scheme': esquema(t.fondo),
+    '--color-bg': t.fondo,
+    // El fondo de la página, aunque un bloque cambie el suyo (margen de la portada "Panel").
+    '--color-page': t.fondo,
+    '--color-crema': t.texto,
+    '--color-teja': t.acento,
+    '--color-on-teja': t.textoBoton,
+    '--btn-bg': fondoBoton(t.acento, t.acento2),
+    '--color-hero-fin': t.degradado || t.texto,
+    '--color-menu-bg': t.menuFondo || t.fondo,
+    '--color-menu-text': t.menuTexto || t.texto,
+    '--color-pie-bg': t.pieFondo || t.fondo,
+    '--color-pie-text': t.pieTexto || t.texto,
+    '--radius-btn': ESQUINAS_BOTONES[t.botones].radio,
+    '--radius-card': tarjetas.radio,
+    '--radius-card-sm': tarjetas.chico,
+    '--font-weight-display': t.pesoTitulos,
+    '--font-display': f(t.titulos),
+    '--font-sans': f(t.cuerpo),
+  };
+  return `:root{${Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(';')}}`;
+}
+
+/**
+ * Estilo en línea de un bloque con colores propios: redefine las variables del tema solo dentro del bloque, así sus
+ * componentes no cambian. Vacío si el bloque usa los colores de la página.
+ */
+export function bloqueCss(b: ColoresBloque, t: Tema) {
+  const css: string[] = [];
+  if (b.colorFondo) {
+    const fondo = b.colorFondo2 ? `linear-gradient(145deg, ${b.colorFondo}, ${b.colorFondo2})` : b.colorFondo;
+    css.push(`--color-bg:${b.colorFondo}`, `background:${fondo}`, `color-scheme:${esquema(b.colorFondo)}`);
+  }
+  if (b.colorTexto) css.push(`--color-crema:${b.colorTexto}`, `color:${b.colorTexto}`);
+  if (b.colorAcento) {
+    css.push(
+      `--color-teja:${b.colorAcento}`,
+      `--btn-bg:${b.colorAcento}`,
+      `--color-on-teja:${legible(b.colorAcento, t.textoBoton, '#ffffff', '#11110d')}`,
+    );
+  }
+  return css.join(';');
 }

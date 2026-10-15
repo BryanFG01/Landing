@@ -15,6 +15,7 @@ import { LoadError } from './PageStates';
 import { PageHeader } from './PageHeader';
 import { Fields } from './site/Fields';
 import { SiteSidebar } from './site/SiteSidebar';
+import { TemplateGallery } from './site/TemplateGallery';
 import { ThemeSample } from './site/ThemeSample';
 
 const PUBLISH_WITH_HOOK =
@@ -88,13 +89,34 @@ export function SiteEditor() {
             )}
           </div>
 
-          {section.kind === 'setting' && section.key === 'tema' && (
+          {section.kind === 'setting' && section.key === 'tema' ? (
             <ThemeSample tema={content.tema} brand={content.marca.nombre} warnings={site.warnings} />
+          ) : (
+            site.warnings.map((w) => (
+              <Alert key={w} variant="warning">
+                {w}
+              </Alert>
+            ))
           )}
 
-          <Fields key={sectionKey(section)} fields={view.fields} value={view.value} onChange={site.updateSection} />
+          {section.kind === 'templates' ? (
+            <TemplateGallery cards={site.templates} brand={content.marca.nombre} onApply={site.askTemplate} />
+          ) : (
+            <Fields key={sectionKey(section)} fields={view.fields} value={view.value} onChange={site.updateSection} />
+          )}
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={!!site.confirmingTemplate}
+        title={`¿Usar la plantilla "${site.confirmingTemplate?.nombre ?? ''}"?`}
+        description="Cambia los colores, botones, menú, pie, esquinas y tipografías, también los colores propios de cada bloque. Tus textos, fotos y el orden no cambian. Queda como cambio sin guardar: revísalo en Vista previa antes de publicar."
+        confirmLabel="Usar plantilla"
+        busyLabel="Aplicando…"
+        busy={false}
+        onConfirm={site.applyTemplate}
+        onCancel={site.cancelTemplate}
+      />
 
       <ConfirmDialog
         open={site.confirmingPublish}

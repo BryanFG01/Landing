@@ -26,7 +26,7 @@ const title = 'mt-4 max-w-xl text-4xl lg:text-5xl xl:text-6xl';
 const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur-md';
 ---
 
-<section id="recorrido" data-world aria-label="Paseo por la finca" class="relative">
+<section id="recorrido" data-world data-disenio={bloque.disenio} aria-label="Paseo por la finca" class="relative">
   <!-- Escenario fijo. Los vídeos son verticales (grabados con el celular): en móvil ocupan toda la pantalla; en
        escritorio, la mitad derecha de borde a borde (pantalla dividida, el texto a la izquierda). Debajo de cada clip, su
        primer fotograma con el mismo encuadre, para que el vídeo entre sin que se note el cambio. -->
@@ -72,13 +72,13 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
     </div>
 
     <!-- Velos para leer el texto encima del vídeo. -->
-    <div aria-hidden="true" class="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-bg/60 to-transparent"></div>
+    <div aria-hidden="true" class="veil-top absolute inset-x-0 top-0 h-40 bg-linear-to-b from-bg/60 to-transparent"></div>
     <div
       aria-hidden="true"
-      class="absolute inset-0 bg-linear-to-t from-bg from-15% via-bg/50 via-50% to-transparent to-80% max-lg:from-30% max-lg:via-bg/70 max-lg:via-55% lg:bg-linear-to-r lg:from-bg/85 lg:via-bg/35 lg:via-35% lg:to-transparent lg:to-65%"
+      class="veil-main absolute inset-0 bg-linear-to-t from-bg from-15% via-bg/50 via-50% to-transparent to-80% max-lg:from-30% max-lg:via-bg/70 max-lg:via-55% lg:bg-linear-to-r lg:from-bg/85 lg:via-bg/35 lg:via-35% lg:to-transparent lg:to-65%"
     >
     </div>
-    <div aria-hidden="true" class="absolute inset-x-0 bottom-0 hidden h-1/2 bg-linear-to-t from-bg/80 to-transparent lg:block"></div>
+    <div aria-hidden="true" class="veil-bottom absolute inset-x-0 bottom-0 hidden h-1/2 bg-linear-to-t from-bg/80 to-transparent lg:block"></div>
 
     <!-- Raíl de paradas. -->
     <nav aria-label="Paradas del paseo" class="absolute top-1/2 right-6 hidden -translate-y-1/2 lg:block xl:right-8">
@@ -135,7 +135,7 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
               <span class="block font-sans text-xs font-medium tracking-widest text-teja uppercase">
                 {p.eyebrow || `${marca.nombre} · ${marca.lema}`}
               </span>
-              <span class="hero-title mt-4 block max-w-[680px] bg-linear-to-r from-crema to-[#c5d3a6] bg-clip-text pb-2 text-4xl text-transparent lg:text-6xl">
+              <span class="hero-title mt-4 block max-w-[680px] bg-linear-to-r from-crema to-(--color-hero-fin) bg-clip-text pb-2 text-4xl text-transparent lg:text-6xl">
                 {p.titulo}
               </span>
             </h1>
@@ -167,7 +167,7 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
           {p.estilo === 'tarjetas' && p.items.length > 0 && (
             <ul class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
               {p.items.map((it) => (
-                <li class="flex flex-col gap-1 rounded-2xl bg-bg/40 p-4 ring-1 ring-crema/15 backdrop-blur-md">
+                <li class="flex flex-col gap-1 rounded-(--radius-card-sm) bg-bg/40 p-4 ring-1 ring-crema/15 backdrop-blur-md">
                   <span class="font-display text-2xl lg:text-3xl">{it.valor}</span>
                   <span class="text-xs text-crema/70 lg:text-sm">{it.etiqueta}</span>
                 </li>
@@ -231,6 +231,98 @@ const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur
   @media (min-width: 1280px) {
     .media {
       width: 52%;
+    }
+  }
+
+  /* ─── Diseños de la portada (Sitio web → Portada → Diseño). Solo cambian dónde van el video y el texto; el
+     recorrido con scroll (src/scripts/motion.ts) es el mismo. "dividida" es el de arriba. ─── */
+
+  /* Panel: la portada es un gran panel redondeado; alrededor se ve el fondo de la página. */
+  [data-disenio='panel'] {
+    background-color: var(--color-page);
+  }
+
+  [data-disenio='panel'] [data-stage] {
+    clip-path: inset(5.5rem 0.75rem 0.75rem round calc(var(--radius-card) * 2));
+  }
+
+  [data-disenio='panel'] :global(.stop-body) {
+    padding-left: 2rem;
+    padding-bottom: 3rem;
+  }
+
+  @media (min-width: 1024px) {
+    [data-disenio='panel'] [data-stage] {
+      clip-path: inset(6rem 1.5rem 1.5rem round calc(var(--radius-card) * 2));
+    }
+
+    [data-disenio='panel'] :global(.stop-body) {
+      padding-left: 5rem;
+      padding-bottom: 4.5rem;
+    }
+  }
+
+  /* Centrada: el video llena la pantalla bajo un velo de color parejo y el texto va al centro. */
+  [data-disenio='centrada'] .media {
+    left: 0;
+    width: 100%;
+    mask-image: none;
+  }
+
+  [data-disenio='centrada'] .veil-main {
+    background-image: none;
+    background-color: color-mix(in oklab, var(--color-bg) 74%, transparent);
+  }
+
+  [data-disenio='centrada'] .veil-bottom {
+    display: none;
+  }
+
+  [data-disenio='centrada'] :global(.stop-body) {
+    margin-inline: auto;
+    align-items: center;
+    padding-bottom: 18svh;
+    text-align: center;
+  }
+
+  [data-disenio='centrada'] :global(.stop-body ul),
+  [data-disenio='centrada'] :global(.stop-body dl) {
+    justify-content: center;
+  }
+
+  [data-disenio='centrada'] .hero-title {
+    margin-inline: auto;
+  }
+
+  /* Tarjeta: portada clara; el video va en una tarjeta flotante (arriba en móvil, a la derecha en escritorio). */
+  [data-disenio='tarjeta'] .media {
+    inset: 5.5rem 1rem auto;
+    width: auto;
+    height: 40svh;
+    overflow: hidden;
+    border-radius: 16px;
+    mask-image: none;
+  }
+
+  [data-disenio='tarjeta'] .veil-top {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    [data-disenio='tarjeta'] .media {
+      /* A la derecha deja sitio al raíl de paradas y abajo al texto "desliza". */
+      inset: 7rem 9rem 9rem auto;
+      width: 34%;
+      height: auto;
+    }
+
+    [data-disenio='tarjeta'] .veil-main,
+    [data-disenio='tarjeta'] .veil-bottom {
+      display: none;
+    }
+
+    [data-disenio='tarjeta'] :global(.stop-body) {
+      max-width: min(42rem, 54vw);
     }
   }
 

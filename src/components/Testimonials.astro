@@ -35,7 +35,7 @@ const { bloque, site } = Astro.props;
       {
         bloque.items.map((t, i) => (
           <li data-reveal style={`--d:${(i % 3) * 100}ms`}>
-            <figure class="flex h-full flex-col gap-6 rounded-3xl p-6 ring-1 ring-crema/15 lg:p-8">
+            <figure class="flex h-full flex-col gap-6 rounded-(--radius-card) p-6 ring-1 ring-crema/15 lg:p-8">
               <Icon name="quotes" class="size-8 text-teja" />
               <blockquote class="flex-1 font-display text-xl leading-snug lg:text-2xl">
                 <p>{t.texto}</p>

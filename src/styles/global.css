@@ -20,9 +20,34 @@
 }
 
 @layer base {
+  /* Valores por defecto; el tema del panel los reemplaza (temaCss en src/data/sitio.ts). */
   :root {
     interpolate-size: allow-keywords;
     color-scheme: dark;
+    --color-on-teja: #1d3324;
+    --btn-bg: #d0703a;
+    --color-hero-fin: #c5d3a6;
+    --color-menu-bg: #1d3324;
+    --color-menu-text: #f3eadb;
+    --color-pie-bg: #1d3324;
+    --color-pie-text: #f3eadb;
+    --radius-btn: 9999px;
+    --radius-card: 24px;
+    --radius-card-sm: 16px;
+    --font-weight-display: 400;
+  }
+
+  /* Menú y pie con sus propios colores: redefinen las variables del tema solo dentro de su zona. */
+  .zona-menu {
+    --color-bg: var(--color-menu-bg);
+    --color-crema: var(--color-menu-text);
+  }
+
+  .zona-pie {
+    --color-bg: var(--color-pie-bg);
+    --color-crema: var(--color-pie-text);
+    background-color: var(--color-bg);
+    color: var(--color-crema);
   }
 
   html {
@@ -42,7 +67,7 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    font-weight: 400;
+    font-weight: var(--font-weight-display);
     text-wrap: balance;
   }
 
@@ -69,7 +94,7 @@
 
   ::selection {
     background-color: var(--color-teja);
-    color: var(--color-bg);
+    color: var(--color-on-teja);
   }
 
   :focus-visible {
@@ -79,14 +104,14 @@
 }
 
 @layer components {
-  /* Botón principal: teja con texto oscuro. */
+  /* Botón principal: color de acento (o degradado) con el texto de botones del tema. */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     min-height: 40px;
-    border-radius: 9999px;
+    border-radius: var(--radius-btn);
     padding: 8px 12px;
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
@@ -116,12 +141,12 @@
   }
 
   .btn-primary {
-    background-color: var(--color-teja);
-    color: var(--color-bg);
+    background: var(--btn-bg);
+    color: var(--color-on-teja);
   }
 
   .btn-primary:hover {
-    background-color: var(--color-crema);
+    background: var(--color-crema);
     transform: scale(1.02);
   }
 

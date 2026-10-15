@@ -2,10 +2,10 @@
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { LoginView } from '../../admin/ui/LoginView';
 import { getAppearance } from '../../admin/server/settings';
+import { isLightTheme, loginThemeCss } from '../../admin/schema';
 import foto from '../../assets/paseo/bascula.webp';
-import { SITE_DEFAULTS } from '../../data/sitio';
-
-const marca = SITE_DEFAULTS.marca;
+import { getSite } from '../../data/contenido';
+import { SITE_DEFAULTS, type SiteContent } from '../../data/sitio';
 
 export const prerender = false;
 
@@ -13,9 +13,23 @@ export const prerender = false;
 if (Astro.locals.adminUser) return Astro.redirect('/admin');
 
 const appearance = await getAppearance();
+// El login se viste con la plantilla publicada en la web (colores y tipografías). Si no se puede leer, la de siempre.
+let site: SiteContent = SITE_DEFAULTS;
+try {
+  site = await getSite();
+} catch (e) {
+  console.warn('[login] Sin el contenido publicado:', e instanceof Error ? e.message : e);
+}
+const { tema, marca } = site;
 ---
 
-<AdminLayout title="Entrar" theme="dark" appearance={appearance}>
+<AdminLayout
+  title="Entrar"
+  theme={isLightTheme(tema) ? 'light' : 'dark'}
+  appearance={appearance}
+  extraCss={loginThemeCss(tema)}
+  fonts={{ titulos: tema.titulos, cuerpo: tema.cuerpo, peso: tema.pesoTitulos }}
+>
   <LoginView
     client:only="react"
     image={foto.src}

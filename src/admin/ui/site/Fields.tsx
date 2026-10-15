@@ -25,6 +25,7 @@ import { optionsOf, removeAt, replaceAt, swap } from '../lib/lists';
 
 type Values = Record<string, unknown>;
 type ListDef = Extract<FieldDef, { type: 'list' }>;
+type GroupDef = Extract<FieldDef, { type: 'group' }>;
 
 function ImageField({ label, value, onChange, help }: Readonly<{ label: string; value: Img; onChange: (v: Img) => void; help?: string }>) {
   const upload = useSiteImageUpload((src) => onChange({ ...value, src }));
@@ -168,7 +169,10 @@ function FieldInput({ def, value, onChange }: Readonly<{ def: FieldDef; value: u
         <Textarea label={def.label} helperText={def.help} rows={5} value={asLines(value)} onChange={(e) => onChange(e.target.value.split('\n'))} />
       );
     case 'color':
-      return <ColorField label={def.label} value={asText(value)} onChange={onChange} />;
+      return <ColorField label={def.label} help={def.help} optional={def.optional} value={asText(value)} onChange={onChange} />;
+    case 'group':
+      // Los grupos se pintan en Fields: sus campos van en el mismo objeto.
+      return null;
     case 'font':
       return <Select label={def.label} options={fontOptions(def.uso)} value={asText(value)} onValueChange={onChange} />;
     case 'select':
@@ -182,12 +186,28 @@ function FieldInput({ def, value, onChange }: Readonly<{ def: FieldDef; value: u
   }
 }
 
+function FieldGroup({ def, value, onChange }: Readonly<{ def: GroupDef; value: Values; onChange: (v: Values) => void }>) {
+  return (
+    <fieldset className="space-y-4 border-t border-border pt-4">
+      <legend className="pr-2 text-sm font-semibold">{def.label}</legend>
+      {def.help && <p className="-mt-2 text-xs text-muted-foreground">{def.help}</p>}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Fields fields={def.fields} value={value} onChange={onChange} />
+      </div>
+    </fieldset>
+  );
+}
+
 export function Fields({ fields, value, onChange }: Readonly<{ fields: FieldDef[]; value: Values; onChange: (v: Values) => void }>) {
   return (
     <>
-      {fields.map((f) => (
-        <FieldInput key={f.key} def={f} value={value[f.key]} onChange={(v) => onChange({ ...value, [f.key]: v })} />
-      ))}
+      {fields.map((f) =>
+        f.type === 'group' ? (
+          <FieldGroup key={f.key} def={f} value={value} onChange={onChange} />
+        ) : (
+          <FieldInput key={f.key} def={f} value={value[f.key]} onChange={(v) => onChange({ ...value, [f.key]: v })} />
+        ),
+      )}
     </>
   );
 }

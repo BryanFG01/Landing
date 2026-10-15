@@ -1,7 +1,9 @@
 // Editor de Sitio web: secciones, orden y visibilidad de bloques, avisos del tema y textos de estado (sin React).
+import { PLANTILLAS, plantillaEnUso, type Plantilla } from '../../../data/plantillas';
 import {
   BLOCK_DEFS,
   contrast,
+  ESQUINAS_BOTONES,
   FONTS,
   SETTINGS_DEFS,
   type Bloque,
@@ -23,10 +25,11 @@ export interface SiteState {
 }
 
 export type SettingKey = (typeof SETTINGS_DEFS)[number]['key'];
-export type Section = { kind: 'setting'; key: SettingKey } | { kind: 'block'; tipo: Bloque['tipo'] };
+export type Section = { kind: 'templates' } | { kind: 'setting'; key: SettingKey } | { kind: 'block'; tipo: Bloque['tipo'] };
 export type DeployResult = 'ok' | 'sin_hook' | 'error';
 
 export const FIRST_SECTION: Section = { kind: 'block', tipo: 'paseo' };
+export const TEMPLATES_SECTION: Section = { kind: 'templates' };
 
 export const SETTING_ICONS: Record<SettingKey, string> = {
   tema: 'palette',
@@ -36,7 +39,10 @@ export const SETTING_ICONS: Record<SettingKey, string> = {
   chat: 'chat',
 };
 
-export const sectionKey = (s: Section) => (s.kind === 'block' ? s.tipo : s.key);
+export function sectionKey(s: Section) {
+  if (s.kind === 'templates') return 'plantillas';
+  return s.kind === 'block' ? s.tipo : s.key;
+}
 export const isSection = (a: Section, b: Section) => sectionKey(a) === sectionKey(b);
 
 export interface SectionView {
@@ -50,6 +56,16 @@ export interface SectionView {
 
 /** Lo que el editor muestra para la sección elegida (ajuste general o bloque). */
 export function sectionView(content: SiteContent, section: Section): SectionView {
+  if (section.kind === 'templates') {
+    return {
+      title: 'Plantillas',
+      description:
+        'Cambia de una vez los colores, botones, menú, pie, esquinas y tipografías. Tus textos, fotos y el orden de los bloques no cambian. Después puedes retocar cualquier color.',
+      fields: [],
+      value: {},
+      apply: () => content,
+    };
+  }
   if (section.kind === 'setting') {
     const def = SETTINGS_DEFS.find((s) => s.key === section.key)!;
     return {
@@ -88,11 +104,72 @@ export function themeWarnings(t: Tema): string[] {
   const warnings: string[] = [];
   if (contrast(t.texto, t.fondo) < 4.5) warnings.push('El texto y el fondo tienen poco contraste: costará leer.');
   if (contrast(t.acento, t.fondo) < 3) warnings.push('El acento casi no se distingue del fondo.');
-  if (contrast(t.fondo, t.acento) < 4.5) warnings.push('El texto de los botones (color de fondo sobre acento) tiene poco contraste.');
+  if (contrast(t.textoBoton, t.acento) < 4.5) warnings.push('El texto de los botones tiene poco contraste con el acento.');
+  if (t.menuFondo && contrast(t.menuTexto || t.texto, t.menuFondo) < 4.5) warnings.push('El texto del menú se lee mal sobre su fondo.');
+  if (t.pieFondo && contrast(t.pieTexto || t.texto, t.pieFondo) < 4.5) warnings.push('El texto del pie de página se lee mal sobre su fondo.');
   return warnings;
 }
 
+/** Avisos de contraste de un bloque con colores propios (con los del tema donde no tiene). */
+export function blockWarnings(b: Bloque, t: Tema): string[] {
+  const fondo = b.colorFondo || t.fondo;
+  const texto = b.colorTexto || t.texto;
+  const acento = b.colorAcento || t.acento;
+  const warnings: string[] = [];
+  if (contrast(texto, fondo) < 4.5) warnings.push('El texto y el fondo de este bloque tienen poco contraste: costará leer.');
+  if (b.colorFondo2 && contrast(texto, b.colorFondo2) < 4.5) warnings.push('El texto se lee mal sobre el segundo color del fondo.');
+  if (contrast(acento, fondo) < 3) warnings.push('El acento casi no se distingue del fondo de este bloque.');
+  return warnings;
+}
+
+/** Avisos de la sección abierta: los del tema o los del bloque. */
+export function sectionWarnings(content: SiteContent, section: Section): string[] {
+  if (section.kind === 'setting' && section.key === 'tema') return themeWarnings(content.tema);
+  if (section.kind !== 'block') return [];
+  const b = content.bloques.find((x) => x.tipo === section.tipo);
+  return b ? blockWarnings(b, content.tema) : [];
+}
+
 export const fontStack = (key: FontKey) => `var(${FONTS[key].css}), ${FONTS[key].fallback}`;
+
+/** Lo que pinta la miniatura de un tema (editor y tarjetas de plantillas). */
+export function themePreview(t: Tema) {
+  return {
+    fondo: t.fondo,
+    texto: t.texto,
+    boton: { background: t.acento2 ? `linear-gradient(180deg, ${t.acento}, ${t.acento2})` : t.acento, color: t.textoBoton },
+    radioBoton: ESQUINAS_BOTONES[t.botones].radio,
+    menu: { background: t.menuFondo || t.fondo, color: t.menuTexto || t.texto },
+    titulos: { fontFamily: fontStack(t.titulos), fontWeight: Number(t.pesoTitulos) },
+    cuerpo: fontStack(t.cuerpo),
+  };
+}
+
+export interface TemplateCard {
+  plantilla: Plantilla;
+  enUso: boolean;
+  preview: ReturnType<typeof themePreview>;
+  /** Fondo de cada bloque visible, en orden (franjas de la miniatura). */
+  franjas: string[];
+}
+
+function franja(p: Plantilla, b: Bloque) {
+  const c = p.bloques[b.tipo];
+  if (!c?.colorFondo) return p.tema.fondo;
+  return c.colorFondo2 ? `linear-gradient(90deg, ${c.colorFondo}, ${c.colorFondo2})` : c.colorFondo;
+}
+
+/** Tarjetas de la galería de plantillas, con la que está en uso marcada. */
+export function templateCards(content: SiteContent): TemplateCard[] {
+  const enUso = plantillaEnUso(content);
+  const visibles = content.bloques.filter((b) => b.visible);
+  return PLANTILLAS.map((p) => ({
+    plantilla: p,
+    enUso: p.id === enUso,
+    preview: themePreview(p.tema),
+    franjas: visibles.map((b) => franja(p, b)),
+  }));
+}
 
 /** Tipografías que se ofrecen para títulos o para textos. */
 export const fontOptions = (uso: 'titulos' | 'cuerpo') =>

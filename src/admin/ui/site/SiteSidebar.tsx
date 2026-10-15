@@ -6,7 +6,7 @@ import { cn } from '../../../components/lib/utils';
 import { BLOCK_DEFS, SETTINGS_DEFS, type Bloque } from '../../../data/sitio';
 import { Icon } from '../icons';
 import { formatDateTime } from '../lib/format';
-import { isSection, SETTING_ICONS, type Section, type SiteState } from '../lib/siteEditor';
+import { isSection, SETTING_ICONS, TEMPLATES_SECTION, type Section, type SiteState } from '../lib/siteEditor';
 
 const navItem = (active: boolean) =>
   cn(
@@ -76,6 +76,10 @@ export function SiteSidebar({ blocks, versions, section, onSection, onMove, onTo
     <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
       <Card className="p-3">
         <Heading>General</Heading>
+        <button type="button" onClick={() => onSection(TEMPLATES_SECTION)} className={navItem(isSection(section, TEMPLATES_SECTION))}>
+          <Icon name="swatches" />
+          Plantillas
+        </button>
         {SETTINGS_DEFS.map((s) => {
           const target: Section = { kind: 'setting', key: s.key };
           return (
