@@ -13,6 +13,8 @@ export interface TableInfo {
   name: string;
   kind: 'tabla' | 'vista';
   pk: string | null;
+  /** COMMENT ON TABLE: nombre sugerido para el módulo. */
+  comment: string | null;
   columns: { name: string; type: string; pk: boolean; data_type: ColumnDataType }[];
   /** Campos de formulario sugeridos para crear un módulo sobre la tabla. */
   suggested_fields: FieldConfig[];

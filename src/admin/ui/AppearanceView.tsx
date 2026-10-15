@@ -15,6 +15,11 @@ import { FilePicker } from './FilePicker';
 import { useAppearanceEditor } from './hooks/useAppearanceEditor';
 import { PageHeader } from './PageHeader';
 
+const COLOR_SOURCE_OPTIONS = [
+  { value: 'web', label: 'Los de la plantilla de la web' },
+  { value: 'propios', label: 'Propios del panel' },
+];
+
 const THEME_OPTIONS = [
   { value: 'auto', label: 'El del sistema de cada persona' },
   { value: 'light', label: 'Claro' },
@@ -78,33 +83,49 @@ function BrandCard({ draft, update, onLogo }: Readonly<{ draft: Appearance; upda
   );
 }
 
+function OwnColors({ draft, update }: Readonly<{ draft: Appearance; update: Update }>) {
+  return (
+    <>
+      <ColorField label="Color principal" value={draft.primary} onChange={(primary) => update({ primary })} />
+      <div className="space-y-2">
+        {draft.primary_dark ? (
+          <ColorField label="Color en modo oscuro" value={draft.primary_dark} onChange={(primary_dark) => update({ primary_dark })} />
+        ) : (
+          <p className="pt-1 text-sm font-medium">Color en modo oscuro</p>
+        )}
+        <Switch
+          label="Automático"
+          description="Una versión más clara del color principal."
+          checked={!draft.primary_dark}
+          onCheckedChange={(auto) => update({ primary_dark: auto ? '' : draft.primary })}
+        />
+      </div>
+      <Select label="Esquinas" options={RADIUS_OPTIONS} value={String(draft.radius)} onValueChange={(v) => update({ radius: Number(v) })} />
+    </>
+  );
+}
+
 function ColorsCard({ draft, update }: Readonly<{ draft: Appearance; update: Update }>) {
+  const fromWeb = draft.colores === 'web';
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Colores y forma</CardTitle>
         <CardDescription>
-          El color principal se usa en botones, enlaces y el elemento activo del menú. El color del texto encima se elige
-          solo para que se lea bien.
+          {fromWeb
+            ? 'El panel usa los colores, esquinas y tipografías de la plantilla publicada en Sitio web. Al publicar otra plantilla, el panel cambia con ella.'
+            : 'El color principal se usa en botones, enlaces y el elemento activo del menú. El color del texto encima se elige solo para que se lea bien.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <ColorField label="Color principal" value={draft.primary} onChange={(primary) => update({ primary })} />
-          <div className="space-y-2">
-            {draft.primary_dark ? (
-              <ColorField label="Color en modo oscuro" value={draft.primary_dark} onChange={(primary_dark) => update({ primary_dark })} />
-            ) : (
-              <p className="pt-1 text-sm font-medium">Color en modo oscuro</p>
-            )}
-            <Switch
-              label="Automático"
-              description="Una versión más clara del color principal."
-              checked={!draft.primary_dark}
-              onCheckedChange={(auto) => update({ primary_dark: auto ? '' : draft.primary })}
-            />
-          </div>
-          <Select label="Esquinas" options={RADIUS_OPTIONS} value={String(draft.radius)} onValueChange={(v) => update({ radius: Number(v) })} />
+          <Select
+            label="Colores del panel"
+            options={COLOR_SOURCE_OPTIONS}
+            value={draft.colores}
+            onValueChange={(v) => update({ colores: v as Appearance['colores'] })}
+          />
+          {!fromWeb && <OwnColors draft={draft} update={update} />}
           <Select
             label="Tema por defecto"
             options={THEME_OPTIONS}

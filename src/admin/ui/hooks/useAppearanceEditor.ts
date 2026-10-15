@@ -12,7 +12,8 @@ const previewable = (a: Appearance) => isHexColor(a.primary) && (!a.primary_dark
 
 export function useAppearanceEditor() {
   const { toast } = useToast();
-  const { appearance: saved, setAppearance } = useAppearance();
+  // La vista previa se ve en todo el panel (previewAppearance) sin tocar la guardada, que es contra la que se compara.
+  const { savedAppearance: saved, setAppearance, previewAppearance } = useAppearance();
   const [draft, setDraftState] = React.useState<Appearance>(saved);
   const [errors, setErrors] = React.useState<string[]>([]);
   const [saving, setSaving] = React.useState(false);
@@ -23,7 +24,7 @@ export function useAppearanceEditor() {
     savedRef.current = saved;
   }, [saved]);
   // Al salir de la pantalla sin guardar, el panel vuelve a la apariencia guardada.
-  React.useEffect(() => () => setAppearance(savedRef.current), [setAppearance]);
+  React.useEffect(() => () => previewAppearance(savedRef.current), [previewAppearance]);
 
   const setDraft = React.useCallback((next: Appearance) => {
     draftRef.current = next;
@@ -34,9 +35,9 @@ export function useAppearanceEditor() {
     (patch: Partial<Appearance>) => {
       const next = { ...draftRef.current, ...patch };
       setDraft(next);
-      if (previewable(next)) setAppearance(next);
+      if (previewable(next)) previewAppearance(next);
     },
-    [setAppearance, setDraft],
+    [previewAppearance, setDraft],
   );
 
   async function pickLogo(file: File | undefined) {
@@ -72,7 +73,7 @@ export function useAppearanceEditor() {
 
   function discard() {
     setDraft(saved);
-    setAppearance(saved);
+    previewAppearance(saved);
   }
 
   return {

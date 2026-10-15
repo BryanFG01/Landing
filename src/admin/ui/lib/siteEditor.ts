@@ -1,4 +1,5 @@
 // Editor de Sitio web: secciones, orden y visibilidad de bloques, avisos del tema y textos de estado (sin React).
+import type { PanelSiteTheme } from '../../schema';
 import { PLANTILLAS, plantillaEnUso, type Plantilla } from '../../../data/plantillas';
 import {
   BLOCK_DEFS,
@@ -129,6 +130,17 @@ export function sectionWarnings(content: SiteContent, section: Section): string[
   const b = content.bloques.find((x) => x.tipo === section.tipo);
   return b ? blockWarnings(b, content.tema) : [];
 }
+
+/** Lo que el panel toma del tema de la web (sus colores, esquinas y tipografías). */
+export const panelThemeOf = (t: Tema): PanelSiteTheme => ({
+  fondo: t.fondo,
+  texto: t.texto,
+  acento: t.acento,
+  titulos: t.titulos,
+  cuerpo: t.cuerpo,
+  pesoTitulos: t.pesoTitulos,
+  tarjetas: t.tarjetas,
+});
 
 export const fontStack = (key: FontKey) => `var(${FONTS[key].css}), ${FONTS[key].fallback}`;
 

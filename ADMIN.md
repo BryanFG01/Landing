@@ -199,7 +199,13 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
   - **Tema** (Colores y tipografía, en grupos): fondo, texto y acento de la página; segundo color del titular; texto de los botones y su degradado opcional; esquinas de botones y tarjetas; colores del menú y del pie; tipografías y grosor de los títulos.
   - **Colores de cada bloque** (al final de cada bloque, "Colores del bloque"): fondo (con degradado opcional), texto y acento. Vacíos: los del tema.
   - **Diseño de la portada** (bloque Portada → "Diseño de la portada"): dividida, panel, centrada o tarjeta. Solo cambia dónde van el video y el texto; el recorrido con scroll es el mismo.
-- **El login** del panel se viste con la plantilla **publicada** (fondo, texto, acento, texto de botones y tipografías). El resto del panel sigue con Apariencia.
+- **El login** del panel se viste con la plantilla **publicada** (fondo, texto, acento, texto de botones y tipografías).
+- **El panel** también, si en Apariencia → "Colores del panel" está "Los de la plantilla de la web" (por defecto). `panelCss` en `src/admin/schema.ts`:
+  - **Tonos:** los fondos y bordes toman el tono del color claro de la plantilla, los textos el del oscuro y el principal el acento. Se oscurece el acento hasta que el texto blanco encima se lea.
+  - **Luminosidades y contraste:** se mantienen las de `admin.css`, así que el contraste no cambia. Con "Finca" sale el panel de siempre.
+  - **Esquinas y tipografías:** también vienen de la plantilla.
+  - **Al publicar** otra plantilla, el panel cambia de colores sin recargar (las tipografías nuevas, al recargar).
+  - **"Propios del panel"** vuelve al color principal y las esquinas de Apariencia.
 - **Retoques:** después de aplicar una plantilla se puede cambiar cualquier color; la galería deja de marcarla "En uso". El editor avisa si algún texto queda con poco contraste (WCAG), en el tema y en cada bloque.
 - **Código:**
   - Las plantillas son datos: `src/data/plantillas.ts`. Añadir una es añadir un objeto con su tema, sus colores por bloque y su portada.
@@ -229,6 +235,17 @@ En el constructor, **General → Origen de los datos**:
 | Consulta SQL | Un `SELECT`/`WITH` sobre `datos` | Ver, filtrar, ordenar y exportar (solo lectura) |
 
 - **Crear la tabla sin salir del constructor**: elige "Tabla de la base" → **Crear tabla con SQL**. Sale un `CREATE TABLE` de partida (con los campos que ya tenga el módulo); al ejecutarlo, el módulo trae las columnas solo. "Cambiar columnas" hace lo mismo con `ALTER TABLE`. Borrar tablas o columnas solo desde la consola.
+- **Lo que el constructor lee del SQL** para armar campos, columnas y filtros (se puede escribir todo en el mismo SQL, varias sentencias seguidas):
+
+  | En el SQL | En el módulo |
+  | --- | --- |
+  | `tipo text CHECK (tipo IN ('hogar', 'tienda'))` o un `ENUM` | Lista con esas opciones, columna como etiqueta y filtro de lista |
+  | `zona_id integer REFERENCES zonas(id)` | Relación con el módulo de la tabla `zonas` (si ya existe), y filtro |
+  | `COMMENT ON COLUMN clientes.tipo IS 'Tipo de cliente'` | Etiqueta del campo |
+  | `COMMENT ON TABLE clientes IS 'Clientes mayoristas'` | Nombre del módulo |
+  | `boolean`, `date`, números y precios | Filtro sí/no, de fecha o de número |
+
+  El resto se sugiere por el nombre de la columna (correo, teléfono, enlace, notas, foto). Los filtros sugeridos son "Buscar" más hasta 5 de esos; se pueden cambiar en la pestaña Filtros antes de guardar.
 - **Consulta**: escribe el SELECT → **Probar consulta** (muestra columnas, tipo detectado y 20 filas). Los filtros y el orden del módulo se aplican sobre el resultado (`SELECT * FROM (<tu consulta>) t WHERE …`). Las columnas deben llamarse en minúsculas y sin tildes (usa `AS`).
 - Los registros de los módulos del panel se leen desde SQL con la vista **`registros`**: `SELECT data->>'estado', count(*) FROM registros WHERE modulo = 'pedidos' GROUP BY 1`.
 

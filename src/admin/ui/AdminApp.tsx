@@ -2,7 +2,7 @@
 // contenido; cada pantalla pide sus datos a la API. Así cambiar de módulo no recarga la página.
 import * as React from 'react';
 import { ToastProvider } from '../../components/ui/toast';
-import type { AdminUser, Appearance, DashboardStats, ModuleAccess, ModuleDefinition, ModuleGroup } from '../schema';
+import type { AdminUser, Appearance, DashboardStats, ModuleAccess, ModuleDefinition, ModuleGroup, PanelSiteTheme } from '../schema';
 import { AdminShell } from './AdminShell';
 import { AppearanceView } from './AppearanceView';
 import { DashboardView } from './DashboardView';
@@ -103,10 +103,18 @@ function Routes({ user }: Readonly<{ user: AdminUser }>) {
   );
 }
 
-export default function AdminApp({ user, nav, appearance }: Readonly<{ user: AdminUser; nav: Nav; appearance: Appearance }>) {
+interface AdminAppProps {
+  user: AdminUser;
+  nav: Nav;
+  appearance: Appearance;
+  /** Plantilla publicada de la web (colores del panel). */
+  siteTheme: PanelSiteTheme | null;
+}
+
+export default function AdminApp({ user, nav, appearance, siteTheme }: Readonly<AdminAppProps>) {
   return (
     <ToastProvider>
-      <AppearanceProvider initial={appearance}>
+      <AppearanceProvider initial={appearance} siteTheme={siteTheme}>
         <NavProvider initial={nav}>
           <RouterProvider>
             <Routes user={user} />

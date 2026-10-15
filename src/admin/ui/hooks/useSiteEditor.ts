@@ -4,9 +4,11 @@ import { useToast } from '../../../components/ui/toast';
 import { aplicarPlantilla, PLANTILLAS, type Plantilla } from '../../../data/plantillas';
 import type { Bloque, SiteContent } from '../../../data/sitio';
 import { api, ApiError, errorMessage } from '../api';
+import { useAppearance } from '../nav';
 import {
   FIRST_SECTION,
   moveBlock,
+  panelThemeOf,
   PUBLISH_TOAST,
   sectionView,
   sectionWarnings,
@@ -33,6 +35,7 @@ function useUnsavedWarning(dirty: boolean) {
 
 export function useSiteEditor() {
   const { toast } = useToast();
+  const { setSiteTheme } = useAppearance();
   const [state, setState] = React.useState<SiteState | null>(null);
   const [content, setContent] = React.useState<SiteContent | null>(null);
   const [saved, setSaved] = React.useState('');
@@ -113,6 +116,8 @@ export function useSiteEditor() {
       const r = await api<{ deploy: DeployResult }>('/site/publish', { method: 'POST' });
       setConfirmingPublish(false);
       toast(PUBLISH_TOAST[r.deploy]);
+      // El panel sigue a la plantilla publicada: cambia de colores ya, sin recargar.
+      if (content) setSiteTheme(panelThemeOf(content.tema));
       await load();
     });
 

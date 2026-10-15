@@ -19,6 +19,14 @@ export interface PgColumn {
   generated: boolean;
   default: string | null;
   pk: boolean;
+  /** COMMENT ON COLUMN: se usa como etiqueta del campo. */
+  comment: string | null;
+  /** Valores de un tipo ENUM. */
+  enum_values: string[] | null;
+  /** CHECK de esta columna sola (pg_get_constraintdef), para sacar listas de "IN (...)". */
+  checks: string[];
+  /** Tabla a la que apunta con REFERENCES (clave foránea de una columna). */
+  references: string | null;
 }
 
 export interface PgTable {
@@ -27,18 +35,29 @@ export interface PgTable {
   columns: PgColumn[];
   /** Clave primaria de una sola columna, si la hay. */
   pk: string | null;
+  /** COMMENT ON TABLE: nombre sugerido del módulo. */
+  comment: string | null;
 }
 
 /** Tablas y vistas del esquema datos con sus columnas. */
 export async function listTables(only?: string): Promise<PgTable[]> {
-  const rows = await query<PgColumn & { table: string; relkind: string }>(
+  const rows = await query<PgColumn & { table: string; relkind: string; table_comment: string | null }>(
     `SELECT c.relname AS "table", c.relkind::text AS relkind, a.attname AS name,
        format_type(a.atttypid, a.atttypmod) AS type, t.typcategory::text AS category,
        t.typcategory = 'A' AS array, a.attnotnull AS not_null,
        a.attidentity <> '' AS identity, a.attgenerated <> '' AS generated,
        pg_get_expr(d.adbin, d.adrelid) AS default,
        EXISTS (SELECT 1 FROM pg_index i WHERE i.indrelid = c.oid AND i.indisprimary AND i.indnatts = 1
-               AND a.attnum = i.indkey[0]) AS pk
+               AND a.attnum = i.indkey[0]) AS pk,
+       col_description(c.oid, a.attnum) AS comment,
+       obj_description(c.oid, 'pg_class') AS table_comment,
+       CASE WHEN t.typtype = 'e'
+         THEN ARRAY(SELECT e.enumlabel::text FROM pg_enum e WHERE e.enumtypid = t.oid ORDER BY e.enumsortorder)
+       END AS enum_values,
+       ARRAY(SELECT pg_get_constraintdef(k.oid) FROM pg_constraint k
+             WHERE k.conrelid = c.oid AND k.contype = 'c' AND k.conkey = ARRAY[a.attnum]) AS checks,
+       (SELECT r.relname::text FROM pg_constraint k JOIN pg_class r ON r.oid = k.confrelid
+         WHERE k.conrelid = c.oid AND k.contype = 'f' AND k.conkey = ARRAY[a.attnum] LIMIT 1) AS "references"
      FROM pg_class c
      JOIN pg_namespace n ON n.oid = c.relnamespace
      JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
@@ -49,9 +68,10 @@ export async function listTables(only?: string): Promise<PgTable[]> {
     only ? [only] : [],
   );
   const tables = new Map<string, PgTable>();
-  for (const { table, relkind, ...col } of rows) {
+  for (const { table, relkind, table_comment, ...col } of rows) {
     if (!tables.has(table)) {
-      tables.set(table, { name: table, kind: relkind === 'r' || relkind === 'p' ? 'tabla' : 'vista', columns: [], pk: null });
+      const kind = relkind === 'r' || relkind === 'p' ? 'tabla' : 'vista';
+      tables.set(table, { name: table, kind, columns: [], pk: null, comment: table_comment });
     }
     const t = tables.get(table)!;
     t.columns.push(col);
@@ -88,20 +108,52 @@ export const columnMaps = (t: PgTable) => ({
   info: new Map<string, ColumnInfo>(t.columns.map((c) => [c.name, { name: c.name, array: c.array }])),
 });
 
-/** Campo de formulario sugerido para una columna, o null si no se rellena a mano (autonumérica, calculada…). */
-export function suggestField(c: PgColumn): FieldConfig | null {
+const humanize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replaceAll('_', ' ');
+
+/**
+ * Valores permitidos por un CHECK de lista: `tipo IN ('a', 'b')` (Postgres lo guarda como `= ANY (ARRAY[...])`).
+ * Null si el CHECK es de otra forma (rangos, expresiones…).
+ */
+export function checkListValues(def: string): string[] | null {
+  if (!/=\s*ANY\s*\(/i.test(def) || /\b(AND|OR)\b/i.test(def)) return null;
+  const values = [...def.matchAll(/'((?:[^']|'')*)'/g)].map((m) => m[1].replaceAll("''", "'"));
+  return values.length ? values : null;
+}
+
+/** Opciones de lista de una columna: su ENUM o su CHECK ... IN (...). */
+function listOptions(c: PgColumn) {
+  const values = c.enum_values ?? c.checks.map(checkListValues).find(Boolean) ?? null;
+  return values?.map((v) => ({ value: v, label: humanize(v) })) ?? null;
+}
+
+/** Módulo de tabla al que puede apuntar un campo de relación, y el campo que se muestra de él. */
+export type RelationTargets = Map<string, { module_key: string; label: string }>;
+
+/**
+ * Campo de formulario sugerido para una columna, o null si no se rellena a mano (autonumérica, calculada…).
+ * Lee del SQL: COMMENT ON COLUMN (etiqueta), ENUM o CHECK ... IN (...) (lista) y REFERENCES a una tabla con módulo
+ * (relación).
+ */
+export function suggestField(c: PgColumn, relations: RelationTargets = new Map()): FieldConfig | null {
   if (c.identity || c.generated || c.default?.startsWith('nextval(')) return null;
   // Fechas de control: las pone la base (creado) o el panel (updated_at, al editar).
   if (c.name === 'updated_at' || (/^(created_at|creado|actualizado)$/.test(c.name) && c.default)) return null;
-  const label = c.name.charAt(0).toUpperCase() + c.name.slice(1).replace(/_/g, ' ');
-  const required = c.not_null && c.default === null;
   const field = (type: FieldType, extra: Partial<FieldConfig> = {}): FieldConfig => ({
     key: c.name,
-    label,
+    label: c.comment?.trim().slice(0, 60) || humanize(c.name),
     type,
-    required,
+    required: c.not_null && c.default === null,
     ...extra,
   });
+  const target = c.references ? relations.get(c.references) : undefined;
+  if (target) return field('relation', { relation_module: target.module_key, relation_label: target.label });
+  const options = listOptions(c);
+  if (options) return field(c.array ? 'multiselect' : 'select', { options });
+  return fieldByType(c, field);
+}
+
+/** Campo según el tipo de PostgreSQL y el nombre de la columna (correo, teléfono, foto…). */
+function fieldByType(c: PgColumn, field: (type: FieldType, extra?: Partial<FieldConfig>) => FieldConfig): FieldConfig | null {
   const n = c.name;
   switch (c.category) {
     case 'N':
@@ -117,15 +169,20 @@ export function suggestField(c: PgColumn): FieldConfig | null {
       if (/foto|imagen|image|photo|logo/.test(n)) return field('image');
       if (/archivo|adjunto|documento|file/.test(n)) return field('file');
       return null;
-    default: {
-      const len = /\((\d+)\)/.exec(c.type)?.[1];
-      if (/correo|email/.test(n)) return field('email');
-      if (/tel|celular|movil|phone|whatsapp/.test(n)) return field('phone');
-      if (/url|web|sitio|enlace|link/.test(n)) return field('url');
-      if (/descripcion|notas|observacion|comentario|detalle/.test(n)) return field('textarea');
-      return field('text', len ? { max_length: Number(len) } : {});
-    }
+    default:
+      return textField(c, field);
   }
+}
+
+/** Texto: el tipo de campo sale del nombre (correo, teléfono, enlace, notas) y el largo máximo de varchar(n). */
+function textField(c: PgColumn, field: (type: FieldType, extra?: Partial<FieldConfig>) => FieldConfig): FieldConfig {
+  const n = c.name;
+  if (/correo|email/.test(n)) return field('email');
+  if (/tel|celular|movil|phone|whatsapp/.test(n)) return field('phone');
+  if (/url|web|sitio|enlace|link/.test(n)) return field('url');
+  if (/descripcion|notas|observacion|comentario|detalle/.test(n)) return field('textarea');
+  const len = /\((\d+)\)/.exec(c.type)?.[1];
+  return field('text', len ? { max_length: Number(len) } : {});
 }
 
 // ─── Consultas de los módulos ────────────────────────────────────────────────

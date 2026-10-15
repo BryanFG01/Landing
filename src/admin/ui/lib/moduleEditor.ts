@@ -77,7 +77,8 @@ export function suggestColumns(fields: FieldConfig[], source: SourceType = 'reco
     .filter((f) => f.type !== 'textarea' && f.type !== 'file')
     .slice(0, source === 'query' ? 10 : 6)
     .map((f): ColumnConfig => {
-      const data_type = types?.get(f.key) ?? columnTypeFor(f.type);
+      // Las listas se ven como etiqueta aunque en la tabla sean texto (CHECK ... IN o ENUM).
+      const data_type = (f.type === 'select' ? undefined : types?.get(f.key)) ?? columnTypeFor(f.type);
       return {
         column: f.key,
         headerText: f.label,
@@ -90,17 +91,19 @@ export function suggestColumns(fields: FieldConfig[], source: SourceType = 'reco
   return source === 'records' ? [...cols, CREATED_COLUMN] : cols;
 }
 
-/** Filtros sugeridos: búsqueda general + listas, sí/no y fechas. */
+const MAX_SUGGESTED_FILTERS = 6;
+
+/** Filtros sugeridos: búsqueda general + listas, relaciones, sí/no, fechas, precios y números (hasta 6). */
 export function suggestFilters(fields: FieldConfig[]): FilterConfig[] {
   const out: FilterConfig[] = [{ name: 'buscar', label: 'Buscar', field: '*', control: 'text' }];
   for (const f of fields) {
     if (['select', 'multiselect', 'relation'].includes(f.type)) {
       out.push({ name: f.key, label: f.label, field: f.key, control: 'multiselect' });
-    } else if (f.type === 'boolean' || f.type === 'date') {
+    } else if (['boolean', 'date', 'currency', 'number'].includes(f.type)) {
       out.push({ name: f.key, label: f.label, field: f.key, control: filterControlsFor(f.type)[0] });
     }
   }
-  return out;
+  return out.slice(0, MAX_SUGGESTED_FILTERS);
 }
 
 // ─── Origen de los datos ─────────────────────────────────────────────────────
@@ -142,7 +145,7 @@ export function tableSetup(mod: EditorModule, t: TableInfo, keyTouched: boolean)
       column_configs: [pkColumn, ...suggestColumns(fields, 'table', types).filter((c) => c.column !== t.pk)],
       filters: suggestFilters(fields),
       default_sort: t.pk ?? '',
-      ...(mod.name ? {} : { name: humanize(t.name) }),
+      ...(mod.name ? {} : { name: t.comment?.trim().slice(0, 60) || humanize(t.name) }),
       ...(keyTouched ? {} : { module_key: slugify(t.name) }),
     },
   };
@@ -188,13 +191,31 @@ const SQL_TYPES: Record<FieldType, string> = {
   file: 'jsonb',
 };
 
-const DEFAULT_COLUMNS = ['nombre text NOT NULL', 'descripcion text', 'precio numeric(14,2)', 'activo boolean NOT NULL DEFAULT true'];
+// De ejemplo: una lista con CHECK ... IN (el constructor la convierte en lista y filtro).
+const DEFAULT_COLUMNS = [
+  'nombre text NOT NULL',
+  'descripcion text',
+  'precio numeric(14,2)',
+  "categoria text CHECK (categoria IN ('huevos', 'pollos', 'otros'))",
+  'activo boolean NOT NULL DEFAULT true',
+];
+const DEFAULT_COMMENTS: [string, string][] = [['categoria', 'Categoría']];
 const RESERVED = new Set(['id', 'creado', 'updated_at']);
 
-const columnSql = (f: FieldConfig) =>
-  f.type === 'boolean' ? `${f.key} boolean NOT NULL DEFAULT false` : `${f.key} ${SQL_TYPES[f.type]}${f.required ? ' NOT NULL' : ''}`;
+const sqlText = (s: string) => `'${s.replaceAll("'", "''")}'`;
 
-/** CREATE TABLE de partida a partir del nombre del módulo y de los campos que ya tenga. */
+function columnSql(f: FieldConfig) {
+  if (f.type === 'boolean') return `${f.key} boolean NOT NULL DEFAULT false`;
+  const base = `${f.key} ${SQL_TYPES[f.type]}${f.required ? ' NOT NULL' : ''}`;
+  const values = f.type === 'select' ? (f.options ?? []).map((o) => sqlText(o.value)) : [];
+  return values.length ? `${base} CHECK (${f.key} IN (${values.join(', ')}))` : base;
+}
+
+/**
+ * CREATE TABLE de partida a partir del nombre del módulo y de los campos que ya tenga. Lleva también lo que el
+ * constructor sabe leer del SQL: listas con CHECK ... IN, el nombre del módulo (COMMENT ON TABLE) y las etiquetas de
+ * los campos (COMMENT ON COLUMN).
+ */
 export function createTableSql(name: string, fields: FieldConfig[]) {
   const table = slugify(name) || 'mi_tabla';
   const cols = fields.filter((f) => /^[a-z_]\w*$/.test(f.key) && !RESERVED.has(f.key));
@@ -204,7 +225,14 @@ export function createTableSql(name: string, fields: FieldConfig[]) {
     'creado timestamptz NOT NULL DEFAULT now()',
     'updated_at timestamptz',
   ];
-  return `CREATE TABLE ${table} (\n  ${lines.join(',\n  ')}\n);`;
+  const labels = cols.length
+    ? cols.filter((f) => f.label && f.label !== humanize(f.key)).map((f): [string, string] => [f.key, f.label])
+    : DEFAULT_COMMENTS;
+  const comments = [
+    `COMMENT ON TABLE ${table} IS ${sqlText(name.trim() || humanize(table))};`,
+    ...labels.map(([key, label]) => `COMMENT ON COLUMN ${table}.${key} IS ${sqlText(label)};`),
+  ];
+  return `CREATE TABLE ${table} (\n  ${lines.join(',\n  ')}\n);\n\n${comments.join('\n')}`;
 }
 
 export const alterTableSql = (table: string) => `ALTER TABLE ${table}\n  ADD COLUMN nueva_columna text;`;

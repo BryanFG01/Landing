@@ -2,7 +2,7 @@
 // Documento de las páginas del admin. Comparte con la landing las fuentes y la paleta, pero no sus estilos ni scripts.
 // Los colores y el redondeo se pueden cambiar desde Apariencia (admin.settings): aquí se aplican antes de pintar.
 import { Font } from 'astro:assets';
-import { appearanceCss, DEFAULT_APPEARANCE, type Appearance } from '../admin/schema';
+import { DEFAULT_APPEARANCE, followsSite, panelCss, type Appearance, type PanelSiteTheme } from '../admin/schema';
 import { FONTS, type FontKey } from '../data/sitio';
 import '../styles/admin.css';
 
@@ -11,19 +11,30 @@ interface Props {
   /** 'auto': el tema guardado, el de Apariencia o el del sistema. 'dark' / 'light': fijo (el login, según la web). */
   theme?: 'auto' | 'dark' | 'light';
   appearance?: Appearance;
+  /** Plantilla publicada de la web: el panel toma de ella colores, esquinas y tipografías (si Apariencia lo indica). */
+  site?: PanelSiteTheme | null;
   /** CSS extra después de Apariencia (el login con los colores de la web). */
   extraCss?: string;
-  /** Tipografías de la web para títulos y textos (el login). Sin ellas, las de siempre. */
+  /** Tipografías de la web para títulos y textos (el login). Sin ellas, las de la plantilla o las de siempre. */
   fonts?: { titulos: FontKey; cuerpo: FontKey; peso: string };
 }
 
-const { title, theme = 'auto', appearance = DEFAULT_APPEARANCE, extraCss = '', fonts } = Astro.props;
+const { title, theme = 'auto', appearance = DEFAULT_APPEARANCE, site = null, extraCss = '' } = Astro.props;
+const isFont = (k: string): k is FontKey => k in FONTS;
+const siteFonts =
+  followsSite(appearance, site) && isFont(site.titulos) && isFont(site.cuerpo)
+    ? { titulos: site.titulos, cuerpo: site.cuerpo, peso: site.pesoTitulos }
+    : undefined;
+const fonts = Astro.props.fonts ?? siteFonts;
 const stack = (k: FontKey) => `var(${FONTS[k].css}), ${FONTS[k].fallback}`;
+// El grosor de títulos de la plantilla: en el login, sus títulos grandes; en el panel, solo el título de cada página
+// (los subtítulos pequeños se quedan con el suyo para que se lean).
+const weightSelector = Astro.props.fonts ? 'h1,h2' : 'h1';
 const fontCss = fonts
-  ? `html:root{--font-display:${stack(fonts.titulos)};--font-sans:${stack(fonts.cuerpo)}}h1,h2{font-weight:${fonts.peso}}`
+  ? `html:root{--font-display:${stack(fonts.titulos)};--font-sans:${stack(fonts.cuerpo)}}${weightSelector}{font-weight:${fonts.peso}}`
   : '';
 const fontVars = fonts ? [...new Set([FONTS[fonts.titulos].css, FONTS[fonts.cuerpo].css])] : ['--font-hina', '--font-zen'];
-const css = appearanceCss(appearance) + extraCss + fontCss;
+const css = panelCss(appearance, site) + extraCss + fontCss;
 const favicon = appearance.logo || '/icon-192.png';
 ---
 

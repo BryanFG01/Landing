@@ -1,18 +1,28 @@
 ---
 // Todo /admin (salvo /admin/login) es una sola página: el panel React se monta una vez y navega en cliente,
-// así cambiar de módulo no recarga la página. Aquí solo se pasan el usuario, el menú y la apariencia para el primer
-// pintado; cada vista pide sus datos a /api/admin. El middleware ya ha comprobado la sesión.
+// así cambiar de módulo no recarga la página. Aquí solo se pasan el usuario, el menú, la apariencia y la plantilla
+// publicada de la web (de la que el panel toma sus colores) para el primer pintado; cada vista pide sus datos a
+// /api/admin. El middleware ya ha comprobado la sesión.
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import AdminApp from '../../admin/ui/AdminApp';
 import { getNav } from '../../admin/server/modules';
 import { getAppearance } from '../../admin/server/settings';
+import { panelThemeOf } from '../../admin/ui/lib/siteEditor';
+import { getSite } from '../../data/contenido';
 
 export const prerender = false;
 
 const user = Astro.locals.adminUser!;
-const [nav, appearance] = await Promise.all([getNav(user), getAppearance()]);
+const [nav, appearance, site] = await Promise.all([
+  getNav(user),
+  getAppearance(),
+  // Sin la plantilla (base caída a medias), el panel usa los colores de Apariencia.
+  getSite()
+    .then((s) => panelThemeOf(s.tema))
+    .catch(() => null),
+]);
 ---
 
-<AdminLayout title="Panel" appearance={appearance}>
-  <AdminApp client:only="react" user={user} nav={nav} appearance={appearance} />
+<AdminLayout title="Panel" appearance={appearance} site={site}>
+  <AdminApp client:only="react" user={user} nav={nav} appearance={appearance} siteTheme={site} />
 </AdminLayout>

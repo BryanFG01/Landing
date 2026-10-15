@@ -1,6 +1,6 @@
 // Contextos del shell (menú y apariencia). La lógica está en hooks/useShellState.ts.
 import * as React from 'react';
-import type { Appearance } from '../schema';
+import type { Appearance, PanelSiteTheme } from '../schema';
 import { useAppearanceState, useNavState, type AppearanceState, type Nav, type NavState } from './hooks/useShellState';
 
 export type { Nav } from './hooks/useShellState';
@@ -12,8 +12,14 @@ export function NavProvider({ initial, children }: Readonly<{ initial: Nav; chil
   return <NavContext.Provider value={useNavState(initial)}>{children}</NavContext.Provider>;
 }
 
-export function AppearanceProvider({ initial, children }: Readonly<{ initial: Appearance; children: React.ReactNode }>) {
-  return <AppearanceContext.Provider value={useAppearanceState(initial)}>{children}</AppearanceContext.Provider>;
+interface AppearanceProviderProps {
+  initial: Appearance;
+  siteTheme: PanelSiteTheme | null;
+  children: React.ReactNode;
+}
+
+export function AppearanceProvider({ initial, siteTheme, children }: Readonly<AppearanceProviderProps>) {
+  return <AppearanceContext.Provider value={useAppearanceState(initial, siteTheme)}>{children}</AppearanceContext.Provider>;
 }
 
 export const useNav = () => {

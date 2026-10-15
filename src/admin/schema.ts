@@ -617,6 +617,8 @@ export interface Appearance {
   radius: number;
   /** Tema por defecto si la persona no ha elegido uno. */
   theme: 'auto' | 'light' | 'dark';
+  /** 'web': colores, esquinas y tipografías salen de la plantilla publicada en Sitio web. 'propios': los de aquí. */
+  colores: 'web' | 'propios';
   /** Login: título y frase sobre la foto. */
   login_title: string;
   login_text: string;
@@ -630,6 +632,7 @@ export const DEFAULT_APPEARANCE: Appearance = {
   primary_dark: '',
   radius: 0.625,
   theme: 'auto',
+  colores: 'web',
   login_title: 'Del campo a tu mesa',
   login_text: 'Gestiona productos, pedidos y todo lo que se ve en la web desde un solo lugar.',
 };
@@ -662,6 +665,7 @@ export function parseAppearance(input: unknown): { ok: true; value: Appearance }
     primary_dark: str(raw.primary_dark),
     radius: RADIUS_OPTIONS.some((o) => Number(o.value) === Number(raw.radius)) ? Number(raw.radius) : d.radius,
     theme: pick<Appearance['theme']>(raw.theme, { auto: 1, light: 1, dark: 1 }, 'auto')!,
+    colores: pick<Appearance['colores']>(raw.colores, { web: 1, propios: 1 }, d.colores)!,
     login_title: text('login_title', 60) || d.login_title,
     login_text: text('login_text', 200),
   };
@@ -747,6 +751,84 @@ export function loginThemeCss(t: LoginTheme) {
     .map(([k, val]) => `${k}:${val}`)
     .join(';');
   return `html:root,html:root.dark{${body}}`;
+}
+
+/** Lo que el panel toma de la plantilla publicada en la web (Sitio web → Colores y tipografía). */
+export interface PanelSiteTheme {
+  fondo: string;
+  texto: string;
+  acento: string;
+  titulos: string;
+  cuerpo: string;
+  pesoTitulos: string;
+  tarjetas: string;
+}
+
+/** Esquinas del panel según las tarjetas de la plantilla (las de "Finca" dan las de siempre). */
+const RADIUS_BY_CARDS: Record<string, number> = { grandes: 0.625, medias: 0.625, suaves: 0.375, rectas: 0 };
+
+type Hsl = [number, number, number];
+
+/** El mismo tono, oscurecido hasta que el texto blanco encima se lea (≥ 4.5:1). */
+function darkenForWhite([h, s, l]: Hsl): Hsl {
+  let light = l;
+  while (light > 5 && contrast(luminance([h, s, light]), 1) < 4.5) light -= 1;
+  return [h, s, light];
+}
+
+/** El panel en modo oscuro: el acento más claro para que destaque sobre el fondo oscuro. */
+const lightenForDark = ([h, s, l]: Hsl): Hsl => [h, Math.min(s, 70), Math.min(Math.max(l + 10, 50), 65)];
+
+const tint = ([h, s]: Hsl, maxSat: number, light: number) => `${h} ${Math.min(s, maxSat)}% ${light}%`;
+
+/**
+ * Colores del panel a partir de la plantilla de la web: los fondos y bordes toman el tono del color claro de la
+ * plantilla; los textos, el del color oscuro; y el principal, el acento. Las luminosidades son las de admin.css, así
+ * el contraste no cambia (con la plantilla "Finca" sale exactamente el panel de siempre).
+ */
+function siteThemeVars(site: PanelSiteTheme) {
+  const [a, b] = [hexToHsl(site.fondo), hexToHsl(site.texto)];
+  const [clear, ink] = luminance(a) >= luminance(b) ? [a, b] : [b, a];
+  const primary = darkenForWhite(hexToHsl(site.acento));
+  const primaryDark = lightenForDark(primary);
+  const light = {
+    '--background': tint(clear, 45, 98),
+    '--foreground': tint(ink, 27, 14),
+    '--muted': tint(clear, 32, 93),
+    '--muted-foreground': tint(ink, 9, 38),
+    '--border': tint(clear, 24, 85),
+    '--primary': hslVar(primary),
+    '--ring': hslVar(primary),
+    '--primary-foreground': foregroundFor(primary),
+    '--radius': `${RADIUS_BY_CARDS[site.tarjetas] ?? 0.625}rem`,
+  };
+  const dark = {
+    '--background': tint(ink, 28, 9),
+    '--foreground': tint(clear, 50, 91),
+    '--muted': tint(ink, 22, 15),
+    '--muted-foreground': tint(clear, 14, 66),
+    '--border': tint(ink, 18, 20),
+    '--primary': hslVar(primaryDark),
+    '--ring': hslVar(primaryDark),
+    '--primary-foreground': foregroundFor(primaryDark),
+  };
+  return { light, dark };
+}
+
+const cssBlock = (selector: string, vars: Record<string, string>) =>
+  `${selector}{${Object.entries(vars)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(';')}}`;
+
+/** ¿El panel sigue a la plantilla de la web? Solo si así está en Apariencia y la plantilla tiene colores válidos. */
+export const followsSite = (a: Appearance, site: PanelSiteTheme | null): site is PanelSiteTheme =>
+  a.colores === 'web' && !!site && [site.fondo, site.texto, site.acento].every((c) => HEX_RE.test(c));
+
+/** Variables CSS del panel: las de la plantilla de la web o las de Apariencia, según lo elegido. */
+export function panelCss(a: Appearance, site: PanelSiteTheme | null) {
+  if (!followsSite(a, site)) return appearanceCss(a);
+  const { light, dark } = siteThemeVars(site);
+  return cssBlock('html:root,html .light', light) + cssBlock('html.dark,html .dark', dark);
 }
 
 /** Variables CSS del tema a partir de la apariencia guardada. */
