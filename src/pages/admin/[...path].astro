@@ -1,16 +1,18 @@
 ---
 // Todo /admin (salvo /admin/login) es una sola página: el panel React se monta una vez y navega en cliente,
-// así cambiar de módulo no recarga la página. Aquí solo se pasan el usuario y el menú para el primer pintado;
-// cada vista pide sus datos a /api/admin. El middleware ya ha comprobado la sesión.
+// así cambiar de módulo no recarga la página. Aquí solo se pasan el usuario, el menú y la apariencia para el primer
+// pintado; cada vista pide sus datos a /api/admin. El middleware ya ha comprobado la sesión.
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import AdminApp from '../../admin/ui/AdminApp';
 import { getNav } from '../../admin/server/modules';
+import { getAppearance } from '../../admin/server/settings';
 
 export const prerender = false;
 
-const nav = await getNav();
+const user = Astro.locals.adminUser!;
+const [nav, appearance] = await Promise.all([getNav(user), getAppearance()]);
 ---
 
-<AdminLayout title="Panel">
-  <AdminApp client:only="react" user={Astro.locals.adminUser!} nav={nav} />
+<AdminLayout title="Panel" appearance={appearance}>
+  <AdminApp client:only="react" user={user} nav={nav} appearance={appearance} />
 </AdminLayout>

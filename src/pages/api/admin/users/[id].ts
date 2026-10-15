@@ -1,36 +1,51 @@
 import type { APIRoute } from 'astro';
 import { destroyUserSessions } from '../../../../admin/server/auth';
-import { audit, exec } from '../../../../admin/server/db';
+import { audit, exec, transaction } from '../../../../admin/server/db';
 import { fail, json, readJson, toId } from '../../../../admin/server/http';
 import { hashPassword, PASSWORD_MIN } from '../../../../admin/server/password';
+import { parsePermissions, parseRole, savePermissions } from '../../../../admin/server/users';
 
 export const prerender = false;
 
-/** Cambia nombre, estado y, si llega, la contraseña. Desactivar o cambiar la contraseña cierra sus sesiones. */
+/**
+ * Cambia nombre, rol, permisos, estado y, si llega, la contraseña. Desactivar o cambiar la contraseña cierra sus
+ * sesiones. Nadie puede quitarse a sí mismo el rol de administrador ni desactivarse.
+ */
 export const PUT: APIRoute = async ({ params, request, locals }) => {
   const id = toId(params.id);
   if (!id) return fail(400, 'Usuario no válido.');
+  const me = locals.adminUser!;
   const body = (await readJson(request)) as Record<string, unknown> | null;
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const isActive = body?.is_active !== false;
   const password = typeof body?.password === 'string' ? body.password : '';
+  const role = parseRole(body?.role);
+  const permissions = parsePermissions(body?.permissions);
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = 'Obligatorio.';
   if (password && password.length < PASSWORD_MIN) fieldErrors.password = `Mínimo ${PASSWORD_MIN} caracteres.`;
   if (Object.keys(fieldErrors).length) return fail(422, 'Revisa los campos marcados.', { fieldErrors });
-  if (id === locals.adminUser!.id && !isActive) return fail(409, 'No puedes desactivar tu propia cuenta.');
+  if (id === me.id && !isActive) return fail(409, 'No puedes desactivar tu propia cuenta.');
+  if (id === me.id && role !== 'admin') return fail(409, 'No puedes quitarte a ti mismo el rol de administrador.');
 
-  const changed = await exec('UPDATE admin.users SET name = ?, is_active = ?, updated_at = now() WHERE id = ?', [
-    name,
-    isActive,
-    id,
-  ]);
+  const passwordHash = password ? await hashPassword(password) : null;
+  const changed = await transaction(async (q) => {
+    const rows = await q('UPDATE admin.users SET name = ?, is_active = ?, role = ?, updated_at = now() WHERE id = ? RETURNING id', [
+      name,
+      isActive,
+      role,
+      id,
+    ]);
+    if (!rows.length) return false;
+    if (passwordHash) await q('UPDATE admin.users SET password_hash = ? WHERE id = ?', [passwordHash, id]);
+    await savePermissions(q, id, role, permissions);
+    return true;
+  });
   if (!changed) return fail(404, 'El usuario no existe.');
-  if (password) await exec('UPDATE admin.users SET password_hash = ? WHERE id = ?', [await hashPassword(password), id]);
-  if (!isActive || (password && id !== locals.adminUser!.id)) await destroyUserSessions(id);
+  if (!isActive || (password && id !== me.id)) await destroyUserSessions(id);
 
-  await audit({ userId: locals.adminUser!.id, action: 'user_update', detail: { id, is_active: isActive, password: !!password } });
+  await audit({ userId: me.id, action: 'user_update', detail: { id, role, is_active: isActive, password: !!password } });
   return json({ ok: true });
 };
 

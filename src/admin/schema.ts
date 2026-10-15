@@ -2,6 +2,19 @@
 // formulario, la tabla y los filtros). Todo lo que se configura de un módulo pasa por aquí antes de llegar a la base.
 
 export const SLUG_RE = /^[a-z][a-z0-9_]{1,47}$/;
+/** Nombre de tabla o columna de PostgreSQL sin comillas (minúsculas). */
+export const IDENT_RE = /^[a-z_][a-z0-9_]{0,62}$/;
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+// ─── Origen de los datos ─────────────────────────────────────────────────────
+
+export const SOURCE_TYPES = {
+  records: 'Registros del panel',
+  table: 'Tabla de la base de datos',
+  query: 'Consulta SQL (solo lectura)',
+} as const;
+
+export type SourceType = keyof typeof SOURCE_TYPES;
 
 // ─── Campos (formulario) ─────────────────────────────────────────────────────
 
@@ -18,9 +31,21 @@ export const FIELD_TYPES = {
   select: 'Lista (una opción)',
   multiselect: 'Lista (varias opciones)',
   relation: 'Registro de otro módulo',
+  image: 'Foto',
+  file: 'Archivo adjunto',
 } as const;
 
 export type FieldType = keyof typeof FIELD_TYPES;
+
+/** Lo que se guarda en un campo de foto o archivo. El contenido está en admin.files. */
+export interface FileRef {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+}
+
+export const fileUrl = (ref: FileRef) => `/api/admin/files/${ref.id}`;
 
 export interface Option {
   label: string;
@@ -57,6 +82,8 @@ export const COLUMN_TYPES = {
   boolean: 'Sí / No',
   badge: 'Etiqueta',
   list: 'Lista',
+  image: 'Foto',
+  file: 'Archivo',
 } as const;
 
 export type ColumnDataType = keyof typeof COLUMN_TYPES;
@@ -126,6 +153,9 @@ export const ICONS = [
   'star',
   'money',
   'map-pin',
+  'table',
+  'database',
+  'image',
 ] as const;
 
 export type IconName = (typeof ICONS)[number];
@@ -135,6 +165,12 @@ export type IconName = (typeof ICONS)[number];
 export interface ModuleDefinition {
   id?: number;
   module_key: string;
+  /** records: admin.records (jsonb). table: tabla real del esquema datos. query: SELECT de solo lectura. */
+  source_type: SourceType;
+  /** table: nombre de la tabla. query: el SQL. */
+  source: string | null;
+  /** table: columna clave primaria. */
+  source_pk: string | null;
   name: string;
   description?: string | null;
   group_id: number | null;
@@ -163,13 +199,25 @@ export interface NavModule {
   group_id: number | null;
 }
 
+export const ROLES = {
+  admin: 'Administrador (todo el panel)',
+  usuario: 'Usuario (solo los módulos asignados)',
+} as const;
+
+export type Role = keyof typeof ROLES;
+
 export interface AdminUser {
   id: number;
   email: string;
   name: string;
+  role: Role;
 }
 
-export type RecordRow = { id: number; created_at: string; updated_at: string } & Record<string, unknown>;
+/** none: no lo ve. view: ver y exportar. edit: además crear, editar, borrar e importar. */
+export type ModuleAccess = 'none' | 'view' | 'edit';
+
+/** Una fila de cualquier origen. `__id` identifica la fila (id del registro o valor de la clave de la tabla). */
+export type RecordRow = { __id: string | number } & Record<string, unknown>;
 
 export interface RecordsPage {
   type: 'table';
@@ -217,6 +265,10 @@ export function columnTypeFor(type: FieldType): ColumnDataType {
       return 'badge';
     case 'multiselect':
       return 'list';
+    case 'image':
+      return 'image';
+    case 'file':
+      return 'file';
     default:
       return 'text';
   }
@@ -228,12 +280,28 @@ const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const pick = <T extends string>(v: unknown, allowed: Record<T, unknown>, fallback?: T) =>
   typeof v === 'string' && v in allowed ? (v as T) : fallback;
 
-/** Limpia y valida lo que llega del constructor de módulos. Devuelve la definición o la lista de errores. */
+/** SQL de un módulo de consulta: un solo SELECT (o WITH), sin punto y coma intermedio. */
+export function cleanQuerySql(sql: string) {
+  return sql.trim().replace(/;\s*$/, '').trim();
+}
+
+/**
+ * Limpia y valida lo que llega del constructor de módulos. Devuelve la definición o la lista de errores.
+ * `columns`: en módulos de tabla o consulta, las columnas reales (las comprueba el servidor contra la base).
+ */
 export function parseModuleDefinition(
   input: unknown,
+  ctx: { columns?: Map<string, ColumnDataType> } = {},
 ): { ok: true; value: ModuleDefinition } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   const raw = (input ?? {}) as Record<string, unknown>;
+  const source_type = pick<SourceType>(raw.source_type, SOURCE_TYPES, 'records')!;
+  const isRecords = source_type === 'records';
+  // En tablas y consultas las claves son nombres de columna de PostgreSQL.
+  const keyRe = isRecords ? SLUG_RE : IDENT_RE;
+  const keyRule = isRecords
+    ? 'debe empezar por letra y usar solo minúsculas, números y guion bajo (2 a 48)'
+    : 'debe ser un nombre de columna en minúsculas (letras, números y guion bajo)';
 
   const module_key = str(raw.module_key);
   if (!SLUG_RE.test(module_key)) {
@@ -241,6 +309,21 @@ export function parseModuleDefinition(
   }
   const name = str(raw.name);
   if (!name) errors.push('El módulo necesita un nombre.');
+
+  // Origen
+  let source: string | null = null;
+  let source_pk: string | null = null;
+  if (source_type === 'table') {
+    source = str(raw.source);
+    source_pk = str(raw.source_pk);
+    if (!IDENT_RE.test(source)) errors.push('Elige la tabla de la base de datos.');
+    if (!IDENT_RE.test(source_pk)) errors.push('La tabla necesita una clave primaria de una sola columna.');
+  } else if (source_type === 'query') {
+    source = cleanQuerySql(typeof raw.source === 'string' ? raw.source : '');
+    if (!/^(select|with)\b/i.test(source)) errors.push('La consulta debe empezar por SELECT o WITH.');
+    else if (source.includes(';')) errors.push('La consulta debe ser una sola sentencia (sin punto y coma).');
+    if (source.length > 20_000) errors.push('La consulta es demasiado larga.');
+  }
 
   // Campos
   const fields: FieldConfig[] = [];
@@ -251,11 +334,12 @@ export function parseModuleDefinition(
     const label = str(r.label) || key;
     const type = pick(r.type, FIELD_TYPES);
     const where = `Campo ${i + 1}${label ? ` (${label})` : ''}`;
-    if (!SLUG_RE.test(key)) {
-      errors.push(`${where}: la clave debe empezar por letra y usar solo minúsculas, números y guion bajo (2 a 48).`);
-    }
-    else if (key in SYSTEM_FIELDS) errors.push(`${where}: "${key}" es un campo de sistema.`);
+    if (!keyRe.test(key)) errors.push(`${where}: la clave ${keyRule}.`);
+    else if (isRecords && key in SYSTEM_FIELDS) errors.push(`${where}: "${key}" es un campo de sistema.`);
     else if (seen.has(key)) errors.push(`${where}: la clave "${key}" está repetida.`);
+    else if (!isRecords && ctx.columns && !ctx.columns.has(key)) {
+      errors.push(`${where}: la columna "${key}" no existe en ${source_type === 'table' ? 'la tabla' : 'la consulta'}.`);
+    }
     seen.add(key);
     if (!type) {
       errors.push(`${where}: tipo no válido.`);
@@ -287,16 +371,28 @@ export function parseModuleDefinition(
       field.relation_module = str(r.relation_module);
       field.relation_label = str(r.relation_label);
       if (!SLUG_RE.test(field.relation_module)) errors.push(`${where}: elige el módulo relacionado.`);
-      if (!SLUG_RE.test(field.relation_label)) errors.push(`${where}: elige qué campo del otro módulo se muestra.`);
+      if (!IDENT_RE.test(field.relation_label)) errors.push(`${where}: elige qué campo del otro módulo se muestra.`);
       if (field.relation_module === module_key) errors.push(`${where}: un módulo no puede relacionarse consigo mismo.`);
+      if (source_type === 'query') errors.push(`${where}: las consultas no tienen campos de relación.`);
     }
     fields.push(field);
   }
-  if (!fields.length) errors.push('Añade al menos un campo.');
+  if (!fields.length) {
+    errors.push(
+      source_type === 'query'
+        ? 'Prueba la consulta para detectar sus columnas.'
+        : source_type === 'table'
+          ? 'Trae las columnas de la tabla o añade al menos un campo.'
+          : 'Añade al menos un campo.',
+    );
+  }
 
+  // Lo que se puede mostrar, ordenar y filtrar: los campos y, según el origen, las columnas de sistema o las reales.
   const known = new Map<string, FieldType | ColumnDataType>([
+    ...(isRecords ? Object.entries(SYSTEM_FIELDS).map(([k, v]) => [k, v.type] as const) : []),
+    ...(ctx.columns ? [...ctx.columns] : []),
+    ...(source_pk && !ctx.columns ? [[source_pk, 'number'] as const] : []),
     ...fields.map((f) => [f.key, f.type] as const),
-    ...Object.entries(SYSTEM_FIELDS).map(([k, v]) => [k, v.type] as const),
   ]);
 
   // Columnas
@@ -340,7 +436,7 @@ export function parseModuleDefinition(
     if (field !== '*' && !filterControlsFor(known.get(field)).includes(control)) {
       errors.push(`${where}: el control "${FILTER_CONTROLS[control]}" no sirve para ese campo.`);
     }
-    if (!SLUG_RE.test(name) || names.has(name)) errors.push(`${where}: nombre "${name}" no válido o repetido.`);
+    if (!IDENT_RE.test(name) || names.has(name)) errors.push(`${where}: nombre "${name}" no válido o repetido.`);
     names.add(name);
     const filter: FilterConfig = { name, label: str(r.label) || name, field, control };
     if (control === 'number') filter.operator = pick(r.operator, NUMBER_OPERATORS, 'eq');
@@ -348,7 +444,8 @@ export function parseModuleDefinition(
     filters.push(filter);
   }
 
-  const default_sort = known.has(str(raw.default_sort)) ? str(raw.default_sort) : 'created_at';
+  const fallbackSort = isRecords ? 'created_at' : (source_pk ?? column_configs[0]?.column ?? fields[0]?.key ?? '');
+  const default_sort = known.has(str(raw.default_sort)) ? str(raw.default_sort) : fallbackSort;
   const default_dir = raw.default_dir === 'asc' ? 'asc' : 'desc';
   const page_size = Math.min(100, Math.max(5, Math.floor(Number(raw.page_size) || 20)));
   const group_id = Number.isInteger(raw.group_id) && (raw.group_id as number) > 0 ? (raw.group_id as number) : null;
@@ -358,6 +455,9 @@ export function parseModuleDefinition(
     ok: true,
     value: {
       module_key,
+      source_type,
+      source,
+      source_pk,
       name,
       description: str(raw.description) || null,
       group_id,
@@ -451,13 +551,157 @@ export function parseRecordData(
         break;
       }
       case 'relation': {
-        const id = Number(v);
-        if (!Number.isInteger(id) || id <= 0) errors[f.key] = 'Selección no válida.';
-        else out[f.key] = id;
+        // Id numérico (registros, claves enteras) o texto (tablas con clave de texto).
+        const s = String(v).trim();
+        if (/^\d+$/.test(s) && Number(s) > 0) out[f.key] = Number(s);
+        else if (s && s.length <= 200 && typeof v !== 'object') out[f.key] = s;
+        else errors[f.key] = 'Selección no válida.';
+        break;
+      }
+      case 'image':
+      case 'file': {
+        const ref = parseFileRef(v);
+        if (!ref) errors[f.key] = 'Archivo no válido.';
+        else if (f.type === 'image' && !ref.mime.startsWith('image/')) errors[f.key] = 'Debe ser una imagen.';
+        else out[f.key] = ref;
         break;
       }
     }
   }
 
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: out };
+}
+
+export function parseFileRef(v: unknown): FileRef | null {
+  const r = (v ?? {}) as Record<string, unknown>;
+  if (typeof v !== 'object' || typeof r.id !== 'string' || !UUID_RE.test(r.id)) return null;
+  return {
+    id: r.id,
+    name: typeof r.name === 'string' ? r.name.slice(0, 200) : 'archivo',
+    mime: typeof r.mime === 'string' ? r.mime.slice(0, 100) : 'application/octet-stream',
+    size: Number(r.size) || 0,
+  };
+}
+
+// ─── Apariencia del panel ────────────────────────────────────────────────────
+
+export interface Appearance {
+  /** Nombre en el menú lateral y en el login. */
+  name: string;
+  /** Texto pequeño bajo el nombre. */
+  subtitle: string;
+  /** Logo como data URL (se reduce en el navegador antes de guardarlo). Vacío: el logo de la web. */
+  logo: string;
+  /** Color principal (botones, enlaces, activo del menú), en hex. */
+  primary: string;
+  /** Color principal en modo oscuro. Vacío: se calcula a partir del principal. */
+  primary_dark: string;
+  /** Redondeo de las esquinas, en rem. */
+  radius: number;
+  /** Tema por defecto si la persona no ha elegido uno. */
+  theme: 'auto' | 'light' | 'dark';
+  /** Login: título y frase sobre la foto. */
+  login_title: string;
+  login_text: string;
+}
+
+export const DEFAULT_APPEARANCE: Appearance = {
+  name: 'El Agropecuario',
+  subtitle: 'Administración',
+  logo: '',
+  primary: '#b7571f',
+  primary_dark: '',
+  radius: 0.625,
+  theme: 'auto',
+  login_title: 'Del campo a tu mesa',
+  login_text: 'Gestiona productos, pedidos y todo lo que se ve en la web desde un solo lugar.',
+};
+
+export const RADIUS_OPTIONS = [
+  { value: '0', label: 'Rectas' },
+  { value: '0.375', label: 'Suaves' },
+  { value: '0.625', label: 'Redondeadas' },
+  { value: '1', label: 'Muy redondeadas' },
+];
+
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+const LOGO_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+export const LOGO_MAX = 300_000;
+
+export function parseAppearance(input: unknown): { ok: true; value: Appearance } | { ok: false; errors: string[] } {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const d = DEFAULT_APPEARANCE;
+  const errors: string[] = [];
+  const text = (k: keyof Appearance, max: number) => {
+    const v = str(raw[k]);
+    if (v.length > max) errors.push(`"${k}" admite como mucho ${max} caracteres.`);
+    return v;
+  };
+  const value: Appearance = {
+    name: text('name', 40) || d.name,
+    subtitle: text('subtitle', 40),
+    logo: str(raw.logo),
+    primary: str(raw.primary) || d.primary,
+    primary_dark: str(raw.primary_dark),
+    radius: RADIUS_OPTIONS.some((o) => Number(o.value) === Number(raw.radius)) ? Number(raw.radius) : d.radius,
+    theme: pick<Appearance['theme']>(raw.theme, { auto: 1, light: 1, dark: 1 }, 'auto')!,
+    login_title: text('login_title', 60) || d.login_title,
+    login_text: text('login_text', 200),
+  };
+  if (!HEX_RE.test(value.primary)) errors.push('El color principal debe ser un color hex, por ejemplo #b7571f.');
+  if (value.primary_dark && !HEX_RE.test(value.primary_dark)) errors.push('El color para modo oscuro no es válido.');
+  if (value.logo && (!LOGO_RE.test(value.logo) || value.logo.length > LOGO_MAX)) {
+    errors.push('El logo debe ser una imagen PNG, JPG o WebP pequeña.');
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value };
+}
+
+/** "#b7571f" → [h, s, l] (grados y porcentajes). */
+export function hexToHsl(hex: string): [number, number, number] {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => c / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, Math.round(l * 100)];
+  const dlt = max - min;
+  const s = l > 0.5 ? dlt / (2 - max - min) : dlt / (max + min);
+  let h = max === r ? (g - b) / dlt + (g < b ? 6 : 0) : max === g ? (b - r) / dlt + 2 : (r - g) / dlt + 4;
+  h *= 60;
+  return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+}
+
+/** Luminancia relativa (WCAG) de un color HSL. */
+function luminance([h, s, l]: [number, number, number]) {
+  const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * f(0) + 0.7152 * f(8) + 0.0722 * f(4);
+}
+
+const contrast = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+/** Texto encima del color: blanco si se lee bien (≥ 4.5:1), si no, casi negro. */
+function foregroundFor(hsl: [number, number, number]) {
+  return contrast(luminance(hsl), 1) >= 4.5 ? '0 0% 100%' : '150 35% 7%';
+}
+
+const hslVar = ([h, s, l]: [number, number, number]) => `${h} ${s}% ${l}%`;
+
+/** Variables CSS del tema a partir de la apariencia guardada. */
+export function appearanceCss(a: Appearance) {
+  const light = hexToHsl(HEX_RE.test(a.primary) ? a.primary : DEFAULT_APPEARANCE.primary);
+  // Sin color propio para el modo oscuro: el mismo tono, más claro para que destaque sobre el fondo verde.
+  const dark: [number, number, number] =
+    a.primary_dark && HEX_RE.test(a.primary_dark)
+      ? hexToHsl(a.primary_dark)
+      : [light[0], Math.min(light[1], 70), Math.min(Math.max(light[2] + 10, 50), 65)];
+  // Con "html" delante ganan a admin.css aunque este se cargue después.
+  return (
+    `html:root,html .light{--primary:${hslVar(light)};--ring:${hslVar(light)};--primary-foreground:${foregroundFor(light)};--radius:${a.radius}rem}` +
+    `html.dark,html .dark{--primary:${hslVar(dark)};--ring:${hslVar(dark)};--primary-foreground:${foregroundFor(dark)}}`
+  );
 }

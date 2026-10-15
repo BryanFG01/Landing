@@ -115,6 +115,7 @@ export function ModulesList({ modules, groups }: { modules: Mod[]; groups: Modul
     module_key: m.module_key,
     icon: m.icon,
     group: m.group_id ? (groupName.get(m.group_id) ?? '—') : 'Sin grupo',
+    source: m.source_type === 'table' ? `Tabla ${m.source}` : m.source_type === 'query' ? 'Consulta SQL' : 'Registros',
     fields: m.fields.length,
     filters: m.filters.length,
     is_active: m.is_active,
@@ -124,7 +125,7 @@ export function ModulesList({ modules, groups }: { modules: Mod[]; groups: Modul
     <>
       <PageHeader
         title="Constructor de módulos"
-        description="Cada módulo es una entrada del menú con su formulario, su tabla y sus filtros. Todo se guarda en la base de datos."
+        description="Cada módulo es una entrada del menú con su formulario, su tabla y sus filtros. Puede guardar sus propios registros, editar una tabla de la base o mostrar una consulta SQL."
         icon="wrench"
         actions={
           <Button onClick={() => navigate('/admin/modulos/nuevo')}>
@@ -152,6 +153,7 @@ export function ModulesList({ modules, groups }: { modules: Mod[]; groups: Modul
               },
               { key: 'module_key', label: 'Clave', render: (v) => <code className="text-xs">{String(v)}</code> },
               { key: 'group', label: 'Grupo', sortable: true },
+              { key: 'source', label: 'Origen', sortable: true },
               { key: 'fields', label: 'Campos' },
               { key: 'filters', label: 'Filtros' },
               {

@@ -47,6 +47,9 @@ Dos esquemas: **`admin`** (lo interno del panel) y **`datos`** (tablas de negoci
 | `admin.records` | Registros de los módulos de tipo `records`. `data` es `jsonb`. |
 | `admin.audit_log` | Quién hizo qué (login, altas, cambios, borrados, cambios de configuración). |
 | `admin.settings` | Ajustes del panel (apariencia…). |
+| `admin.user_modules` | Permisos de los usuarios con rol `usuario`: módulo y si puede editar. |
+| `admin.files` | Fotos y adjuntos de los registros (bytea). |
+| `datos.registros` | Vista de solo lectura con los registros de todos los módulos, para las consultas. |
 | `admin.schema_migrations` | Migraciones aplicadas (la gestiona `scripts/db.mjs`). |
 
 ---
@@ -114,9 +117,75 @@ Mismos nombres que `columnConfigs` en ERPCloud:
 | `POST` | `/api/admin/m/:key` | Alta |
 | `GET` `PUT` `DELETE` | `/api/admin/m/:key/:id` | Registro |
 | `GET` | `/api/admin/m/:key/options` | Opciones de los campos de relación |
-| `GET` `POST` · `PUT` `DELETE` | `/api/admin/users` · `/users/:id` | Administradores |
+| `GET` `POST` · `PUT` `DELETE` | `/api/admin/users` · `/users/:id` | Usuarios, rol y permisos por módulo |
+| `GET` | `/api/admin/m/:key/export` | CSV con lo que cumple los filtros (`;` y BOM para Excel, hasta 10 000 filas) |
+| `POST` | `/api/admin/m/:key/import` | `{ rows: [{ campo: "texto" }] }`: valida todo y guarda todo o nada (hasta 5000 filas) |
+| `POST` · `GET` | `/api/admin/files` · `/files/:id` | Subir (multipart, 4 MB) y descargar fotos y adjuntos |
+| `POST` | `/api/admin/sql/run` | Consola SQL `{ sql, allow_write }` |
+| `POST` | `/api/admin/sql/preview` | Probar la consulta de un módulo: columnas y 20 filas |
+| `GET` | `/api/admin/tables` | Tablas y vistas del esquema `datos`, con campos sugeridos |
+| `GET` `PUT` | `/api/admin/settings/appearance` | Apariencia |
 
 `filters` va como JSON en la query, por nombre de filtro: `{"estado":["pendiente"],"entrega":{"from":"2026-10-01"}}`.
+
+Solo administradores: `/modules`, `/groups`, `/users`, `/sql`, `/tables`, `/settings` (lo corta `src/middleware.ts`). En `/m/:key` se comprueba el permiso del usuario en ese módulo.
+
+---
+
+## Fase 2: todo desde el panel, sin IDE
+
+### Origen de los datos de un módulo
+
+En el constructor, **General → Origen de los datos**:
+
+| Origen | Dónde están las filas | Se puede |
+| --- | --- | --- |
+| Registros del panel | `admin.records` (jsonb) | Crear, editar, borrar, importar, exportar |
+| Tabla de la base | Una tabla real de `datos` con clave primaria de una columna | Lo mismo. Las columnas son los campos. Si la tabla tiene `updated_at`, el panel la actualiza |
+| Consulta SQL | Un `SELECT`/`WITH` sobre `datos` | Ver, filtrar, ordenar y exportar (solo lectura) |
+
+- **Crear la tabla sin salir del constructor**: elige "Tabla de la base" → **Crear tabla con SQL**. Sale un `CREATE TABLE` de partida (con los campos que ya tenga el módulo); al ejecutarlo, el módulo trae las columnas solo. "Cambiar columnas" hace lo mismo con `ALTER TABLE`. Borrar tablas o columnas solo desde la consola.
+- **Consulta**: escribe el SELECT → **Probar consulta** (muestra columnas, tipo detectado y 20 filas). Los filtros y el orden del módulo se aplican sobre el resultado (`SELECT * FROM (<tu consulta>) t WHERE …`). Las columnas deben llamarse en minúsculas y sin tildes (usa `AS`).
+- Los registros de los módulos del panel se leen desde SQL con la vista **`registros`**: `SELECT data->>'estado', count(*) FROM registros WHERE modulo = 'pedidos' GROUP BY 1`.
+
+### Consola SQL (`/admin/sql`)
+
+Por defecto en **solo lectura**. Con "Permitir cambios" puede crear tablas, insertar, actualizar y borrar en `datos` (pide confirmación si hay `DROP`, `TRUNCATE` o `DELETE`). Guarda historial en el navegador y cada ejecución queda en la auditoría (`action = 'sql'`).
+
+**Cómo se aísla**: todo lo que escribe la gente (consola, módulos de tabla y de consulta) corre en una transacción que hace `SET LOCAL ROLE` a un rol sin login:
+
+| Rol | Permisos |
+| --- | --- |
+| `admin_datos_lector` | `SELECT` en `datos` (consultas y consola en solo lectura, en transacción `READ ONLY`) |
+| `admin_datos_editor` | Todo en `datos` (consola con cambios, módulos de tabla) |
+
+Ninguno ve el esquema `admin` (usuarios, sesiones). Además se rechazan sentencias de control de transacción, de roles y permisos (`COMMIT`, `SET ROLE`, `GRANT`, `DO`…), `set_config()` y referencias a `admin.`, y cada sentencia tiene un tiempo máximo (10–15 s). Es una barrera contra errores, no contra un administrador malintencionado: quien es administrador ya controla el panel entero.
+
+**Tablas creadas desde un IDE** con el usuario dueño (`neondb_owner`) reciben permisos solas (`ALTER DEFAULT PRIVILEGES`). Si las crea **otro rol** (p. ej. `agropecuario`), dale permisos al panel una vez:
+
+```sql
+GRANT ALL ON ALL TABLES IN SCHEMA datos TO admin_datos_editor;
+GRANT SELECT ON ALL TABLES IN SCHEMA datos TO admin_datos_lector;
+```
+
+### Usuarios y permisos
+
+- **Administrador**: todo, incluidos constructor, consola, apariencia y usuarios.
+- **Usuario**: solo los módulos asignados en `admin.user_modules`, cada uno con "Ver y exportar" o "Ver y editar" (crear, editar, borrar, importar). No ve el SQL de las consultas ni la configuración.
+- Nadie puede quitarse a sí mismo el rol de administrador ni desactivarse.
+
+### Fotos y archivos
+
+Tipos de campo **Foto** y **Archivo adjunto**. El archivo se sube al elegirlo y se guarda en `admin.files` (en la propia base, máx. 4 MB); el campo guarda `{ id, name, mime, size }`. En tablas reales la columna debe ser `jsonb`. Solo PNG, JPG, WebP, GIF y AVIF se muestran en el navegador; lo demás se descarga. Hacen falta sesión para verlos. Los archivos de registros que se borran no se limpian solos (ocupan espacio en Neon).
+
+### Importar y exportar
+
+- **Exportar**: el CSV sale con los filtros y el orden actuales, etiquetas legibles (listas, relaciones, Sí/No) y se abre bien en Excel.
+- **Importar**: botón Importar → elegir CSV (en Excel: Guardar como → CSV) → emparejar columnas con campos (automático por nombre) → importar. "Descargar plantilla" da un CSV con los encabezados. Acepta `7.500`, `7500,50`, `Sí/No/1/0`, `DD/MM/AAAA`, etiquetas o valores de listas y varias opciones separadas por `|`. Si una fila falla no se guarda ninguna.
+
+### Apariencia (`/admin/apariencia`)
+
+Nombre, subtítulo, logo (se reduce a 256 px en el navegador), color principal, color para modo oscuro (o automático), esquinas, tema por defecto y textos del login. Se guarda en `admin.settings` (clave `appearance`) y se aplica antes de pintar (`AdminLayout.astro`). El color del texto sobre el color principal se elige solo para un contraste de al menos 4,5:1.
 
 ---
 

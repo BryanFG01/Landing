@@ -4,5 +4,5 @@ import { getNav } from '../../../admin/server/modules';
 
 export const prerender = false;
 
-/** Grupos y módulos activos para el sidebar. */
-export const GET: APIRoute = async () => json(await getNav());
+/** Grupos y módulos activos que el usuario puede ver, para el sidebar. */
+export const GET: APIRoute = async ({ locals }) => json(await getNav(locals.adminUser!));

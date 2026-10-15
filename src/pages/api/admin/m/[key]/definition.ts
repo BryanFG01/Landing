@@ -1,12 +1,14 @@
 import type { APIRoute } from 'astro';
-import { fail, json } from '../../../../../admin/server/http';
-import { getModuleByKey } from '../../../../../admin/server/modules';
+import { moduleFor } from '../../../../../admin/server/guard';
+import { json } from '../../../../../admin/server/http';
 
 export const prerender = false;
 
-/** Definición de un módulo activo (campos, columnas, filtros) para pintar su vista. */
-export const GET: APIRoute = async ({ params }) => {
-  const mod = await getModuleByKey(params.key ?? '');
-  if (!mod) return fail(404, 'Este módulo no existe o está desactivado.');
-  return json({ module: mod });
+/** Definición de un módulo activo (campos, columnas, filtros) y el permiso del usuario, para pintar su vista. */
+export const GET: APIRoute = async ({ params, locals }) => {
+  const r = await moduleFor(params.key, locals.adminUser!, 'view');
+  if (r instanceof Response) return r;
+  // El SQL de las consultas solo lo ven quienes pueden configurar módulos.
+  const mod = locals.adminUser!.role === 'admin' ? r.mod : { ...r.mod, source: null };
+  return json({ module: mod, access: r.mod.source_type === 'query' ? 'view' : r.access });
 };

@@ -9,9 +9,18 @@ import { Icon, iconComponent } from './icons';
 import { useRouter } from './router';
 
 export interface DashboardStats {
-  modules: { module_key: string; name: string; icon: string | null; description: string | null; records: number }[];
+  modules: {
+    module_key: string;
+    name: string;
+    icon: string | null;
+    description: string | null;
+    source_type: string;
+    /** Null en consultas (no se cuentan). */
+    records: number | null;
+  }[];
   totalRecords: number;
-  admins: number;
+  /** Solo para administradores. */
+  admins: number | null;
   recent: { action: string; created_at: string; user: string | null; module: string | null; record_id: number | null }[];
 }
 
@@ -19,13 +28,18 @@ const ACTIONS: Record<string, string> = {
   create: 'creó un registro en',
   update: 'editó un registro de',
   delete: 'borró un registro de',
+  import: 'importó registros en',
+  export: 'exportó',
   module_create: 'creó el módulo',
   module_update: 'configuró el módulo',
   module_delete: 'borró un módulo',
   login: 'entró al panel',
-  user_create: 'creó un administrador',
-  user_update: 'editó un administrador',
+  user_create: 'creó un usuario',
+  user_update: 'editó un usuario',
+  user_delete: 'borró un usuario',
   group_create: 'creó un grupo del menú',
+  sql: 'ejecutó SQL en la consola',
+  appearance_update: 'cambió la apariencia',
 };
 
 const fmt = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
@@ -36,10 +50,10 @@ export function DashboardView({ user, stats }: { user: AdminUser; stats: Dashboa
     <>
       <PageHeader title={`Hola, ${user.name.split(' ')[0]}`} description="Resumen del panel de administración." />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard title="Módulos activos" value={stats.modules.length} icon={iconComponent('squares')} />
+      <div className={stats.admins === null ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-3'}>
+        <StatCard title="Módulos" value={stats.modules.length} icon={iconComponent('squares')} />
         <StatCard title="Registros" value={stats.totalRecords} icon={iconComponent('database')} />
-        <StatCard title="Administradores" value={stats.admins} icon={iconComponent('user-gear')} />
+        {stats.admins !== null && <StatCard title="Usuarios activos" value={stats.admins} icon={iconComponent('user-gear')} />}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -55,7 +69,13 @@ export function DashboardView({ user, stats }: { user: AdminUser; stats: Dashboa
                     </span>
                     <span className="min-w-0">
                       <span className="block font-medium">{m.name}</span>
-                      <span className="block text-sm text-muted-foreground">{m.records} registro(s)</span>
+                      <span className="block text-sm text-muted-foreground">
+                        {m.records === null
+                          ? m.source_type === 'query'
+                            ? 'Consulta'
+                            : 'Tabla no disponible'
+                          : `${m.records} registro(s)`}
+                      </span>
                     </span>
                   </Card>
                 </a>
@@ -63,10 +83,18 @@ export function DashboardView({ user, stats }: { user: AdminUser; stats: Dashboa
             </div>
           ) : (
             <Card className="p-6 text-center">
-              <p className="text-sm text-muted-foreground">Aún no hay módulos.</p>
-              <Button className="mt-4" onClick={() => navigate('/admin/modulos/nuevo')}>
-                <Icon name="plus" /> Crear el primero
-              </Button>
+              {user.role === 'admin' ? (
+                <>
+                  <p className="text-sm text-muted-foreground">Aún no hay módulos.</p>
+                  <Button className="mt-4" onClick={() => navigate('/admin/modulos/nuevo')}>
+                    <Icon name="plus" /> Crear el primero
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Aún no tienes módulos asignados. Pide a un administrador que te dé acceso.
+                </p>
+              )}
             </Card>
           )}
         </section>

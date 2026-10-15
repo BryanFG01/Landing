@@ -10,15 +10,24 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from '../../components/ui/dropdown';
+import { Badge } from '../../components/ui/badge';
 import { Sidebar, type SidebarSection } from '../../components/ui/sidebar';
 import type { AdminUser, NavModule } from '../schema';
 import { api } from './api';
 import { Icon, iconComponent } from './icons';
-import { useNav, type Nav } from './nav';
+import { useAppearance, useNav, type Nav } from './nav';
 import { useRouter } from './router';
 
-/** El sidebar sale de la base de datos: un apartado por grupo, con sus módulos activos. */
-function buildSections(nav: Nav): SidebarSection[] {
+/** Entradas de Configuración, solo para administradores. */
+export const SETTINGS_LINKS = [
+  { label: 'Constructor de módulos', href: '/admin/modulos', icon: 'wrench' },
+  { label: 'Consola SQL', href: '/admin/sql', icon: 'terminal' },
+  { label: 'Usuarios y permisos', href: '/admin/usuarios', icon: 'user-gear' },
+  { label: 'Apariencia', href: '/admin/apariencia', icon: 'palette' },
+];
+
+/** El sidebar sale de la base de datos: un apartado por grupo, con los módulos activos que el usuario puede ver. */
+function buildSections(nav: Nav, isAdmin: boolean): SidebarSection[] {
   const item = (m: NavModule) => ({ label: m.name, href: `/admin/m/${m.module_key}`, icon: iconComponent(m.icon) });
   const sections: SidebarSection[] = [{ section: '', items: [{ label: 'Inicio', href: '/admin', icon: iconComponent('house') }] }];
   for (const g of nav.groups) {
@@ -27,13 +36,12 @@ function buildSections(nav: Nav): SidebarSection[] {
   }
   const loose = nav.modules.filter((m) => !m.group_id || !nav.groups.some((g) => g.id === m.group_id)).map(item);
   if (loose.length) sections.push({ section: 'Módulos', items: loose });
-  sections.push({
-    section: 'Configuración',
-    items: [
-      { label: 'Constructor de módulos', href: '/admin/modulos', icon: iconComponent('wrench') },
-      { label: 'Administradores', href: '/admin/usuarios', icon: iconComponent('user-gear') },
-    ],
-  });
+  if (isAdmin) {
+    sections.push({
+      section: 'Configuración',
+      items: SETTINGS_LINKS.map((l) => ({ label: l.label, href: l.href, icon: iconComponent(l.icon) })),
+    });
+  }
   return sections;
 }
 
@@ -60,9 +68,11 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const { nav } = useNav();
+  const { appearance } = useAppearance();
   const { path: fullPath, navigate } = useRouter();
   const path = fullPath.split('?')[0];
-  const sections = React.useMemo(() => buildSections(nav), [nav]);
+  const isAdmin = user.role === 'admin';
+  const sections = React.useMemo(() => buildSections(nav, isAdmin), [nav, isAdmin]);
   const theme = useTheme();
   // Marca como activo el enlace más largo que sea prefijo de la ruta (el editor de un módulo cuelga del constructor).
   const activeHref =
@@ -97,10 +107,20 @@ export function AdminShell({
         className="max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-40"
         logo={
           <a href="/admin" className="flex items-center gap-2.5">
-            <img src="/icon-192.png" alt="" width={36} height={36} className="size-9 shrink-0 rounded-full bg-white" />
+            <img
+              src={appearance.logo || '/icon-192.png'}
+              alt=""
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-full bg-white object-contain"
+            />
             <span className="min-w-0 leading-tight">
-              <span className="block truncate font-display text-base">El Agropecuario</span>
-              <span className="block text-[10px] tracking-[0.18em] text-muted-foreground uppercase">Administración</span>
+              <span className="block truncate font-display text-base">{appearance.name}</span>
+              {appearance.subtitle && (
+                <span className="block truncate text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+                  {appearance.subtitle}
+                </span>
+              )}
             </span>
           </a>
         }
@@ -143,9 +163,11 @@ export function AdminShell({
                       <span className="block truncate font-normal">{user.email}</span>
                     </DropdownLabel>
                     <DropdownSeparator />
-                    <DropdownItem icon={<Icon name="user-gear" />} onClick={() => navigate('/admin/usuarios')}>
-                      Administradores
-                    </DropdownItem>
+                    {isAdmin && (
+                      <DropdownItem icon={<Icon name="user-gear" />} onClick={() => navigate('/admin/usuarios')}>
+                        Usuarios y permisos
+                      </DropdownItem>
+                    )}
                     <DropdownItem icon={<Icon name="sign-out" />} destructive onClick={logout}>
                       Cerrar sesión
                     </DropdownItem>
@@ -168,11 +190,13 @@ export function PageHeader({
   title,
   description,
   icon,
+  badge,
   actions,
 }: {
   title: string;
   description?: string | null;
   icon?: string | null;
+  badge?: string;
   actions?: React.ReactNode;
 }) {
   return (
@@ -184,7 +208,14 @@ export function PageHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="text-2xl leading-tight">{title}</h1>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl leading-tight">
+            {title}
+            {badge && (
+              <Badge variant="muted" size="sm" className="font-sans">
+                {badge}
+              </Badge>
+            )}
+          </h1>
           {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
         </div>
       </div>

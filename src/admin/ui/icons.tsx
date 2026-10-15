@@ -30,6 +30,16 @@ import arrowUp from '@phosphor-icons/core/assets/regular/arrow-up.svg?raw';
 import arrowDown from '@phosphor-icons/core/assets/regular/arrow-down.svg?raw';
 import x from '@phosphor-icons/core/assets/regular/x.svg?raw';
 import database from '@phosphor-icons/core/assets/regular/database.svg?raw';
+import terminal from '@phosphor-icons/core/assets/regular/terminal-window.svg?raw';
+import palette from '@phosphor-icons/core/assets/regular/palette.svg?raw';
+import upload from '@phosphor-icons/core/assets/regular/upload-simple.svg?raw';
+import download from '@phosphor-icons/core/assets/regular/download-simple.svg?raw';
+import image from '@phosphor-icons/core/assets/regular/image.svg?raw';
+import paperclip from '@phosphor-icons/core/assets/regular/paperclip.svg?raw';
+import table from '@phosphor-icons/core/assets/regular/table.svg?raw';
+import lock from '@phosphor-icons/core/assets/regular/lock-simple.svg?raw';
+import eye from '@phosphor-icons/core/assets/regular/eye.svg?raw';
+import code from '@phosphor-icons/core/assets/regular/code.svg?raw';
 import * as React from 'react';
 
 const SVG = {
@@ -64,6 +74,16 @@ const SVG = {
   'arrow-down': arrowDown,
   x,
   database,
+  terminal,
+  palette,
+  upload,
+  download,
+  image,
+  paperclip,
+  table,
+  lock,
+  eye,
+  code,
 } as const;
 
 export type IconKey = keyof typeof SVG;

@@ -1,4 +1,14 @@
-import type { ColumnConfig, FieldConfig, FilterConfig, ModuleDefinition, ModuleGroup, NavModule } from '../schema';
+import type {
+  AdminUser,
+  ColumnConfig,
+  FieldConfig,
+  FilterConfig,
+  ModuleAccess,
+  ModuleDefinition,
+  ModuleGroup,
+  NavModule,
+  SourceType,
+} from '../schema';
 import { exec, one, query } from './db';
 
 type ModuleRow = {
@@ -16,13 +26,16 @@ type ModuleRow = {
   default_dir: 'asc' | 'desc';
   page_size: number;
   is_active: boolean;
+  source_type: SourceType;
+  source: string | null;
+  source_pk: string | null;
 };
 
 export type LoadedModule = ModuleDefinition & { id: number };
 
 // Las columnas jsonb llegan ya como objetos.
 const COLUMNS = `id, module_key, name, description, group_id, icon, sort_order, fields, column_configs, filters,
-  default_sort, default_dir, page_size, is_active`;
+  default_sort, default_dir, page_size, is_active, source_type, source, source_pk`;
 
 const toModule = (r: ModuleRow): LoadedModule => ({
   ...r,
@@ -51,24 +64,53 @@ export async function listModules() {
   return rows.map(toModule);
 }
 
-/** Lo que pinta el sidebar: grupos y módulos activos, en orden. */
-export async function getNav(): Promise<{ groups: ModuleGroup[]; modules: NavModule[] }> {
-  const [groups, modules] = await Promise.all([
+// ─── Permisos ────────────────────────────────────────────────────────────────
+
+/** Acceso de un usuario a cada módulo. Los administradores tienen acceso total a todos. */
+export async function accessMap(user: AdminUser): Promise<(moduleId: number) => ModuleAccess> {
+  if (user.role === 'admin') return () => 'edit';
+  const rows = await query<{ module_id: number; can_edit: boolean }>(
+    'SELECT module_id, can_edit FROM admin.user_modules WHERE user_id = ?',
+    [user.id],
+  );
+  const map = new Map(rows.map((r) => [r.module_id, r.can_edit ? 'edit' : 'view'] as const));
+  return (id) => map.get(id) ?? 'none';
+}
+
+export async function moduleAccess(user: AdminUser, moduleId: number): Promise<ModuleAccess> {
+  return (await accessMap(user))(moduleId);
+}
+
+/** Lo que pinta el sidebar: grupos y módulos activos que el usuario puede ver, en orden. */
+export async function getNav(user: AdminUser): Promise<{ groups: ModuleGroup[]; modules: NavModule[] }> {
+  const [groups, modules, access] = await Promise.all([
     listGroups(),
     query<NavModule>(
       'SELECT id, module_key, name, icon, group_id FROM admin.modules WHERE is_active ORDER BY sort_order, name',
     ),
+    accessMap(user),
   ]);
-  return { groups, modules };
+  return { groups, modules: modules.filter((m) => access(m.id) !== 'none') };
 }
 
 /** Comprueba que los módulos relacionados existen y tienen el campo de etiqueta. */
-export async function checkRelations(def: ModuleDefinition): Promise<string[]> {
+export async function checkRelations(def: ModuleDefinition, tableColumns?: (table: string) => Promise<string[] | null>) {
   const errors: string[] = [];
   for (const f of def.fields.filter((f) => f.type === 'relation')) {
     const target = await getModuleByKey(f.relation_module!, { activeOnly: false });
-    if (!target) errors.push(`Campo ${f.label}: el módulo "${f.relation_module}" no existe.`);
-    else if (!target.fields.some((tf) => tf.key === f.relation_label)) {
+    if (!target) {
+      errors.push(`Campo ${f.label}: el módulo "${f.relation_module}" no existe.`);
+      continue;
+    }
+    if (target.source_type === 'query') {
+      errors.push(`Campo ${f.label}: no se puede relacionar con un módulo de consulta.`);
+      continue;
+    }
+    const labels =
+      target.source_type === 'table' && target.source && tableColumns
+        ? ((await tableColumns(target.source)) ?? [])
+        : target.fields.map((tf) => tf.key);
+    if (!labels.includes(f.relation_label!)) {
       errors.push(`Campo ${f.label}: el módulo "${target.name}" no tiene el campo "${f.relation_label}".`);
     }
   }
@@ -89,13 +131,16 @@ const moduleParams = (d: ModuleDefinition) => [
   d.default_dir,
   d.page_size,
   d.is_active,
+  d.source_type,
+  d.source,
+  d.source_pk,
 ];
 
 export async function insertModule(d: ModuleDefinition) {
   const row = await one<{ id: number }>(
     `INSERT INTO admin.modules (module_key, name, description, group_id, icon, sort_order, fields, column_configs,
-       filters, default_sort, default_dir, page_size, is_active)
-     VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?) RETURNING id`,
+       filters, default_sort, default_dir, page_size, is_active, source_type, source, source_pk)
+     VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
     moduleParams(d),
   );
   return row!.id;
@@ -105,7 +150,7 @@ export async function updateModule(id: number, d: ModuleDefinition) {
   await exec(
     `UPDATE admin.modules SET module_key = ?, name = ?, description = ?, group_id = ?, icon = ?, sort_order = ?,
        fields = ?::jsonb, column_configs = ?::jsonb, filters = ?::jsonb, default_sort = ?, default_dir = ?,
-       page_size = ?, is_active = ?, updated_at = now()
+       page_size = ?, is_active = ?, source_type = ?, source = ?, source_pk = ?, updated_at = now()
      WHERE id = ?`,
     [...moduleParams(d), id],
   );
@@ -117,6 +162,7 @@ export async function modulesReferencing(key: string) {
   return all.filter((m) => m.fields.some((f) => f.type === 'relation' && f.relation_module === key));
 }
 
+/** Registros guardados en el panel (solo módulos de tipo records; las tablas reales no se borran con el módulo). */
 export async function countRecords(moduleId: number) {
   const row = await one<{ n: number }>('SELECT COUNT(*)::int AS n FROM admin.records WHERE module_id = ?', [moduleId]);
   return row?.n ?? 0;

@@ -31,7 +31,9 @@
 
 /* Paleta de la landing: verde finca #1d3324, crema #f3eadb y teja #d0703a.
    Claro: fondo crema muy suave, texto verde finca, acento teja oscurecido para que el texto blanco tenga ≥ 4.5:1. */
-:root {
+/* .light: para mostrar el tema claro dentro de una página oscura (vista previa de Apariencia). */
+:root,
+.light {
   --background: 40 45% 98%;
   --foreground: 140 27% 14%;
   --primary: 22 71% 42%;

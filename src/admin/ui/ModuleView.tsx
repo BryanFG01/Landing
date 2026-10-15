@@ -10,15 +10,18 @@ import { Modal } from '../../components/ui/modal';
 import { Pagination } from '../../components/ui/pagination';
 import { Select } from '../../components/ui/select';
 import { useToast } from '../../components/ui/toast';
-import { SYSTEM_FIELDS, type ModuleDefinition, type Option, type RecordRow, type RecordsPage } from '../schema';
+import { SYSTEM_FIELDS, type ModuleAccess, type ModuleDefinition, type Option, type RecordRow, type RecordsPage } from '../schema';
 import { PageHeader } from './AdminShell';
-import { api, ApiError } from './api';
+import { api, ApiError, download } from './api';
 import { formatCell } from './format';
 import { Icon } from './icons';
+import { ImportDialog } from './ImportDialog';
 import { initialValues, RecordForm, type FormValues } from './RecordForm';
 import { useRouter } from './router';
 
 type Mod = ModuleDefinition & { id: number };
+
+const SOURCE_BADGE: Record<string, string> = { table: 'Tabla', query: 'Consulta · solo lectura' };
 
 function useDebounced<T>(value: T, ms: number) {
   const [v, setV] = React.useState(value);
@@ -29,9 +32,20 @@ function useDebounced<T>(value: T, ms: number) {
   return v;
 }
 
-export function ModuleView({ module: mod }: { module: Mod }) {
+export function ModuleView({
+  module: mod,
+  access,
+  canConfigure,
+}: {
+  module: Mod;
+  access: ModuleAccess;
+  canConfigure: boolean;
+}) {
   const { toast } = useToast();
   const { navigate } = useRouter();
+  const canEdit = access === 'edit' && mod.source_type !== 'query';
+  const [importing, setImporting] = React.useState(false);
+  const [exporting, setExporting] = React.useState(false);
   const [filters, setFilters] = React.useState<FilterValues>({});
   const debouncedFilters = useDebounced(filters, 300);
   const [page, setPage] = React.useState(1);
@@ -117,29 +131,45 @@ export function ModuleView({ module: mod }: { module: Mod }) {
           </div>
         ),
       })),
-      {
-        key: '__actions',
-        label: '',
-        render: (_: unknown, row: RecordRow) => (
-          <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => openForm(row)}>
-              <Icon name="pencil" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Borrar"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setDeleting(row)}
-            >
-              <Icon name="trash" />
-            </Button>
-          </div>
-        ),
-      },
+      ...(canEdit
+        ? [
+            {
+              key: '__actions',
+              label: '',
+              render: (_: unknown, row: RecordRow) => (
+                <div className="flex justify-end gap-1">
+                  <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => openForm(row)}>
+                    <Icon name="pencil" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Borrar"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setDeleting(row)}
+                  >
+                    <Icon name="trash" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [mod.column_configs, fieldByKey, relationOptions],
+    [mod.column_configs, fieldByKey, relationOptions, canEdit],
   );
+
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      const qs = new URLSearchParams({ sort: sort.field, dir: sort.dir, filters: JSON.stringify(debouncedFilters) });
+      await download(`/m/${mod.module_key}/export?${qs}`);
+    } catch (err) {
+      toast({ variant: 'error', title: err instanceof Error ? err.message : 'No se pudo exportar.' });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // Ordenar: columnas marcadas como ordenables + el orden por defecto del módulo.
   const sortOptions = React.useMemo(() => {
@@ -166,7 +196,7 @@ export function ModuleView({ module: mod }: { module: Mod }) {
     setSaving(true);
     try {
       if (editing === 'new') await api(`/m/${mod.module_key}`, { method: 'POST', body: values });
-      else await api(`/m/${mod.module_key}/${editing.id}`, { method: 'PUT', body: values });
+      else await api(`/m/${mod.module_key}/${encodeURIComponent(String(editing.__id))}`, { method: 'PUT', body: values });
       toast({ variant: 'success', title: editing === 'new' ? 'Registro creado' : 'Cambios guardados' });
       setEditing(null);
       setReload((n) => n + 1);
@@ -183,7 +213,7 @@ export function ModuleView({ module: mod }: { module: Mod }) {
   async function confirmDelete() {
     if (!deleting) return;
     try {
-      await api(`/m/${mod.module_key}/${deleting.id}`, { method: 'DELETE' });
+      await api(`/m/${mod.module_key}/${encodeURIComponent(String(deleting.__id))}`, { method: 'DELETE' });
       toast({ variant: 'success', title: 'Registro borrado' });
       setDeleting(null);
       setReload((n) => n + 1);
@@ -205,14 +235,27 @@ export function ModuleView({ module: mod }: { module: Mod }) {
         title={mod.name}
         description={mod.description}
         icon={mod.icon}
+        badge={SOURCE_BADGE[mod.source_type] ?? (access === 'view' ? 'Solo lectura' : undefined)}
         actions={
           <>
-            <Button variant="outline" onClick={() => navigate(`/admin/modulos/${mod.id}`)}>
-              <Icon name="wrench" /> Configurar
+            {canConfigure && (
+              <Button variant="outline" onClick={() => navigate(`/admin/modulos/${mod.id}`)}>
+                <Icon name="wrench" /> Configurar
+              </Button>
+            )}
+            <Button variant="outline" onClick={exportCsv} disabled={exporting}>
+              <Icon name="download" /> {exporting ? 'Exportando…' : 'Exportar'}
             </Button>
-            <Button onClick={() => openForm('new')}>
-              <Icon name="plus" /> Nuevo registro
-            </Button>
+            {canEdit && (
+              <Button variant="outline" onClick={() => setImporting(true)}>
+                <Icon name="upload" /> Importar
+              </Button>
+            )}
+            {canEdit && (
+              <Button onClick={() => openForm('new')}>
+                <Icon name="plus" /> Nuevo registro
+              </Button>
+            )}
           </>
         }
       />
@@ -269,7 +312,7 @@ export function ModuleView({ module: mod }: { module: Mod }) {
       <Modal
         open={editing !== null}
         onOpenChange={(open) => !open && setEditing(null)}
-        title={editing === 'new' ? `Nuevo registro · ${mod.name}` : `Editar registro #${editing ? editing.id : ''}`}
+        title={editing === 'new' ? `Nuevo registro · ${mod.name}` : `Editar registro #${editing ? String(editing.__id) : ''}`}
         maxWidth="lg"
         className="max-h-[85dvh] overflow-y-auto"
       >
@@ -294,6 +337,17 @@ export function ModuleView({ module: mod }: { module: Mod }) {
           </Modal.Footer>
         </form>
       </Modal>
+
+      {canEdit && (
+        <ImportDialog
+          open={importing}
+          onOpenChange={setImporting}
+          moduleKey={mod.module_key}
+          moduleName={mod.name}
+          fields={mod.fields}
+          onImported={() => setReload((n) => n + 1)}
+        />
+      )}
 
       <Modal
         open={deleting !== null}

@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { parseModuleDefinition } from '../../../../admin/schema';
 import { audit } from '../../../../admin/server/db';
+import { validateDefinition } from '../../../../admin/server/definition';
 import { fail, json, readJson } from '../../../../admin/server/http';
-import { checkRelations, getModuleByKey, insertModule, listModules } from '../../../../admin/server/modules';
+import { getModuleByKey, insertModule, listModules } from '../../../../admin/server/modules';
 
 export const prerender = false;
 
@@ -10,7 +10,7 @@ export const prerender = false;
 export const GET: APIRoute = async () => json({ modules: await listModules() });
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const parsed = parseModuleDefinition(await readJson(request));
+  const parsed = await validateDefinition(await readJson(request));
   if (!parsed.ok) return fail(422, 'Revisa la configuración del módulo.', { errors: parsed.errors });
   const def = parsed.value;
 
@@ -19,8 +19,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       errors: [`La clave "${def.module_key}" ya está en uso.`],
     });
   }
-  const relErrors = await checkRelations(def);
-  if (relErrors.length) return fail(422, 'Revisa las relaciones.', { errors: relErrors });
 
   const id = await insertModule(def);
   await audit({ userId: locals.adminUser!.id, action: 'module_create', moduleId: id, detail: { key: def.module_key } });

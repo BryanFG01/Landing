@@ -1,7 +1,7 @@
 // Formato de las celdas según columnConfigs. El backend entrega los valores tal cual; presentarlos es cosa del frontend.
 import * as React from 'react';
 import { Badge } from '../../components/ui/badge';
-import type { ColumnConfig, FieldConfig, Option } from '../schema';
+import { fileUrl, parseFileRef, type ColumnConfig, type FieldConfig, type Option } from '../schema';
 
 const dateFmt = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 const dateTimeFmt = new Intl.DateTimeFormat('es-CO', {
@@ -35,6 +35,29 @@ export function formatCell(
   const options = field?.type === 'relation' ? relationOptions : field?.options;
 
   switch (column.data_type) {
+    case 'image': {
+      const ref = parseFileRef(value);
+      if (!ref) return <span className="text-muted-foreground">{empty}</span>;
+      return (
+        <a href={fileUrl(ref)} target="_blank" rel="noopener" className="inline-block">
+          <img
+            src={fileUrl(ref)}
+            alt={ref.name}
+            loading="lazy"
+            className="size-10 rounded-md border border-border object-cover"
+          />
+        </a>
+      );
+    }
+    case 'file': {
+      const ref = parseFileRef(value);
+      if (!ref) return <span className="text-muted-foreground">{empty}</span>;
+      return (
+        <a href={fileUrl(ref)} target="_blank" rel="noopener" className="text-primary underline-offset-4 hover:underline">
+          {ref.name}
+        </a>
+      );
+    }
     case 'number':
       return typeof value === 'number' ? numberFmt.format(value) : String(value);
     case 'currency':
@@ -70,6 +93,9 @@ export function formatCell(
         </span>
       );
     default: {
+      const ref = parseFileRef(value);
+      if (ref) return ref.name;
+      if (typeof value === 'object') return JSON.stringify(value);
       const text = options ? optionLabel(value, options) : String(value);
       return text.length > 80 ? `${text.slice(0, 80)}…` : text;
     }

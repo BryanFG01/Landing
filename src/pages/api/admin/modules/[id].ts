@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
-import { parseModuleDefinition } from '../../../../admin/schema';
 import { audit, exec } from '../../../../admin/server/db';
+import { validateDefinition } from '../../../../admin/server/definition';
 import { fail, json, readJson, toId } from '../../../../admin/server/http';
 import {
-  checkRelations,
   countRecords,
   getModuleById,
   getModuleByKey,
@@ -25,7 +24,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   const current = id && (await getModuleById(id));
   if (!current) return fail(404, 'El módulo no existe.');
 
-  const parsed = parseModuleDefinition(await readJson(request));
+  const parsed = await validateDefinition(await readJson(request));
   if (!parsed.ok) return fail(422, 'Revisa la configuración del módulo.', { errors: parsed.errors });
   const def = parsed.value;
 
@@ -40,15 +39,16 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
       });
     }
   }
-  const relErrors = await checkRelations(def);
-  if (relErrors.length) return fail(422, 'Revisa las relaciones.', { errors: relErrors });
 
   await updateModule(current.id, def);
   await audit({ userId: locals.adminUser!.id, action: 'module_update', moduleId: current.id, detail: { key: def.module_key } });
   return json({ ok: true });
 };
 
-/** Borra el módulo y todos sus registros (ON DELETE CASCADE). */
+/**
+ * Borra el módulo. Si es de registros, también sus registros (ON DELETE CASCADE). Si es de tabla o consulta, la
+ * tabla de la base no se toca.
+ */
 export const DELETE: APIRoute = async ({ params, locals }) => {
   const id = toId(params.id);
   const mod = id && (await getModuleById(id));

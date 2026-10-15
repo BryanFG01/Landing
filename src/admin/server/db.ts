@@ -6,15 +6,21 @@ import pg from 'pg';
 
 // COUNT(*) y bigint llegan como texto; aquí siempre caben en un number.
 pg.types.setTypeParser(pg.types.builtins.INT8, (v) => Number(v));
+// numeric como número (precios, totales de las consultas) y date como 'YYYY-MM-DD' (sin pasar por la zona horaria).
+pg.types.setTypeParser(pg.types.builtins.NUMERIC, (v) => Number(v));
+pg.types.setTypeParser(pg.types.builtins.DATE, (v) => v);
 
 let pool: pg.Pool | undefined;
+
+/** La base no está configurada (falta DATABASE_URL). Se distingue para dar un mensaje claro en el panel. */
+export class DbConfigError extends Error {}
 
 function getPool() {
   if (!pool) {
     // Se lee aquí y no al importar el módulo: el build (que prerenderiza la landing) no necesita la base.
     const connectionString = getSecret('DATABASE_URL');
     if (!connectionString) {
-      throw new Error(
+      throw new DbConfigError(
         'Falta DATABASE_URL: añade la cadena de Neon con pooling en las variables del proyecto (Vercel) o en .env (local).',
       );
     }
@@ -61,6 +67,68 @@ export async function transaction<T>(fn: (q: typeof query) => Promise<T>): Promi
     throw e;
   } finally {
     client.release();
+  }
+}
+
+/** Roles sin login para lo que se ejecuta contra el esquema datos (ver db/migrations/0003_fase2.sql). */
+export const DATOS_ROLE = { editor: 'admin_datos_editor', lector: 'admin_datos_lector' } as const;
+
+export type ScopedQuery = <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;
+
+/**
+ * Transacción con el rol de datos: no ve el esquema admin, search_path = datos y tiempo máximo por sentencia.
+ * `readOnly` además impide cualquier escritura. `fn` recibe la función de consulta (con `?`) y el cliente crudo.
+ */
+export async function scoped<T>(
+  opts: { role: keyof typeof DATOS_ROLE; readOnly?: boolean; timeoutMs?: number },
+  fn: (q: ScopedQuery, client: pg.PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await getPool().connect();
+  try {
+    await client.query(opts.readOnly ? 'BEGIN READ ONLY' : 'BEGIN');
+    await client.query(
+      `SET LOCAL ROLE ${DATOS_ROLE[opts.role]}; SET LOCAL search_path = datos; SET LOCAL statement_timeout = ${Math.floor(opts.timeoutMs ?? 10_000)}`,
+    );
+    const q: ScopedQuery = async (text, params = []) => (await client.query(toPg(text), params)).rows;
+    const result = await fn(q, client);
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/** Error de PostgreSQL con código SQLSTATE. */
+export const pgCode = (e: unknown) => (e && typeof e === 'object' && 'code' in e ? String(e.code) : '');
+
+/** Mensaje entendible para los errores de datos más comunes al escribir en una tabla. Null si no es uno de ellos. */
+export function friendlyDbError(e: unknown): string | null {
+  const code = pgCode(e);
+  const detail = e && typeof e === 'object' && 'detail' in e && e.detail ? ` (${String(e.detail)})` : '';
+  const column = e && typeof e === 'object' && 'column' in e && e.column ? ` "${String(e.column)}"` : '';
+  switch (code) {
+    case '23505':
+      return `Ya existe un registro con ese valor${detail}.`;
+    case '23503':
+      return `El dato está relacionado con otros registros${detail}.`;
+    case '23502':
+      return `Falta un dato obligatorio en la columna${column}.`;
+    case '23514':
+      return `Un valor no cumple las reglas de la tabla${detail}.`;
+    case '22P02':
+    case '22007':
+    case '22008':
+    case '22003':
+      return `Hay un valor con formato no válido para la columna${column}.`;
+    case '42501':
+      return 'Sin permiso sobre esa tabla. Si la creaste desde un IDE con otro usuario, dale permisos al panel (ver ADMIN.md).';
+    case '57014':
+      return 'La consulta tardó demasiado y se canceló.';
+    default:
+      return null;
   }
 }
 

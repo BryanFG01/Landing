@@ -26,8 +26,8 @@ export async function login(email: string, password: string): Promise<LoginResul
     return { ok: false, status: 429, error: `Demasiados intentos. Espera ${FAILED_WINDOW_MIN} minutos.` };
   }
 
-  const row = await one<{ id: number; email: string; name: string; password_hash: string; is_active: boolean }>(
-    'SELECT id, email, name, password_hash, is_active FROM admin.users WHERE lower(email) = ?',
+  const row = await one<AdminUser & { password_hash: string; is_active: boolean }>(
+    'SELECT id, email, name, role, password_hash, is_active FROM admin.users WHERE lower(email) = ?',
     [subject],
   );
 
@@ -40,7 +40,7 @@ export async function login(email: string, password: string): Promise<LoginResul
 
   await exec('UPDATE admin.users SET last_login_at = now() WHERE id = ?', [row.id]);
   await audit({ userId: row.id, action: 'login', subject });
-  return { ok: true, user: { id: row.id, email: row.email, name: row.name } };
+  return { ok: true, user: { id: row.id, email: row.email, name: row.name, role: row.role } };
 }
 
 export async function createSession(userId: number, cookies: AstroCookies, secure: boolean) {
@@ -56,7 +56,7 @@ export async function getSessionUser(cookies: AstroCookies): Promise<AdminUser |
   const token = cookies.get(SESSION_COOKIE)?.value;
   if (!token || !/^[0-9a-f]{64}$/.test(token)) return null;
   return one<AdminUser>(
-    `SELECT u.id, u.email, u.name FROM admin.sessions s
+    `SELECT u.id, u.email, u.name, u.role FROM admin.sessions s
      JOIN admin.users u ON u.id = s.user_id
      WHERE s.id = ? AND s.expires_at > now() AND u.is_active`,
     [await sha256(token)],

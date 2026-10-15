@@ -6,14 +6,16 @@ import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ToastProvider } from '../../components/ui/toast';
 import type { BreadcrumbItem } from '../../components/ui/breadcrumb';
-import type { AdminUser, ModuleDefinition, ModuleGroup } from '../schema';
+import type { AdminUser, Appearance, ModuleAccess, ModuleDefinition, ModuleGroup } from '../schema';
 import { AdminShell } from './AdminShell';
+import { AppearanceView } from './AppearanceView';
 import { DashboardView, type DashboardStats } from './DashboardView';
 import { ModuleEditor } from './ModuleEditor';
 import { ModulesList } from './ModulesList';
 import { ModuleView } from './ModuleView';
-import { NavProvider, useNav, type Nav } from './nav';
+import { AppearanceProvider, NavProvider, useNav, type Nav } from './nav';
 import { RouterProvider, useApiData, useRouter } from './router';
+import { SqlConsole } from './SqlConsole';
 import { UsersView } from './UsersView';
 
 type Mod = ModuleDefinition & { id: number };
@@ -24,13 +26,20 @@ type Route =
   | { name: 'modules' }
   | { name: 'editor'; id: number | null }
   | { name: 'users' }
+  | { name: 'sql' }
+  | { name: 'appearance' }
   | { name: 'not-found' };
+
+/** Rutas de configuración: solo administradores. */
+const ADMIN_ROUTES = new Set<Route['name']>(['modules', 'editor', 'users', 'sql', 'appearance']);
 
 function matchRoute(path: string): Route {
   const p = path.split('?')[0].replace(/\/+$/, '') || '/admin';
   if (p === '/admin') return { name: 'dashboard' };
   if (p === '/admin/modulos') return { name: 'modules' };
   if (p === '/admin/usuarios') return { name: 'users' };
+  if (p === '/admin/sql') return { name: 'sql' };
+  if (p === '/admin/apariencia') return { name: 'appearance' };
   let m = p.match(/^\/admin\/m\/([a-z][a-z0-9_]{1,47})$/);
   if (m) return { name: 'module', key: m[1] };
   m = p.match(/^\/admin\/modulos\/(nuevo|\d+)$/);
@@ -83,12 +92,12 @@ function DashboardRoute({ user }: { user: AdminUser }) {
   return <DashboardView user={user} stats={data.stats} />;
 }
 
-function ModuleRoute({ moduleKey }: { moduleKey: string }) {
-  const { data, error, reload } = useApiData<{ module: Mod }>(`/m/${moduleKey}/definition`);
+function ModuleRoute({ moduleKey, user }: { moduleKey: string; user: AdminUser }) {
+  const { data, error, reload } = useApiData<{ module: Mod; access: ModuleAccess }>(`/m/${moduleKey}/definition`);
   if (error) return <LoadError message={error} onRetry={reload} />;
   // Mientras llega la definición del módulo nuevo no se pinta la del anterior.
   if (!data || data.module.module_key !== moduleKey) return <PageSkeleton />;
-  return <ModuleView key={moduleKey} module={data.module} />;
+  return <ModuleView key={moduleKey} module={data.module} access={data.access} canConfigure={user.role === 'admin'} />;
 }
 
 function ModulesRoute() {
@@ -138,7 +147,7 @@ function Routes({ user }: { user: AdminUser }) {
     case 'module': {
       title = nav.modules.find((m) => m.module_key === route.key)?.name ?? 'Módulo';
       breadcrumb = [home, { label: title }];
-      content = <ModuleRoute moduleKey={route.key} />;
+      content = <ModuleRoute moduleKey={route.key} user={user} />;
       break;
     }
     case 'modules':
@@ -154,14 +163,30 @@ function Routes({ user }: { user: AdminUser }) {
       break;
     }
     case 'users':
-      title = 'Administradores';
+      title = 'Usuarios y permisos';
       breadcrumb = [home, { label: title }];
       content = <UsersView me={user} />;
+      break;
+    case 'sql':
+      title = 'Consola SQL';
+      breadcrumb = [home, { label: title }];
+      content = <SqlConsole />;
+      break;
+    case 'appearance':
+      title = 'Apariencia';
+      breadcrumb = [home, { label: title }];
+      content = <AppearanceView />;
       break;
     default:
       title = 'No encontrado';
       breadcrumb = [home, { label: title }];
       content = <LoadError message="Esta página del panel no existe." />;
+  }
+
+  if (ADMIN_ROUTES.has(route.name) && user.role !== 'admin') {
+    title = 'Sin acceso';
+    breadcrumb = [home, { label: title }];
+    content = <LoadError message="Esta parte del panel es solo para administradores." />;
   }
 
   React.useEffect(() => {
@@ -175,14 +200,16 @@ function Routes({ user }: { user: AdminUser }) {
   );
 }
 
-export default function AdminApp({ user, nav }: { user: AdminUser; nav: Nav }) {
+export default function AdminApp({ user, nav, appearance }: { user: AdminUser; nav: Nav; appearance: Appearance }) {
   return (
     <ToastProvider>
-      <NavProvider initial={nav}>
-        <RouterProvider>
-          <Routes user={user} />
-        </RouterProvider>
-      </NavProvider>
+      <AppearanceProvider initial={appearance}>
+        <NavProvider initial={nav}>
+          <RouterProvider>
+            <Routes user={user} />
+          </RouterProvider>
+        </NavProvider>
+      </AppearanceProvider>
     </ToastProvider>
   );
 }

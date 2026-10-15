@@ -9,7 +9,21 @@ function safeNext() {
   return next.startsWith('/admin') && !next.startsWith('//') && !next.startsWith('/admin/login') ? next : '/admin';
 }
 
-export function LoginView({ image, brand, tagline }: { image: string; brand: string; tagline: string }) {
+export function LoginView({
+  image,
+  brand,
+  tagline,
+  logo,
+  title,
+  text,
+}: {
+  image: string;
+  brand: string;
+  tagline: string;
+  logo: string;
+  title: string;
+  text: string;
+}) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string>();
 
@@ -42,12 +56,8 @@ export function LoginView({ image, brand, tagline }: { image: string; brand: str
           </a>
           <div className="hidden max-w-md lg:block">
             <p className="text-xs font-medium tracking-[0.2em] text-teja uppercase">{tagline}</p>
-            <h2 className="mt-4 text-5xl leading-[1.1] text-crema">
-              Del campo a tu mesa
-            </h2>
-            <p className="mt-4 text-sm text-crema/70">
-              Gestiona productos, pedidos y todo lo que se ve en la web desde un solo lugar.
-            </p>
+            <h2 className="mt-4 text-5xl leading-[1.1] text-crema">{title}</h2>
+            {text && <p className="mt-4 text-sm text-crema/70">{text}</p>}
           </div>
         </div>
       </aside>
@@ -64,17 +74,16 @@ export function LoginView({ image, brand, tagline }: { image: string; brand: str
             className="p-0"
             logo={
               <img
-                src="/icon-192.png"
+                src={logo}
                 alt={brand}
                 width={96}
                 height={96}
-                className="size-24 rounded-full bg-white shadow-lg shadow-black/30"
+                className="size-24 rounded-full bg-white object-contain shadow-lg shadow-black/30"
               />
             }
           />
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Acceso solo para administradores. ¿Problemas para entrar? Pide a otro administrador que te restablezca la
-            contraseña.
+            Acceso solo para el equipo. ¿Problemas para entrar? Pide a un administrador que te restablezca la contraseña.
           </p>
         </div>
       </section>
