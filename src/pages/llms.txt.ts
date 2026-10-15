@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { contacto, faqs, links, marca, precioPollo, productos, seo } from '../data/finca';
+import { contacto, faqs, links, marca, precioPanal, precioPollo, productos, seo } from '../data/finca';
 
 export const GET: APIRoute = ({ site }) => {
   if (!site) throw new Error('Falta site en astro.config.mjs');
@@ -19,7 +19,8 @@ ${marca.lema}: pollo campesino y huevos colorados a domicilio. Los pedidos se ha
 - Entregas: ${contacto.entregas}
 - Horario de pedidos: ${contacto.horario}
 - Pago: ${contacto.pagos}
-- Precio del pollo: ${precioPollo} la libra, entero o despresado (se pesa completo)
+- Precio del pollo: ${precioPollo} la libra con domicilio incluido, entero o despresado (se pesa completo)
+- Precio del panal de 30 huevos colorados: ${precioPanal}
 - Teléfono y WhatsApp: ${contacto.telefono}
 - Pedidos: ${links.pedir}
 - Instagram: ${links.instagram}

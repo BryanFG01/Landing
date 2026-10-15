@@ -30,6 +30,11 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
   const fill = stage.querySelector<HTMLElement>('[data-rail-fill]');
   const hint = stage.querySelector<HTMLElement>('[data-hint]');
   const clips = [...stage.querySelectorAll<HTMLVideoElement>('[data-clip]')];
+  // Clips automáticos: se reproducen solos, en bucle, en vez de avanzar con el scroll.
+  const auto = clips.map((clip) => clip.dataset.auto !== undefined);
+  // Qué clip se ve en cada parada: el suyo, o el de la anterior si la parada "continúa" (el vídeo no se corta).
+  const owner: number[] = [];
+  clips.forEach((clip, i) => owner.push(i > 0 && clip.dataset.continua !== undefined ? owner[i - 1] : i));
   const last = stops.length - 1;
   const focus = stops.map((stop) => Number(stop.dataset.focus ?? 50));
 
@@ -44,6 +49,8 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
   let active = 0;
   let shown = -1;
   let time = 0;
+  // Si el paseo está en pantalla: fuera de él no se reproduce ningún clip automático.
+  let visible = true;
 
   const setCurrent = (index: number) => {
     if (index === current) return;
@@ -61,10 +68,23 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
     stage.dataset.mode = 'video';
   };
 
+  // Pausa los clips automáticos que no son el activo (o todos, si se pasa -1).
+  const pauseAuto = (except: number) =>
+    clips.forEach((clip, i) => {
+      if (auto[i] && i !== except && !clip.paused) clip.pause();
+    });
+
   const sync = () => {
     const clip = clips[active];
     if (!clip || !ready[active]) {
       delete stage.dataset.mode;
+      return;
+    }
+    // Automático: solo se asegura de que se esté reproduciendo.
+    if (auto[active]) {
+      show();
+      if (!visible) clip.pause();
+      else if (clip.paused) clip.play().catch(() => {});
       return;
     }
     if (clip.seeking) return;
@@ -106,7 +126,13 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
   const scrub = () => {
     if (!clips.length) return;
     const lastClip = clips.length - 1;
-    active = Math.min(lastClip, Math.max(0, Math.floor(v + 0.5)));
+    const stop = Math.min(lastClip, Math.max(0, Math.floor(v + 0.5)));
+    active = owner[stop];
+    pauseAuto(active);
+    if (auto[active]) {
+      sync();
+      return;
+    }
     const start = active === 0 ? 0 : active - 0.5;
     const end = active === lastClip ? stops.length : active + 0.5;
     const { duration } = clips[active];
@@ -131,6 +157,13 @@ export function initWorld(world: HTMLElement, reduceMotion: boolean) {
     onRefresh: render,
   });
   render(span);
+
+  // Fuera del paseo, ningún clip automático se queda reproduciéndose oculto; al volver, sigue donde iba.
+  new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    if (visible) scrub();
+    else pauseAuto(-1);
+  }).observe(world);
 
   // Con movimiento reducido o ahorro de datos se quedan las fotos.
   const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;

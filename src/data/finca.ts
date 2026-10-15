@@ -10,15 +10,9 @@ import recogida from '../assets/photos/3-recogida.webp';
 import pollos from '../assets/photos/4-pollos.webp';
 import seleccion from '../assets/photos/5-seleccion.webp';
 import entrega from '../assets/photos/6-entrega.webp';
-// Primer fotograma de cada clip del paseo, sacado del propio MP4 para que encaje exactamente con él:
-// ffmpeg -i public/video/paseo-1.mp4 -frames:v 1 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" paseo-1.png
-// La parada 3 no tiene vídeo: su "póster" es la foto del huevo en la báscula.
-import poster1 from '../assets/paseo/paseo-1.webp';
-import poster2 from '../assets/paseo/paseo-2.webp';
-import poster3 from '../assets/paseo/paseo-3.webp';
-import poster4 from '../assets/paseo/paseo-4.webp';
-import poster5 from '../assets/paseo/paseo-5.webp';
-import poster6 from '../assets/paseo/paseo-6.webp';
+// Primer fotograma del vídeo del paseo, sacado del propio MP4 para que encaje exactamente con él:
+// ffmpeg -i public/video/pollos.mp4 -frames:v 1 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24" pollos.png
+import posterPollos from '../assets/paseo/pollos.webp';
 
 export const photos = { amanecer, gallinas, nidos, recogida, pollos, seleccion, entrega };
 
@@ -33,23 +27,29 @@ export const marca = {
 export const seo = {
   title: `${marca.nombre} · Pollo campesino y huevos colorados a domicilio`,
   description:
-    'Pollo campesino de piel amarilla natural, criado sin químicos ni aceleradores, y huevos colorados. Fresco del día, entero o despresado. Pide por WhatsApp: la libra de pollo a $4.500.',
+    'Pollo campesino de piel amarilla natural, criado sin químicos ni aceleradores, y huevos colorados. Fresco del día, entero o despresado. Pide por WhatsApp: la libra de pollo a $7.500 con domicilio incluido y el panal de huevos a $20.000.',
 };
 
 /** Precio del pollo por libra (entero o despresado, mismo precio). */
-export const precioPollo = '$4.500';
+export const precioPollo = '$7.500';
+/** Precio del panal (cubeta de 30 huevos colorados). */
+export const precioPanal = '$20.000';
 
-// Paseo (scroll world): vídeos reales, verticales, grabados con el celular. Un tramo por parada; avanza o retrocede con
-// el scroll. Mientras el clip de un tramo no ha cargado se ve su primer fotograma (`poster`).
-// Para que el scrub sea fluido, cada clip necesita keyframes muy seguidos (-g 3, sin B-frames). A 30 fps cada tramo ya
-// tiene de 97 a 240 fotogramas, así que no hace falta interpolar. El color va marcado como BT.709 con curva sRGB: sin
-// marcar, el navegador pinta el vídeo más claro que el póster y el cambio se nota. Los originales están en media/video-real.
-// ffmpeg -ss 0 -to 8 -i original.mp4 -an -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30" -c:v libx264 -preset slow -crf 24 -g 3 -keyint_min 3 -sc_threshold 0 -bf 0 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/paseo-1.mp4
+// Paseo (scroll world): un solo vídeo real (los pollos comiendo, grabado con el celular, vertical) que se reproduce solo y
+// en bucle durante todo el paseo; el scroll solo cambia el texto de cada parada. Mientras carga se ve su primer fotograma.
+// Cada parada puede tener su propio clip ('scroll' para avanzarlo con el scroll, como antes) o continuar el anterior.
+// El color va marcado como BT.709 con curva sRGB: sin marcar, el navegador pinta el vídeo más claro que el póster y el
+// cambio se nota. Los originales están en media/video-real.
+// ffmpeg -i original.mp4 -an -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30" -c:v libx264 -preset slow -crf 23 -g 60 -pix_fmt yuv420p -color_primaries bt709 -color_trc iec61966-2-1 -colorspace bt709 -color_range tv -movflags +faststart+write_colr public/video/pollos.mp4
 export type Parada = {
   id: string;
   lugar: string;
   /** Clip de este tramo. Sin clip, el tramo muestra solo su póster (una foto). */
   clip?: string;
+  /** 'scroll' (por defecto): el clip avanza con el scroll. 'auto': se reproduce solo, en bucle, mientras se ve. */
+  reproduccion?: 'scroll' | 'auto';
+  /** Sigue mostrando el clip de la parada anterior (que debe ser 'auto'): el vídeo no se corta entre las dos. */
+  continua?: boolean;
   /** Punto horizontal (0 a 100) que queda a la vista cuando el vertical se recorta por los lados. */
   focus: number;
   /** Primer fotograma del clip (vertical, como el vídeo). Se ve mientras el clip carga y encaja con él al aparecer. */
@@ -59,53 +59,21 @@ export type Parada = {
 
 export const paseo: { paradas: Parada[] } = {
   paradas: [
+    // El vídeo de los pollos arranca en la primera parada y las demás lo continúan: se ve de corrido, sin cortes.
     {
       id: 'inicio',
       lugar: 'Los huevos',
-      clip: '/video/paseo-1.mp4',
+      clip: '/video/pollos.mp4',
+      reproduccion: 'auto',
       focus: 50,
-      poster: poster1,
-      alt: 'Cubetas de cartón llenas de huevos colorados',
+      poster: posterPollos,
+      alt: 'Pollos jóvenes comiendo alrededor de un comedero rojo',
     },
-    {
-      id: 'crianza',
-      lugar: 'Las gallinas',
-      clip: '/video/paseo-2.mp4',
-      focus: 50,
-      poster: poster2,
-      alt: 'Gallinas coloradas comiendo verdura fresca en un comedero rojo',
-    },
-    {
-      id: 'precios',
-      lugar: 'El peso',
-      focus: 50,
-      poster: poster3,
-      alt: 'Un huevo colorado sobre una báscula de cocina que marca 79 gramos, delante de una cubeta de huevos',
-    },
-    {
-      id: 'frescura',
-      lugar: 'La selección',
-      clip: '/video/paseo-4.mp4',
-      focus: 50,
-      poster: poster4,
-      alt: 'Primeros planos de huevos colorados en su cubeta',
-    },
-    {
-      id: 'pollo',
-      lugar: 'Los pollos',
-      clip: '/video/paseo-5.mp4',
-      focus: 50,
-      poster: poster5,
-      alt: 'Pollos jóvenes alrededor de un comedero rojo con alimento',
-    },
-    {
-      id: 'como-pedir',
-      lugar: 'Tu pedido',
-      clip: '/video/paseo-6.mp4',
-      focus: 50,
-      poster: poster6,
-      alt: 'Pollos jóvenes comiendo en el galpón',
-    },
+    { id: 'crianza', lugar: 'Las gallinas', continua: true, focus: 50, poster: posterPollos, alt: '' },
+    { id: 'precios', lugar: 'El peso', continua: true, focus: 50, poster: posterPollos, alt: '' },
+    { id: 'frescura', lugar: 'La selección', continua: true, focus: 50, poster: posterPollos, alt: '' },
+    { id: 'pollo', lugar: 'Los pollos', continua: true, focus: 50, poster: posterPollos, alt: '' },
+    { id: 'como-pedir', lugar: 'Tu pedido', continua: true, focus: 50, poster: posterPollos, alt: '' },
   ],
 };
 
@@ -148,19 +116,19 @@ export const nav = [
 
 export type Producto = { nombre: string; detalle: string; precio: string };
 
-// El pollo no va por libra fija: se pesa completo y cada libra vale `precioPollo`, entero o despresado.
-// PENDIENTE: precio de los huevos.
+// El pollo no va por libra fija: se pesa completo y cada libra vale `precioPollo`, entero o despresado, con domicilio
+// incluido.
 export const productos: Producto[] = [
-  { nombre: 'Cubeta de huevos colorados', detalle: '30 huevos recogidos en la finca', precio: '$ —' },
-  { nombre: 'Media cubeta', detalle: '15 huevos colorados', precio: '$ —' },
+  { nombre: 'Panal de huevos colorados', detalle: 'Cubeta de 30 huevos colorados', precio: precioPanal },
   {
     nombre: 'Pollo campesino entero',
-    detalle: 'Fresco del día, sin cortar. Se pesa completo y pagas lo que pese',
+    detalle: 'Fresco del día, sin cortar. Se pesa completo y pagas lo que pese. Domicilio incluido',
     precio: `${precioPollo} / lb`,
   },
   {
     nombre: 'Pollo campesino despresado',
-    detalle: 'Despresado a mano en pechuga, piernas, alas, contramuslo y menudencias. Mismo precio por libra',
+    detalle:
+      'Despresado a mano en pechuga, piernas, alas, contramuslo y menudencias. Mismo precio por libra, domicilio incluido',
     precio: `${precioPollo} / lb`,
   },
 ];
@@ -212,8 +180,8 @@ export const faqs: Faq[] = [
     pending: 'Confirmar cada cuánto se recoge y cuántos días pasan hasta la entrega.',
   },
   {
-    pregunta: '¿Cuánto vale el pollo?',
-    respuesta: `La libra vale ${precioPollo}. No vendemos por libra fija: se pesa el pollo completo y lo que pese se multiplica por el precio de la libra.`,
+    pregunta: '¿Cuánto valen el pollo y los huevos?',
+    respuesta: `La libra vale ${precioPollo} con el domicilio incluido. No vendemos por libra fija: se pesa el pollo completo y lo que pese se multiplica por el precio de la libra. El panal de 30 huevos colorados vale ${precioPanal}.`,
   },
   {
     pregunta: '¿Lo puedo pedir entero o despresado?',
