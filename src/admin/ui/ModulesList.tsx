@@ -1,84 +1,23 @@
 // Constructor: lista de módulos y grupos del menú.
 import * as React from 'react';
-import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { DataTable } from '../../components/ui/data-table';
+import { DataTable, type ColumnDef } from '../../components/ui/data-table';
 import { Input } from '../../components/ui/input';
-import { useToast } from '../../components/ui/toast';
-import type { ModuleDefinition, ModuleGroup } from '../schema';
-import { PageHeader } from './AdminShell';
-import { api } from './api';
+import type { ModuleGroup } from '../schema';
+import { useGroups } from './hooks/useGroups';
 import { Icon } from './icons';
-import { useNav } from './nav';
+import { moduleRows, type Mod, type ModuleRow } from './lib/modules';
+import { PageHeader } from './PageHeader';
 import { useRouter } from './router';
-
-type Mod = ModuleDefinition & { id: number };
-
-function GroupsCard({ initial }: { initial: ModuleGroup[] }) {
-  const { toast } = useToast();
-  const { refreshNav } = useNav();
-  const [groups, setGroups] = React.useState(initial);
-  const [name, setName] = React.useState('');
-
-  async function run(fn: () => Promise<unknown>, ok: string) {
-    try {
-      await fn();
-      const r = await api<{ groups: ModuleGroup[] }>('/groups');
-      setGroups(r.groups);
-      await refreshNav();
-      toast({ variant: 'success', title: ok });
-    } catch (err) {
-      toast({ variant: 'error', title: err instanceof Error ? err.message : 'No se pudo guardar.' });
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Grupos del menú</CardTitle>
-        <CardDescription>Los apartados en los que se ordenan los módulos del sidebar.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {groups.map((g) => (
-          <GroupRow
-            key={g.id}
-            group={g}
-            onSave={(patch) => run(() => api(`/groups/${g.id}`, { method: 'PUT', body: { ...g, ...patch } }), 'Grupo guardado')}
-            onDelete={() => run(() => api(`/groups/${g.id}`, { method: 'DELETE' }), 'Grupo borrado')}
-          />
-        ))}
-        <form
-          className="flex gap-2 pt-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!name.trim()) return;
-            run(() => api('/groups', { method: 'POST', body: { name, sort_order: groups.length } }), 'Grupo creado').then(
-              () => setName(''),
-            );
-          }}
-        >
-          <div className="flex-1">
-            <Input placeholder="Nuevo grupo, p. ej. Ventas" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <Button type="submit" variant="outline">
-            <Icon name="plus" /> Añadir
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
+import { StatusBadge } from './StatusBadge';
 
 function GroupRow({
   group,
   onSave,
   onDelete,
-}: {
-  group: ModuleGroup;
-  onSave: (patch: Partial<ModuleGroup>) => void;
-  onDelete: () => void;
-}) {
+}: Readonly<{ group: ModuleGroup; onSave: (patch: Partial<ModuleGroup>) => void; onDelete: () => void }>) {
+  // Borrador local del formulario de la fila (solo visual hasta pulsar Guardar).
   const [name, setName] = React.useState(group.name);
   const [order, setOrder] = React.useState(String(group.sort_order));
   const dirty = name !== group.name || order !== String(group.sort_order);
@@ -106,20 +45,79 @@ function GroupRow({
   );
 }
 
-export function ModulesList({ modules, groups }: { modules: Mod[]; groups: ModuleGroup[] }) {
+function GroupsCard({ initial }: Readonly<{ initial: ModuleGroup[] }>) {
+  const groups = useGroups(initial);
+  const [name, setName] = React.useState('');
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (name.trim() && (await groups.create(name))) setName('');
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Grupos del menú</CardTitle>
+        <CardDescription>Los apartados en los que se ordenan los módulos del sidebar.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {groups.groups.map((g) => (
+          <GroupRow key={g.id} group={g} onSave={(patch) => groups.update(g, patch)} onDelete={() => groups.remove(g)} />
+        ))}
+        <form className="flex gap-2 pt-2" onSubmit={submit}>
+          <div className="flex-1">
+            <Input placeholder="Nuevo grupo, p. ej. Ventas" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <Button type="submit" variant="outline">
+            <Icon name="plus" /> Añadir
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Columnas de la tabla del constructor (presentación). */
+function columnsFor(navigate: (to: string) => void): ColumnDef<ModuleRow>[] {
+  return [
+    {
+      key: 'name',
+      label: 'Módulo',
+      sortable: true,
+      render: (_, r) => (
+        <a href={`/admin/modulos/${r.id}`} className="flex items-center gap-2 font-medium hover:text-primary">
+          <Icon name={r.icon} className="size-4 text-muted-foreground" />
+          {r.name}
+        </a>
+      ),
+    },
+    { key: 'module_key', label: 'Clave', render: (v) => <code className="text-xs">{String(v)}</code> },
+    { key: 'group', label: 'Grupo', sortable: true },
+    { key: 'source', label: 'Origen', sortable: true },
+    { key: 'fields', label: 'Campos' },
+    { key: 'filters', label: 'Filtros' },
+    { key: 'is_active', label: 'Estado', render: (v) => <StatusBadge active={v === true} /> },
+    {
+      key: 'id',
+      label: '',
+      render: (_, r) => (
+        <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/m/${r.module_key}`)}>
+            Abrir
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/modulos/${r.id}`)}>
+            Configurar
+          </Button>
+        </div>
+      ),
+    },
+  ];
+}
+
+export function ModulesList({ modules, groups }: Readonly<{ modules: Mod[]; groups: ModuleGroup[] }>) {
   const { navigate } = useRouter();
-  const groupName = new Map(groups.map((g) => [g.id, g.name]));
-  const rows = modules.map((m) => ({
-    id: m.id,
-    name: m.name,
-    module_key: m.module_key,
-    icon: m.icon,
-    group: m.group_id ? (groupName.get(m.group_id) ?? '—') : 'Sin grupo',
-    source: m.source_type === 'table' ? `Tabla ${m.source}` : m.source_type === 'query' ? 'Consulta SQL' : 'Registros',
-    fields: m.fields.length,
-    filters: m.filters.length,
-    is_active: m.is_active,
-  }));
+  const rows = React.useMemo(() => moduleRows(modules, groups), [modules, groups]);
+  const columns = React.useMemo(() => columnsFor(navigate), [navigate]);
 
   return (
     <>
@@ -135,57 +133,7 @@ export function ModulesList({ modules, groups }: { modules: Mod[]; groups: Modul
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <Card className="p-4">
-          <DataTable
-            data={rows}
-            searchable
-            emptyText="Aún no hay módulos. Crea el primero."
-            columns={[
-              {
-                key: 'name',
-                label: 'Módulo',
-                sortable: true,
-                render: (_, r) => (
-                  <a href={`/admin/modulos/${r.id}`} className="flex items-center gap-2 font-medium hover:text-primary">
-                    <Icon name={r.icon} className="size-4 text-muted-foreground" />
-                    {r.name}
-                  </a>
-                ),
-              },
-              { key: 'module_key', label: 'Clave', render: (v) => <code className="text-xs">{String(v)}</code> },
-              { key: 'group', label: 'Grupo', sortable: true },
-              { key: 'source', label: 'Origen', sortable: true },
-              { key: 'fields', label: 'Campos' },
-              { key: 'filters', label: 'Filtros' },
-              {
-                key: 'is_active',
-                label: 'Estado',
-                render: (v) =>
-                  v ? (
-                    <Badge variant="success" size="sm" dot>
-                      Activo
-                    </Badge>
-                  ) : (
-                    <Badge variant="muted" size="sm">
-                      Inactivo
-                    </Badge>
-                  ),
-              },
-              {
-                key: 'id',
-                label: '',
-                render: (_, r) => (
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/m/${r.module_key}`)}>
-                      Abrir
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/admin/modulos/${r.id}`)}>
-                      Configurar
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
-          />
+          <DataTable data={rows} searchable emptyText="Aún no hay módulos. Crea el primero." columns={columns} />
         </Card>
         <GroupsCard initial={groups} />
       </div>

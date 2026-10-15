@@ -219,6 +219,23 @@ export type ModuleAccess = 'none' | 'view' | 'edit';
 /** Una fila de cualquier origen. `__id` identifica la fila (id del registro o valor de la clave de la tabla). */
 export type RecordRow = { __id: string | number } & Record<string, unknown>;
 
+/** Resumen del inicio del panel (solo con los módulos que el usuario puede ver). */
+export interface DashboardStats {
+  modules: {
+    module_key: string;
+    name: string;
+    icon: string | null;
+    description: string | null;
+    source_type: string;
+    /** Null en consultas (no se cuentan) o si la tabla no está disponible. */
+    records: number | null;
+  }[];
+  totalRecords: number;
+  /** Solo para administradores. */
+  admins: number | null;
+  recent: { action: string; created_at: string; user: string | null; module: string | null; record_id: number | null }[];
+}
+
 export interface RecordsPage {
   type: 'table';
   columnConfigs: ColumnConfig[];
@@ -408,7 +425,7 @@ export function parseModuleDefinition(
       column,
       headerText: str(r.headerText) || fields.find((f) => f.key === column)?.label || SYSTEM_FIELDS[column]?.label || column,
       data_type: pick(r.data_type, COLUMN_TYPES, 'text')!,
-      align: pick(r.align, { left: 1, center: 1, right: 1 }, 'left'),
+      align: pick<NonNullable<ColumnConfig['align']>>(r.align, { left: 1, center: 1, right: 1 }, 'left'),
       sortable: r.sortable === true,
       null_display: typeof r.null_display === 'string' ? r.null_display : '—',
     });

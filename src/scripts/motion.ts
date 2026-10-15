@@ -3,9 +3,10 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initWorld } from './world';
 
+// window.lenis lo usa la propia librería para sus datos: la instancia va en otro nombre.
 declare global {
   interface Window {
-    lenis?: Lenis;
+    smoothScroll?: Lenis;
   }
 }
 
@@ -21,7 +22,7 @@ if (!reduceMotion) {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
-  window.lenis = lenis;
+  window.smoothScroll = lenis;
 }
 
 // Entradas al hacer scroll: IntersectionObserver, nunca un listener de scroll.

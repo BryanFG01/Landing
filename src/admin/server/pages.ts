@@ -1,6 +1,5 @@
 // Resumen del inicio del panel.
-import type { AdminUser } from '../schema';
-import type { DashboardStats } from '../ui/DashboardView';
+import type { AdminUser, DashboardStats } from '../schema';
 import { one, query } from './db';
 import { accessMap, listModules } from './modules';
 import { countRows } from './sources';
@@ -30,7 +29,7 @@ export async function getDashboardStats(user: AdminUser): Promise<DashboardStats
   const modules = visible.map((m, i) => ({
     module_key: m.module_key,
     name: m.name,
-    icon: m.icon,
+    icon: m.icon ?? null,
     description: m.description ?? null,
     source_type: m.source_type,
     records: counts[i],

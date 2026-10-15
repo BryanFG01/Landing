@@ -21,6 +21,22 @@ Sigue la idea del patrón "reportes como código" de ERPCloud: la presentación 
 
 Solo `/admin` y `/api/admin` se ejecutan como funciones de Vercel; la landing se sigue sirviendo como archivos estáticos.
 
+### Dónde va cada cosa (responsabilidades)
+
+**La lógica nunca va en los `.tsx` ni en los `.astro`**: los componentes solo pintan. Las reglas completas están en la skill `.claude/skills/clean-code/SKILL.md`.
+
+| Capa | Carpeta | Qué contiene |
+| --- | --- | --- |
+| Dominio | `src/admin/schema.ts`, `src/data/sitio.ts`, `src/admin/xlsx.ts` | Tipos, validación y reglas compartidas por navegador y servidor |
+| Servidor | `src/admin/server/` | SQL (siempre con parámetros), permisos, reglas de negocio |
+| API | `src/pages/api/admin/` | Controladores delgados: validar → servidor → responder |
+| Hooks | `src/admin/ui/hooks/use*.ts` | Estado, efectos, llamadas a la API y acciones de cada pantalla |
+| Lógica de UI | `src/admin/ui/lib/*.ts` | Transformaciones puras para pintar (sin React ni `fetch`) |
+| Cliente de la API | `src/admin/ui/api.ts` | Única puerta del navegador a `/api/admin` |
+| Componentes | `src/admin/ui/**/*.tsx` | Solo JSX: reciben datos y acciones del hook. Pantallas grandes divididas en carpetas (`module-editor/`, `site/`, `sql/`, `users/`, `records/`) |
+
+Las dependencias solo bajan: componentes → hooks → `lib`/`api.ts` → dominio; API → servidor → dominio. Ningún componente importa de `server/`.
+
 **Conexiones a Neon.** Dos cadenas de la misma base:
 
 | Variable | Host | Para qué |

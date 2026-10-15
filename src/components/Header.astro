@@ -196,10 +196,10 @@ const nav = menu(site);
     if (main) main.inert = open;
     if (footer) footer.inert = open;
     if (open) {
-      window.lenis?.stop();
+      window.smoothScroll?.stop();
       menu.querySelector<HTMLAnchorElement>('a')?.focus({ preventScroll: true });
     } else {
-      window.lenis?.start();
+      window.smoothScroll?.start();
     }
   };
 
@@ -218,7 +218,7 @@ const nav = menu(site);
       if (!target) return;
       event.preventDefault();
       setOpen(false);
-      if (window.lenis) window.lenis.scrollTo(target);
+      if (window.smoothScroll) window.smoothScroll.scrollTo(target);
       else target.scrollIntoView();
     });
   });

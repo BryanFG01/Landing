@@ -1,121 +1,41 @@
-// Importar filas desde un CSV (o un Excel guardado como CSV): se lee en el navegador, se empareja cada campo del
-// módulo con una columna del archivo y el servidor valida todas las filas antes de guardar ninguna.
+// Importar filas desde un Excel (.xlsx) o un CSV: se lee en el navegador, se empareja cada campo del módulo con una
+// columna del archivo y el servidor valida todas las filas antes de guardar ninguna. La lógica está en
+// hooks/useImport.ts y lib/spreadsheet.ts.
 import * as React from 'react';
 import { Alert } from '../../components/ui/alert';
 import { Button } from '../../components/ui/button';
 import { Modal } from '../../components/ui/modal';
 import { Select } from '../../components/ui/select';
-import { useToast } from '../../components/ui/toast';
 import type { FieldConfig } from '../schema';
-import { api, ApiError } from './api';
-import { buildXlsx, readXlsx } from '../xlsx';
-import { normalize, parseCsv } from './csv';
+import { FilePicker } from './FilePicker';
+import { useImport } from './hooks/useImport';
 import { Icon } from './icons';
+import { SKIP } from './lib/spreadsheet';
 
-const SKIP = '__skip__';
+const ACCEPT = '.xlsx,.csv,text/csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-export function ImportDialog({
-  open,
-  onOpenChange,
-  moduleKey,
-  moduleName,
-  fields,
-  onImported,
-}: {
+interface ImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   moduleKey: string;
   moduleName: string;
   fields: FieldConfig[];
   onImported: () => void;
-}) {
-  const { toast } = useToast();
-  // Las fotos y archivos no se importan desde un CSV.
-  const importable = fields.filter((f) => f.type !== 'image' && f.type !== 'file');
-  const [fileName, setFileName] = React.useState('');
-  const [rows, setRows] = React.useState<string[][]>([]);
-  const [mapping, setMapping] = React.useState<Record<string, string>>({});
-  const [errors, setErrors] = React.useState<string[]>([]);
-  const [busy, setBusy] = React.useState(false);
-  const input = React.useRef<HTMLInputElement>(null);
+}
 
-  const headers = rows[0] ?? [];
-  const data = rows.slice(1);
+export function ImportDialog({ open, onOpenChange, moduleKey, moduleName, fields, onImported }: Readonly<ImportDialogProps>) {
+  const imp = useImport({ moduleKey, moduleName, fields, onDone: onImported });
+  const hasFile = imp.headers.length > 0;
 
-  function reset() {
-    setFileName('');
-    setRows([]);
-    setMapping({});
-    setErrors([]);
+  function close(isOpen: boolean) {
+    if (!isOpen) imp.reset();
+    onOpenChange(isOpen);
   }
-
-  async function pick(file: File | undefined) {
-    if (!file) return;
-    reset();
-    let parsed: string[][];
-    try {
-      parsed = /\.xlsx$/i.test(file.name)
-        ? readXlsx(new Uint8Array(await file.arrayBuffer()), new DOMParser())
-        : parseCsv(await file.text());
-    } catch {
-      setErrors(['No se pudo leer el archivo. Usa un Excel (.xlsx) o un CSV.']);
-      return;
-    }
-    if (parsed.length < 2) {
-      setErrors(['El archivo no tiene filas debajo de los encabezados.']);
-      return;
-    }
-    setFileName(file.name);
-    setRows(parsed);
-    // Emparejado automático por clave o por etiqueta del campo.
-    const byName = new Map(parsed[0].map((h, i) => [normalize(h), String(i)]));
-    setMapping(
-      Object.fromEntries(
-        importable.map((f) => [f.key, byName.get(normalize(f.key)) ?? byName.get(normalize(f.label)) ?? SKIP]),
-      ),
-    );
-  }
-
-  async function submit() {
-    setBusy(true);
-    setErrors([]);
-    try {
-      const payload = data.map((r) =>
-        Object.fromEntries(
-          importable.filter((f) => mapping[f.key] !== SKIP).map((f) => [f.key, r[Number(mapping[f.key])] ?? '']),
-        ),
-      );
-      const res = await api<{ inserted: number }>(`/m/${moduleKey}/import`, { method: 'POST', body: { rows: payload } });
-      toast({ variant: 'success', title: `${res.inserted} fila(s) importada(s)` });
-      reset();
-      onOpenChange(false);
-      onImported();
-    } catch (e) {
-      setErrors(e instanceof ApiError && e.errors.length ? e.errors : [e instanceof Error ? e.message : 'No se pudo importar.']);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function downloadTemplate() {
-    const xlsx = buildXlsx(moduleName, importable.map((f) => f.label), []);
-    const blob = new Blob([xlsx as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), { href: url, download: `plantilla-${moduleKey}.xlsx` });
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-
-  const missingRequired = importable.filter((f) => f.required && mapping[f.key] === SKIP);
-  const columnOptions = [{ value: SKIP, label: '— No importar —' }, ...headers.map((h, i) => ({ value: String(i), label: h || `Columna ${i + 1}` }))];
 
   return (
     <Modal
       open={open}
-      onOpenChange={(o) => {
-        if (!o) reset();
-        onOpenChange(o);
-      }}
+      onOpenChange={close}
       title={`Importar a ${moduleName}`}
       description="Sube un Excel (.xlsx) o un CSV. Lo más fácil: exporta o descarga la plantilla, rellénala en Excel y súbela. Se valida todo antes de guardar: si una fila tiene errores, no se importa nada."
       maxWidth="lg"
@@ -123,41 +43,30 @@ export function ImportDialog({
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            ref={input}
-            type="file"
-            accept=".xlsx,.csv,text/csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            className="sr-only"
-            onChange={(e) => {
-              pick(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-            aria-label="Archivo Excel o CSV"
-          />
-          <Button variant="outline" onClick={() => input.current?.click()}>
-            <Icon name="upload" /> {fileName ? 'Elegir otro archivo' : 'Elegir archivo (Excel o CSV)'}
-          </Button>
-          <Button variant="ghost" onClick={downloadTemplate}>
+          <FilePicker accept={ACCEPT} label="Archivo Excel o CSV" size="md" onPick={imp.pick}>
+            {imp.fileName ? 'Elegir otro archivo' : 'Elegir archivo (Excel o CSV)'}
+          </FilePicker>
+          <Button variant="ghost" onClick={imp.downloadTemplate}>
             <Icon name="download" /> Descargar plantilla
           </Button>
-          {fileName && (
+          {imp.fileName && (
             <span className="text-sm text-muted-foreground">
-              {fileName} · {data.length} fila(s)
+              {imp.fileName} · {imp.rowCount} fila(s)
             </span>
           )}
         </div>
 
-        {headers.length > 0 && (
+        {hasFile && (
           <div>
             <p className="mb-2 text-sm font-medium">¿Qué columna del archivo va en cada campo?</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              {importable.map((f) => (
+              {imp.importable.map((f) => (
                 <Select
                   key={f.key}
                   label={f.required ? `${f.label} *` : f.label}
-                  options={columnOptions}
-                  value={mapping[f.key] ?? SKIP}
-                  onValueChange={(v) => setMapping((m) => ({ ...m, [f.key]: v }))}
+                  options={imp.columnOptions}
+                  value={imp.mapping[f.key] ?? SKIP}
+                  onValueChange={(column) => imp.setColumn(f.key, column)}
                 />
               ))}
             </div>
@@ -168,14 +77,14 @@ export function ImportDialog({
           </div>
         )}
 
-        {missingRequired.length > 0 && headers.length > 0 && (
-          <Alert variant="warning">Faltan campos obligatorios: {missingRequired.map((f) => f.label).join(', ')}.</Alert>
+        {hasFile && imp.missing.length > 0 && (
+          <Alert variant="warning">Faltan campos obligatorios: {imp.missing.map((f) => f.label).join(', ')}.</Alert>
         )}
 
-        {errors.length > 0 && (
+        {imp.errors.length > 0 && (
           <Alert variant="error" title="No se importó nada">
             <ul className="max-h-48 list-disc space-y-0.5 overflow-y-auto pl-4">
-              {errors.map((e) => (
+              {imp.errors.map((e) => (
                 <li key={e}>{e}</li>
               ))}
             </ul>
@@ -184,11 +93,14 @@ export function ImportDialog({
       </div>
 
       <Modal.Footer>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <Button variant="outline" onClick={() => close(false)}>
           Cancelar
         </Button>
-        <Button onClick={submit} disabled={busy || !data.length || missingRequired.length > 0}>
-          {busy ? 'Importando…' : `Importar ${data.length || ''} fila(s)`}
+        <Button
+          onClick={async () => (await imp.submit()) && onOpenChange(false)}
+          disabled={imp.busy || !imp.rowCount || imp.missing.length > 0}
+        >
+          {imp.busy ? 'Importando…' : `Importar ${imp.rowCount || ''} fila(s)`}
         </Button>
       </Modal.Footer>
     </Modal>

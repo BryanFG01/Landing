@@ -13,7 +13,7 @@ export function queryErrorMessage(e: unknown) {
   if (e instanceof QueryShapeError) return e.message;
   const friendly = friendlyDbError(e);
   if (friendly) return friendly;
-  if (e && typeof e === 'object' && 'code' in e) return `Error en la consulta: ${(e as Error).message}`;
+  if (e instanceof Error && 'code' in e) return `Error en la consulta: ${e.message}`;
   return null;
 }
 

@@ -26,8 +26,8 @@ async function friendly<T>(fn: () => Promise<T>): Promise<T> {
     const msg = friendlyDbError(e);
     if (msg) throw new SourceError(msg, 422);
     // Errores de SQL de una consulta: el mensaje de PostgreSQL ayuda a corregirla.
-    if (e && typeof e === 'object' && 'code' in e && /^42/.test(String(e.code))) {
-      throw new SourceError(`Error en la consulta: ${(e as Error).message}`, 422);
+    if (e instanceof Error && 'code' in e && String(e.code).startsWith('42')) {
+      throw new SourceError(`Error en la consulta: ${e.message}`, 422);
     }
     throw e;
   }

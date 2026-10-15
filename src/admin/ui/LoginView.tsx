@@ -1,43 +1,19 @@
 // Login del panel con la identidad de la landing: foto de la finca, verde, crema y teja, y Hina Mincho en los títulos.
 import * as React from 'react';
 import { Login } from '../../components/ui/login';
-import { api, ApiError } from './api';
+import { useLogin } from './hooks/useLogin';
 
-/** Solo se vuelve a rutas del propio admin, nunca a una URL externa. */
-function safeNext() {
-  const next = new URLSearchParams(location.search).get('next') ?? '';
-  return next.startsWith('/admin') && !next.startsWith('//') && !next.startsWith('/admin/login') ? next : '/admin';
-}
-
-export function LoginView({
-  image,
-  brand,
-  tagline,
-  logo,
-  title,
-  text,
-}: {
+interface LoginViewProps {
   image: string;
   brand: string;
   tagline: string;
   logo: string;
   title: string;
   text: string;
-}) {
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string>();
+}
 
-  async function submit(values: { email: string; password: string }) {
-    setLoading(true);
-    setError(undefined);
-    try {
-      await api('/auth/login', { method: 'POST', body: values });
-      location.href = safeNext();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo conectar. Inténtalo de nuevo.');
-      setLoading(false);
-    }
-  }
+export function LoginView({ image, brand, tagline, logo, title, text }: Readonly<LoginViewProps>) {
+  const { loading, error, submit } = useLogin();
 
   return (
     <main className="grid min-h-dvh bg-background text-foreground lg:grid-cols-[1.15fr_1fr]">
