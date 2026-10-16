@@ -11,13 +11,13 @@ Sigue la idea del patrón "reportes como código" de ERPCloud: la presentación 
 | Pieza | Tecnología | Dónde |
 | --- | --- | --- |
 | Landing | Astro estático (sin cambios, se prerenderiza) | `src/pages/index.astro` |
-| Admin (páginas) | Una sola página Astro SSR con una isla React que navega en cliente (SPA) | `src/pages/admin/[...path].astro`, `src/admin/ui/router.tsx` |
+| Admin (páginas) | Una sola página Astro SSR con una isla React que navega en cliente (SPA) | `src/pages/admin/[...path].astro`, `src/features/admin/core/ui/router.tsx` |
 | API | Endpoints de Astro como funciones de Vercel | `src/pages/api/admin/` |
-| Base de datos | Neon (PostgreSQL), `node-postgres` + `attachDatabasePool` | `db/migrations/`, `src/admin/server/db.ts` |
-| UI | [nuvo-ui](https://nuvo-ui.xyz/) copiado en el proyecto | `src/components/ui/` |
-| Lógica compartida | Contrato de módulos + validación | `src/admin/schema.ts` |
-| Servidor | Auth, módulos, registros | `src/admin/server/` |
-| Vistas | Shell, módulo genérico, constructor | `src/admin/ui/` |
+| Base de datos | Neon (PostgreSQL), `node-postgres` + `attachDatabasePool` | `db/migrations/`, `src/shared/server/db.ts` |
+| UI | [nuvo-ui](https://nuvo-ui.xyz/) copiado en el proyecto | `src/shared/ui/` |
+| Lógica compartida | Contrato de módulos + validación | `src/features/admin/core/domain/schema.ts` |
+| Servidor | Auth, módulos, registros | `src/features/admin/<feature>/server/` |
+| Vistas | Shell, módulo genérico, constructor | `src/features/admin/<feature>/ui/` |
 
 Solo `/admin` y `/api/admin` se ejecutan como funciones de Vercel; la landing se sigue sirviendo como archivos estáticos.
 
@@ -25,15 +25,17 @@ Solo `/admin` y `/api/admin` se ejecutan como funciones de Vercel; la landing se
 
 **La lógica nunca va en los `.tsx` ni en los `.astro`**: los componentes solo pintan. Las reglas completas están en la skill `.claude/skills/clean-code/SKILL.md`.
 
-| Capa | Carpeta | Qué contiene |
+El código está organizado **por feature** (Clean Architecture modular): cada parte del panel tiene su carpeta en `src/features/admin/` (`core`, `shell`, `auth`, `records`, `module-editor`, `users`, `site-editor`, `sql`, `dashboard`, `orders`, `appearance`) y dentro repite las mismas capas. Lo que usan varias features vive en `core/` (panel) o en `src/shared/` (panel y landing).
+
+| Capa | Carpeta (dentro de cada feature) | Qué contiene |
 | --- | --- | --- |
-| Dominio | `src/admin/schema.ts`, `src/data/sitio.ts`, `src/admin/xlsx.ts` | Tipos, validación y reglas compartidas por navegador y servidor |
-| Servidor | `src/admin/server/` | SQL (siempre con parámetros), permisos, reglas de negocio |
+| Dominio | `domain/` (p. ej. `core/domain/schema.ts`, `records/domain/xlsx.ts`) y `src/features/landing/domain/sitio.ts` | Tipos, validación y reglas compartidas por navegador y servidor |
+| Servidor | `server/` (y `src/shared/server/db.ts`, `http.ts`) | SQL (siempre con parámetros), permisos, reglas de negocio |
 | API | `src/pages/api/admin/` | Controladores delgados: validar → servidor → responder |
-| Hooks | `src/admin/ui/hooks/use*.ts` | Estado, efectos, llamadas a la API y acciones de cada pantalla |
-| Lógica de UI | `src/admin/ui/lib/*.ts` | Transformaciones puras para pintar (sin React ni `fetch`) |
-| Cliente de la API | `src/admin/ui/api.ts` | Única puerta del navegador a `/api/admin` |
-| Componentes | `src/admin/ui/**/*.tsx` | Solo JSX: reciben datos y acciones del hook. Pantallas grandes divididas en carpetas (`module-editor/`, `site/`, `sql/`, `users/`, `records/`) |
+| Hooks | `ui/hooks/use*.ts` | Estado, efectos, llamadas a la API y acciones de cada pantalla |
+| Lógica de UI | `ui/lib/*.ts` | Transformaciones puras para pintar (sin React ni `fetch`) |
+| Cliente de la API | `src/features/admin/core/ui/api.ts` | Única puerta del navegador a `/api/admin` |
+| Componentes | `ui/*.tsx` (+ su `.types.ts`) | Solo JSX: reciben datos y acciones del hook |
 
 Las dependencias solo bajan: componentes → hooks → `lib`/`api.ts` → dominio; API → servidor → dominio. Ningún componente importa de `server/`.
 
@@ -72,7 +74,7 @@ Dos esquemas: **`admin`** (lo interno del panel) y **`datos`** (tablas de negoci
 
 ## Contrato de un módulo
 
-Todo se valida en `parseModuleDefinition` (`src/admin/schema.ts`) antes de guardarse.
+Todo se valida en `parseModuleDefinition` (`src/features/admin/core/domain/schema.ts`) antes de guardarse.
 
 ### `fields`: el formulario
 
@@ -98,7 +100,7 @@ Mismos nombres que `columnConfigs` en ERPCloud:
 { "column": "precio", "headerText": "Precio", "data_type": "currency", "align": "right", "sortable": true, "null_display": "—" }
 ```
 
-`data_type`: `text`, `number`, `currency`, `date`, `datetime`, `boolean`, `badge`, `list`. `column` puede ser un campo o uno de sistema (`id`, `created_at`, `updated_at`). El formato es cosa del frontend (`src/admin/ui/format.tsx`).
+`data_type`: `text`, `number`, `currency`, `date`, `datetime`, `boolean`, `badge`, `list`. `column` puede ser un campo o uno de sistema (`id`, `created_at`, `updated_at`). El formato es cosa del frontend (`src/features/admin/core/ui/format.tsx`).
 
 ### `filters`: los filtros
 
@@ -153,7 +155,7 @@ Solo administradores: `/modules`, `/groups`, `/users`, `/sql`, `/tables`, `/sett
 
 ## Sitio web: editar la landing desde el panel (`/admin/sitio`)
 
-Todo lo que se ve en la landing sale de un documento de contenido (`src/data/sitio.ts`), editable por bloques:
+Todo lo que se ve en la landing sale de un documento de contenido (`src/features/landing/domain/sitio.ts`), editable por bloques:
 
 | Sección | Qué se cambia |
 | --- | --- |
@@ -173,7 +175,7 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 
 **Configurar el Deploy Hook (una vez):** Vercel → proyecto → Settings → Git → Deploy Hooks → crear uno para la rama de producción (`main`) → copiar la URL → Settings → Environment Variables → `VERCEL_DEPLOY_HOOK` (Production) → Redeploy. Sin él, "Publicar" guarda pero la web cambia en el siguiente despliegue normal.
 
-**Imágenes.** Se suben desde el editor, se reducen en el navegador (máx. 1920 px, WebP) y se guardan en `admin.files` con `public = true`. Se sirven sin sesión en `/media/<id>` con caché de un año (la CDN de Vercel las guarda tras la primera visita). Las imágenes que vienen con el proyecto se nombran `asset:<clave>` (`src/data/assets.ts`) y siguen pasando por `astro:assets` (AVIF/WebP). Los **videos** no se suben desde el panel (Safari necesita peticiones parciales que una función no da bien): se eligen de `public/video/` o se pega una URL https.
+**Imágenes.** Se suben desde el editor, se reducen en el navegador (máx. 1920 px, WebP) y se guardan en `admin.files` con `public = true`. Se sirven sin sesión en `/media/<id>` con caché de un año (la CDN de Vercel las guarda tras la primera visita). Las imágenes que vienen con el proyecto se nombran `asset:<clave>` (`src/features/landing/domain/assets.ts`) y siguen pasando por `astro:assets` (AVIF/WebP). Los **videos** no se suben desde el panel (Safari necesita peticiones parciales que una función no da bien): se eligen de `public/video/` o se pega una URL https.
 
 **Chat de ayuda** (Sitio web → General → Chat de ayuda). Botón flotante con una conversación guiada por botones, sin IA y sin costo:
 
@@ -184,7 +186,7 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
   - `POST /api/pedido` (público): solo acepta peticiones desde la propia web (cabecera `Origin`), recalcula productos y precios con lo publicado (no se fía de lo que manda el navegador), valida teléfono y entrega, descarta bots con un campo trampa y limita a 5 pedidos por IP cada 10 min y 120 por hora en total (`audit_log`, acción `web_order`, IP guardada como SHA-256).
   - Si el registro falla o el módulo no existe, WhatsApp se abre igual: el pedido nunca se pierde.
 - **Se configura:** mostrarlo u ocultarlo, texto y lado del botón, nombre del asistente, bienvenida, preguntas, entregas, nota, registro en el panel y plantilla del mensaje. Sale con Publicar, como el resto.
-- **Código:** reglas del pedido en `src/data/chat.ts` (puro, también valida el pedido en el servidor), conversación en `src/scripts/chat.ts`, marco en `src/components/ChatBot.astro` y guardado en `src/admin/server/webOrders.ts`. No usa React: la landing sigue ligera.
+- **Código:** reglas del pedido en `src/features/landing/domain/chat.ts` (puro, también valida el pedido en el servidor), conversación en `src/features/landing/scripts/chat.ts`, marco en `src/features/landing/components/ChatBot.astro` y guardado en `src/features/admin/orders/server/webOrders.ts`. No usa React: la landing sigue ligera.
 
 **Plantillas** (Sitio web → General → Plantillas). Cambian de una vez el aspecto de la web sin tocar textos, fotos ni el orden de los bloques. Al aplicar una se guarda en el borrador (así cualquier vista previa la muestra, también una pestaña abierta de antes); se revisa en Vista previa y sale con Publicar.
 
@@ -202,7 +204,7 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
     - Los colores de un bloque mandan sobre los de la página. En Colores y tipografía, un aviso lista los bloques con colores propios y tiene un botón para quitárselos a todos.
   - **Diseño de la portada** (bloque Portada → "Diseño de la portada"): dividida, panel, centrada o tarjeta. Solo cambia dónde van el video y el texto; el recorrido con scroll es el mismo.
 - **El login** del panel se viste con la plantilla **publicada** (fondo, texto, acento, texto de botones y tipografías).
-- **El panel** también, si en Apariencia → "Colores del panel" está "Los de la plantilla de la web" (por defecto). `panelCss` en `src/admin/schema.ts`:
+- **El panel** también, si en Apariencia → "Colores del panel" está "Los de la plantilla de la web" (por defecto). `panelCss` en `src/features/admin/core/domain/schema.ts`:
   - **Tonos:** los fondos y bordes toman el tono del color claro de la plantilla, los textos el del oscuro y el principal el acento. Se oscurece el acento hasta que el texto blanco encima se lea.
   - **Luminosidades y contraste:** se mantienen las de `admin.css`, así que el contraste no cambia. Con "Finca" sale el panel de siempre.
   - **Esquinas y tipografías:** también vienen de la plantilla.
@@ -210,7 +212,7 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
   - **"Propios del panel"** vuelve al color principal y las esquinas de Apariencia.
 - **Retoques:** después de aplicar una plantilla se puede cambiar cualquier color; la galería deja de marcarla "En uso". El editor avisa si algún texto queda con poco contraste (WCAG), en el tema y en cada bloque.
 - **Código:**
-  - Las plantillas son datos: `src/data/plantillas.ts`. Añadir una es añadir un objeto con su tema, sus colores por bloque y su portada.
+  - Las plantillas son datos: `src/features/landing/domain/plantillas.ts`. Añadir una es añadir un objeto con su tema, sus colores por bloque y su portada.
   - Las referencias de estilo de cada una están en `.claude/skills/plantilla-<id>/SKILL.md`.
   - **Cómo funciona:** todos los colores de la landing salen de variables CSS (`--color-bg`, `--color-crema`, `--color-teja`, `--btn-bg`, `--color-on-teja`, `--radius-*`…).
     - `temaCss` las define para la página.
@@ -220,14 +222,14 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 
 **Privacidad** (Sitio web → General → Privacidad). Política de tratamiento de datos (Ley 1581 de 2012), obligatoria porque el chat pide nombre, teléfono y dirección.
 - Se ve en `/privacidad` (`src/pages/privacidad.astro`), enlazada en el pie, y el chat la enlaza en un aviso justo antes de "Enviar pedido por WhatsApp".
-- Campos: responsable, NIT o cédula, correo, fecha y el texto. En el texto, "## " crea un título, "- " una viñeta y una línea en blanco separa párrafos. Admite las variables `{marca} {responsable} {documento} {correo} {telefono} {ubicacion} {actualizado}` (`legalBlocks` en `src/data/sitio.ts`).
+- Campos: responsable, NIT o cédula, correo, fecha y el texto. En el texto, "## " crea un título, "- " una viñeta y una línea en blanco separa párrafos. Admite las variables `{marca} {responsable} {documento} {correo} {telefono} {ubicacion} {actualizado}` (`legalBlocks` en `src/features/landing/domain/sitio.ts`).
 - Como el resto de la landing, sale al publicar.
 
 **URL del sitio:** `astro.config.mjs` usa `SITE_URL` si existe (variable de Vercel) y si no `https://landing-agro-sepia.vercel.app`. Con dominio propio basta con crear `SITE_URL` en Vercel y volver a desplegar.
 
 **Textos con formato:** `**así**` pone negrita y un salto de línea parte el renglón (títulos del llamado final, notas).
 
-**Qué sigue siendo de código:** el diseño de cada bloque, las animaciones y crear un *tipo* de bloque nuevo. Para añadir un campo editable a un bloque basta con añadirlo a su tipo, a `SITE_DEFAULTS` y a `BLOCK_DEFS` en `src/data/sitio.ts`, y usarlo en su componente: el editor lo dibuja solo.
+**Qué sigue siendo de código:** el diseño de cada bloque, las animaciones y crear un *tipo* de bloque nuevo. Para añadir un campo editable a un bloque basta con añadirlo a su tipo, a `SITE_DEFAULTS` y a `BLOCK_DEFS` en `src/features/landing/domain/sitio.ts`, y usarlo en su componente: el editor lo dibuja solo.
 
 ---
 
@@ -290,7 +292,7 @@ Tipos de campo **Foto** y **Archivo adjunto**. El archivo se sube al elegirlo y 
 
 ### Importar y exportar
 
-- **Exportar a Excel**: un .xlsx real (`src/admin/xlsx.ts`, empaquetado con `fflate`) con los filtros y el orden actuales, etiquetas legibles (listas, relaciones, Sí/No), números como números, encabezado en negrita y fijo, y filtros. Se abre en columnas con cualquier configuración regional; un CSV no (Excel lo parte por `,` o por `;` según el país del equipo y, si no coincide, deja cada fila en la columna A). El CSV sigue disponible con `?formato=csv`.
+- **Exportar a Excel**: un .xlsx real (`src/features/admin/records/domain/xlsx.ts`, empaquetado con `fflate`) con los filtros y el orden actuales, etiquetas legibles (listas, relaciones, Sí/No), números como números, encabezado en negrita y fijo, y filtros. Se abre en columnas con cualquier configuración regional; un CSV no (Excel lo parte por `,` o por `;` según el país del equipo y, si no coincide, deja cada fila en la columna A). El CSV sigue disponible con `?formato=csv`.
 - **Importar**: botón Importar → elegir un Excel (.xlsx) o un CSV → emparejar columnas con campos (automático por nombre) → importar. El .xlsx se lee en el navegador. "Descargar plantilla" da un Excel con los encabezados. Acepta `7.500`, `7500,50`, `Sí/No/1/0`, `DD/MM/AAAA`, fechas de Excel, etiquetas o valores de listas y varias opciones separadas por `|`. Si una fila falla no se guarda ninguna.
 
 ### Apariencia (`/admin/apariencia`)
@@ -306,7 +308,7 @@ Nombre, subtítulo, logo (se reduce a 256 px en el navegador), color principal, 
 En Sitio web → Productos → **"De dónde salen los productos"**: la lista del bloque (por defecto) o **el módulo Productos del panel**.
 
 - **Con el módulo**, la web, el chat, los datos para Google (JSON-LD, con `InStock`/`OutOfStock`) y la validación de pedidos usan sus registros:
-  - Se aplica al cargar el contenido: `aplicarCatalogo` en `src/data/catalogo.ts` y `loadCatalog` en `src/admin/server/catalog.ts`. La landing (`contenido.ts`) y la vista previa lo llaman.
+  - Se aplica al cargar el contenido: `aplicarCatalogo` en `src/features/landing/domain/catalogo.ts` y `loadCatalog` en `src/features/admin/site-editor/server/catalog.ts`. La landing (`contenido.ts`) y la vista previa lo llaman.
   - Del registro salen el nombre, la descripción, el precio con "Precio por" (unidad, libra → "/ lb" o kilo → "/ kg") y la foto.
   - En el chat, cada producto se identifica por su id de registro, estable aunque cambie el orden.
 - **"Disponible" en No** = agotado: sale en la web con la etiqueta "Agotado" y el chat no lo ofrece; el servidor rechaza pedirlo.
@@ -323,7 +325,7 @@ En Sitio web → Productos → **"De dónde salen los productos"**: la lista del
   - Si sube, avisa con "Llegó un pedido nuevo." y la pestaña muestra "(n)" (`usePendingAlerts`).
 - **Cambio rápido de estado:** en esos módulos la columna Estado es un selector en cada fila.
 - **WhatsApp:** los campos de tipo teléfono son un enlace a WhatsApp en las tablas (a los celulares de 10 dígitos se les añade el 57).
-- **Aviso por Telegram (opcional):** con `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel, cada pedido del chat llega como mensaje con sus datos y el enlace al panel (`src/admin/server/notify.ts`). Si falla o no está configurado, el pedido se guarda igual.
+- **Aviso por Telegram (opcional):** con `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel, cada pedido del chat llega como mensaje con sus datos y el enlace al panel (`src/features/admin/orders/server/notify.ts`). Si falla o no está configurado, el pedido se guarda igual.
   1. En Telegram, habla con **@BotFather** → `/newbot` y copia el token.
   2. Escríbele al bot y abre `https://api.telegram.org/bot<token>/getUpdates`. El `chat.id` que aparece es `TELEGRAM_CHAT_ID`. Para un grupo, añade el bot al grupo y usa el id del grupo (empieza por `-`).
   3. Guarda las dos variables en Vercel (Production) y vuelve a desplegar.
@@ -334,12 +336,12 @@ Quien puede ver "Pedidos de la web" ve en el inicio:
 
 - **Pedidos:** de hoy, de los últimos 7 días y por atender.
 - **Ventas de 7 días:** suma de totales sin cancelados; lo que se cobra por peso no tiene total.
-- **Gráfico** de pedidos por día (14 días) y **más pedidos** (30 días, contados desde el texto "productos" de cada pedido: `topProducts` en `src/admin/sales.ts`).
+- **Gráfico** de pedidos por día (14 días) y **más pedidos** (30 días, contados desde el texto "productos" de cada pedido: `topProducts` en `src/features/admin/core/domain/sales.ts`).
 - **La web en 7 días:**
   - visitas, clics en WhatsApp y chats abiertos;
   - pedidos por cada 100 visitas.
 
-**Cómo se mide** (`src/scripts/metrics.ts` → `POST /api/evento` → `admin.web_events`):
+**Cómo se mide** (`src/features/landing/scripts/metrics.ts` → `POST /api/evento` → `admin.web_events`):
 
 - Hay un contador por día y tipo, sin cookies ni datos personales.
 - La visita se cuenta una vez por sesión del navegador. El chat, una vez por página.
@@ -392,7 +394,7 @@ Con dominio propio, crea la variable `SITE_URL` en Vercel (lo usan canónica, ro
 
 ## Cambios hechos a los componentes de nuvo-ui
 
-El código de nuvo-ui vive en el proyecto (`src/components/ui`), así que se ajustó aquí. Conviene llevarlo a la librería:
+El código de nuvo-ui vive en el proyecto (`src/shared/ui`), así que se ajustó aquí. Conviene llevarlo a la librería:
 
 1. **`dashboard-layout`**: `min-w-0` en la columna de contenido. Sin él, una tabla ancha estira la página más allá de la pantalla en móvil.
 2. **`login`**: props opcionales `forgotPasswordHref` y `signUpHref`. Antes los enlaces "¿Olvidaste tu contraseña?" y "Crear cuenta" salían siempre con `href="#"`.

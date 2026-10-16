@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { audit } from '../../../../admin/server/db';
-import { fail, json, readJson } from '../../../../admin/server/http';
-import { restoreVersion } from '../../../../admin/server/site';
+import { audit } from '@/shared/server/db';
+import { fail, json, readJson } from '@/shared/server/http';
+import { restoreVersion } from '@/features/admin/site-editor/server/site';
 
 export const prerender = false;
 

@@ -1,0 +1,9 @@
+---
+import type { LegalListProps as Props } from './types';
+
+const { bloque } = Astro.props;
+---
+
+<ul class="flex list-disc flex-col gap-2 pl-6 text-base text-crema/80 marker:text-teja">
+  {bloque.items.map((item) => <li set:html={item} />)}
+</ul>

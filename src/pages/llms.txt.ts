@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { getSite } from '../data/contenido';
-import { bloque, links as linksFor, plain } from '../data/sitio';
+import { getSite } from '@/features/landing/server/contenido';
+import { bloque, links as linksFor, plain } from '@/features/landing/domain/sitio';
 
 export const GET: APIRoute = async ({ site }) => {
   if (!site) throw new Error('Falta site en astro.config.mjs');

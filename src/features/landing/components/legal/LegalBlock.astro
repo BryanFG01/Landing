@@ -1,0 +1,20 @@
+---
+// Un bloque de la política de privacidad (Sitio web → Privacidad): cada tipo tiene su componente y aquí solo se elige.
+import LegalTitle from './LegalTitle.astro';
+import LegalList from './LegalList.astro';
+import LegalParagraph from './LegalParagraph.astro';
+import type { LegalBlock } from '../../domain/sitio';
+import type { LegalBlockProps as Props } from './types';
+
+const { bloque } = Astro.props;
+
+// `satisfies` obliga a que cada tipo de bloque tenga su componente.
+const BLOQUES = {
+  titulo: LegalTitle,
+  lista: LegalList,
+  parrafo: LegalParagraph,
+} satisfies Record<LegalBlock['tipo'], unknown>;
+const Bloque = BLOQUES[bloque.tipo];
+---
+
+<Bloque bloque={bloque as never} />

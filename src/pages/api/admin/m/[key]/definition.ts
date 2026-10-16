@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { moduleFor } from '../../../../../admin/server/guard';
-import { json } from '../../../../../admin/server/http';
+import { moduleFor } from '@/features/admin/core/server/guard';
+import { json } from '@/shared/server/http';
 
 export const prerender = false;
 

@@ -189,6 +189,6 @@ Actualizado: 15 de octubre de 2026 (noche) · Rama `main` (último commit `85c8e
 | `SCROLL-VIDEO.md` | Guía para reutilizar el efecto de video al hacer scroll en otras webs |
 | `.claude/skills/clean-code/SKILL.md` | Reglas de código: dónde va cada cosa y lista de comprobación |
 | `.claude/skills/plantilla-*/SKILL.md` | Referencia de estilo de cada plantilla (Órbita, Atardecer y Lima) y qué se ajustó |
-| `src/data/plantillas.ts` | Las plantillas: tema, colores por bloque y portada de cada una |
+| `src/features/landing/domain/plantillas.ts` | Las plantillas: tema, colores por bloque y portada de cada una |
 | `db/migrations/` | Cambios de la base, en orden (`pnpm db:migrate`) |
 | `db/validar.sql` | Consultas de solo lectura para revisar la base de producción |

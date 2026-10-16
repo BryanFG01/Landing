@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { moduleFor } from '../../../../../admin/server/guard';
-import { json } from '../../../../../admin/server/http';
-import { relationOptions } from '../../../../../admin/server/sources';
+import { moduleFor } from '@/features/admin/core/server/guard';
+import { json } from '@/shared/server/http';
+import { relationOptions } from '@/features/admin/core/server/sources';
 
 export const prerender = false;
 

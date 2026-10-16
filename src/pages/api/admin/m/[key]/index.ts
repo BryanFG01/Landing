@@ -1,11 +1,11 @@
 import type { APIRoute } from 'astro';
-import { parseRecordData } from '../../../../../admin/schema';
-import { audit } from '../../../../../admin/server/db';
-import { listQueryFrom } from '../../../../../admin/server/filters';
-import { moduleFor, sourceFailure } from '../../../../../admin/server/guard';
-import { fail, json, readJson } from '../../../../../admin/server/http';
-import { onCatalogChange } from '../../../../../admin/server/catalog';
-import { checkRelationValues, insertRow, listRows } from '../../../../../admin/server/sources';
+import { parseRecordData } from '@/features/admin/core/domain/schema';
+import { audit } from '@/shared/server/db';
+import { listQueryFrom } from '@/features/admin/core/server/filters';
+import { moduleFor, sourceFailure } from '@/features/admin/core/server/guard';
+import { fail, json, readJson } from '@/shared/server/http';
+import { onCatalogChange } from '@/features/admin/site-editor/server/catalog';
+import { checkRelationValues, insertRow, listRows } from '@/features/admin/core/server/sources';
 
 export const prerender = false;
 

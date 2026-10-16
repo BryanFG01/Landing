@@ -13,7 +13,8 @@
     "db:migrate": "node scripts/db.mjs migrate",
     "db:status": "node scripts/db.mjs status",
     "db:seed": "node scripts/db.mjs seed",
-    "admin:create": "node scripts/create-admin.mjs"
+    "admin:create": "node scripts/create-admin.mjs",
+    "audit:components": "node scripts/audit-components.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.1",

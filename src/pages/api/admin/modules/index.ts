@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { audit } from '../../../../admin/server/db';
-import { validateDefinition } from '../../../../admin/server/definition';
-import { fail, json, readJson } from '../../../../admin/server/http';
-import { getModuleByKey, insertModule, listModules } from '../../../../admin/server/modules';
+import { audit } from '@/shared/server/db';
+import { validateDefinition } from '@/features/admin/module-editor/server/definition';
+import { fail, json, readJson } from '@/shared/server/http';
+import { getModuleByKey, insertModule, listModules } from '@/features/admin/core/server/modules';
 
 export const prerender = false;
 

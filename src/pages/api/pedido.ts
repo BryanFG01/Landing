@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { buildChatData, parseWebOrder } from '../../data/chat';
-import { getSite } from '../../data/contenido';
-import { fail, json, readJson } from '../../admin/server/http';
-import { notifyNewOrder } from '../../admin/server/notify';
-import { ipFingerprint, saveWebOrder, tooManyOrders, WEB_ORDERS_MODULE } from '../../admin/server/webOrders';
+import { buildChatData, parseWebOrder } from '@/features/landing/domain/chat';
+import { getSite } from '@/features/landing/server/contenido';
+import { fail, json, readJson } from '@/shared/server/http';
+import { notifyNewOrder } from '@/features/admin/orders/server/notify';
+import { ipFingerprint, saveWebOrder, tooManyOrders, WEB_ORDERS_MODULE } from '@/features/admin/orders/server/webOrders';
 
 export const prerender = false;
 

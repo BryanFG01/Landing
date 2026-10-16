@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { audit, exec } from '../../../../admin/server/db';
-import { fail, json, readJson, toId } from '../../../../admin/server/http';
+import { audit, exec } from '@/shared/server/db';
+import { fail, json, readJson, toId } from '@/shared/server/http';
 
 export const prerender = false;
 

@@ -1,0 +1,47 @@
+---
+// Chat de ayuda flotante. Se configura en el panel (Sitio web → Chat de ayuda); la conversación la lleva
+// src/scripts/chat.ts y las reglas del pedido src/data/chat.ts.
+import './styles/ChatBot.css';
+import { chatBotView } from './ChatBot.view';
+import type { Props } from './ChatBot.types';
+
+const { site } = Astro.props;
+const { data, json, side } = chatBotView(site);
+---
+
+<div data-chat data-side={side} class="chat">
+  <button type="button" data-chat-open class="chat-launcher" aria-expanded="false" aria-controls="chat-panel">
+    <svg aria-hidden="true" viewBox="0 0 256 256" class="size-5 shrink-0" fill="currentColor">
+      <path
+        d="M128 24a104 104 0 0 0-91.82 152.88l-11.35 34.05a16 16 0 0 0 20.24 20.24l34.05-11.35A104 104 0 1 0 128 24m0 192a87.87 87.87 0 0 1-44.06-11.81 8 8 0 0 0-4-1.08 8.3 8.3 0 0 0-2.53.41L40 216l12.47-37.4a8 8 0 0 0-.66-6.54A88 88 0 1 1 128 216"
+      ></path>
+    </svg>
+    <span class="chat-launcher-text">{site.chat.boton}</span>
+  </button>
+
+  <section id="chat-panel" data-chat-panel class="chat-panel" role="dialog" aria-labelledby="chat-title" hidden>
+    <header class="chat-header">
+      {data.logo && <img src={data.logo} alt="" width="36" height="36" class="size-9 shrink-0 rounded-full bg-white object-cover" />}
+      <div class="min-w-0 flex-1">
+        <h2 id="chat-title" class="truncate font-sans text-sm font-medium">{data.nombre}</h2>
+        <p class="truncate text-xs text-crema/60">{data.marca} · Responde al instante</p>
+      </div>
+      <button type="button" data-chat-close class="chat-close" aria-label="Cerrar el chat">
+        <svg aria-hidden="true" viewBox="0 0 256 256" class="size-5" fill="currentColor">
+          <path
+            d="M205.66 194.34a8 8 0 0 1-11.32 11.32L128 139.31l-66.34 66.35a8 8 0 0 1-11.32-11.32L116.69 128 50.34 61.66a8 8 0 0 1 11.32-11.32L128 116.69l66.34-66.35a8 8 0 0 1 11.32 11.32L139.31 128Z"
+          ></path>
+        </svg>
+      </button>
+    </header>
+    <div data-chat-log data-lenis-prevent class="chat-log" role="log" aria-live="polite"></div>
+    <div data-chat-actions data-lenis-prevent class="chat-actions"></div>
+  </section>
+
+  <script type="application/json" data-chat-data set:html={json} is:inline></script>
+</div>
+
+<script>
+  import '../scripts/chat';
+</script>
+

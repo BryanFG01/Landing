@@ -1,0 +1,23 @@
+---
+// Datos de una parada según su estilo (Sitio web → Paseo): cada estilo tiene su componente y aquí solo se elige.
+import StopChips from './StopChips.astro';
+import StopCifras from './StopCifras.astro';
+import StopTarjetas from './StopTarjetas.astro';
+import StopNumero from './StopNumero.astro';
+import StopPasos from './StopPasos.astro';
+import type { EstiloConItems, StopItemsProps as Props } from './types';
+
+const { estilo, items } = Astro.props;
+
+// `satisfies` obliga a que cada estilo con datos tenga su componente.
+const ESTILOS = {
+  chips: StopChips,
+  cifras: StopCifras,
+  tarjetas: StopTarjetas,
+  numero: StopNumero,
+  pasos: StopPasos,
+} satisfies Record<EstiloConItems, unknown>;
+const Items = ESTILOS[estilo];
+---
+
+<Items items={items} />

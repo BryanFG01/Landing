@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { json } from '../../../admin/server/http';
-import { getNav } from '../../../admin/server/modules';
+import { json } from '@/shared/server/http';
+import { getNav } from '@/features/admin/core/server/modules';
 
 export const prerender = false;
 

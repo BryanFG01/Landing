@@ -4,11 +4,11 @@ Guía para reutilizar en otras webs la animación de esta landing: un video a pa
 
 Implementación de referencia en este repo:
 
-- [src/scripts/world.ts](src/scripts/world.ts): toda la lógica.
-- [src/components/ScrollWorld.astro](src/components/ScrollWorld.astro): HTML y CSS del escenario.
-- [src/components/Stop.astro](src/components/Stop.astro): cada parada de texto.
-- [src/scripts/motion.ts](src/scripts/motion.ts): Lenis + GSAP.
-- [src/data/finca.ts](src/data/finca.ts): datos de las paradas y comandos de ffmpeg.
+- [src/features/landing/scripts/world.ts](src/features/landing/scripts/world.ts): toda la lógica.
+- [src/features/landing/components/ScrollWorld.astro](src/features/landing/components/ScrollWorld.astro): HTML y CSS del escenario.
+- [src/features/landing/components/Stop.astro](src/features/landing/components/Stop.astro): cada parada de texto.
+- [src/features/landing/scripts/motion.ts](src/features/landing/scripts/motion.ts): Lenis + GSAP.
+- [src/features/landing/domain/finca.ts](src/features/landing/domain/finca.ts): datos de las paradas y comandos de ffmpeg.
 
 ---
 
@@ -289,7 +289,7 @@ if (world) initWorld(world, reduceMotion);
 
 ### 6.2 El escenario
 
-Copia de [src/scripts/world.ts](src/scripts/world.ts), lista para pegar en otro proyecto.
+Copia de [src/features/landing/scripts/world.ts](src/features/landing/scripts/world.ts), lista para pegar en otro proyecto.
 
 ```ts
 // world.ts

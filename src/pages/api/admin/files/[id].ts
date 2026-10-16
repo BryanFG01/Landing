@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { UUID_RE } from '../../../../admin/schema';
-import { one } from '../../../../admin/server/db';
-import { fail } from '../../../../admin/server/http';
+import { UUID_RE } from '@/features/admin/core/domain/schema';
+import { one } from '@/shared/server/db';
+import { fail } from '@/shared/server/http';
 
 export const prerender = false;
 

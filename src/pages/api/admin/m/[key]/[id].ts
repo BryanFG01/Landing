@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { parseRecordData } from '../../../../../admin/schema';
-import { onCatalogChange } from '../../../../../admin/server/catalog';
-import { audit } from '../../../../../admin/server/db';
-import { moduleFor, sourceFailure } from '../../../../../admin/server/guard';
-import { fail, json, readJson } from '../../../../../admin/server/http';
+import { parseRecordData } from '@/features/admin/core/domain/schema';
+import { onCatalogChange } from '@/features/admin/site-editor/server/catalog';
+import { audit } from '@/shared/server/db';
+import { moduleFor, sourceFailure } from '@/features/admin/core/server/guard';
+import { fail, json, readJson } from '@/shared/server/http';
 import {
   checkRelationValues,
   countReferences,
@@ -11,7 +11,7 @@ import {
   getRow,
   parseRowId,
   updateRow,
-} from '../../../../../admin/server/sources';
+} from '@/features/admin/core/server/sources';
 
 export const prerender = false;
 

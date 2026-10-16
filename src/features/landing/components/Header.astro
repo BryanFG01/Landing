@@ -1,0 +1,121 @@
+---
+import './styles/Header.css';
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { links as linksFor, menu } from '../domain/sitio';
+import type { Props } from './Header.types';
+
+const { site } = Astro.props;
+const { marca } = site;
+const links = linksFor(site);
+// El menú son los bloques visibles que tienen entrada (Inicio, Productos, Opiniones, Preguntas).
+const nav = menu(site);
+// Posición de la barra en escritorio (Sitio web → Colores y tipografía → Menú). En el celular, siempre al centro.
+const POSICION = { izquierda: 'lg:justify-start', centro: 'lg:justify-center', derecha: 'lg:justify-end' } as const;
+---
+
+<a
+  href="#contenido"
+  class="btn btn-primary btn-sm fixed top-4 left-4 z-[60] -translate-y-24 focus-visible:translate-y-0"
+>
+  <span>Saltar al contenido</span>
+</a>
+
+<header
+  class:list={[
+    'zona-menu pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-6 lg:px-8 xl:px-20',
+    POSICION[site.tema.menuPosicion],
+  ]}
+>
+  <div
+    class="pointer-events-auto flex w-max items-center gap-6 rounded-full bg-bg/60 p-2 pl-6 ring-1 ring-crema/10 backdrop-blur-xl lg:gap-5"
+  >
+    <a href="#inicio" class="flex h-9 items-center rounded-full text-crema" aria-label={`${marca.nombre}, volver al inicio`}>
+      <Logo site={site} class="text-lg" />
+    </a>
+
+    <nav aria-label="Principal" class="relative hidden lg:block">
+      <span aria-hidden="true" class="nav-indicator absolute top-0 left-0 h-9 rounded-full bg-crema/[0.07]"></span>
+      <ul class="relative flex items-center text-sm">
+        {
+          nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                data-nav-link
+                class="flex h-9 items-center rounded-full px-3 text-crema/70 transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-crema aria-[current=true]:text-crema"
+              >
+                <span class="text-trim">{item.label}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-1">
+      <!-- Acceso al panel: discreto, para no competir con "Pedir". En móvil solo el icono. -->
+      <a
+        href="/admin/login"
+        rel="nofollow"
+        aria-label="Ingresar al panel de administración"
+        class="flex h-9 items-center gap-2 rounded-full px-2.5 text-sm text-crema/70 transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-crema/10 hover:text-crema lg:px-3"
+      >
+        <Icon name="user" class="size-5" />
+        <span class="text-trim hidden lg:inline">Ingresar</span>
+      </a>
+      <a href={links.pedir} class="btn btn-primary btn-sm px-4" rel="noopener" target="_blank">
+        <span>Pedir</span>
+      </a>
+      <button
+        type="button"
+        class="menu-toggle relative size-9 rounded-full text-crema transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-crema/10 lg:hidden"
+        aria-expanded="false"
+        aria-controls="menu"
+        aria-label="Abrir menú"
+      >
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div
+  id="menu"
+  class="zona-menu menu invisible fixed inset-0 z-40 flex flex-col justify-between bg-bg/80 px-4 pt-32 pb-12 opacity-0 backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:hidden"
+  inert
+>
+  <nav aria-label="Menú móvil">
+    <ul class="flex flex-col items-center gap-6 text-center">
+      {
+        nav.map((item, i) => (
+          <li class="menu-item" style={`--i:${i}`}>
+            <a href={item.href} data-menu-link class="font-display text-4xl text-crema">
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+      <li class="menu-item pt-6" style={`--i:${nav.length}`}>
+        <a href={links.pedir} class="btn btn-primary" rel="noopener" target="_blank"><span>Pedir por WhatsApp</span></a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="menu-item flex flex-col items-center gap-2 text-sm text-crema/70" style={`--i:${nav.length + 1}`}>
+    <a href={links.telefono} class="link inline-flex items-center gap-2">
+      <Icon name="phone" />
+      {site.contacto.telefono}
+    </a>
+    <p>{site.contacto.ubicacion} · {site.contacto.horario}</p>
+    <a href="/admin/login" rel="nofollow" class="link mt-2 inline-flex items-center gap-2">
+      <Icon name="user" />
+      Ingresar al panel
+    </a>
+  </div>
+</div>
+
+<script>
+  import '../scripts/header';
+</script>

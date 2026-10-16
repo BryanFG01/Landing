@@ -1,0 +1,48 @@
+---
+// Fondo del escenario del paseo: un póster por parada y, encima, los clips de vídeo que world.ts carga y reproduce.
+// Solo el primer póster se ve y se pide con prioridad; los demás esperan su turno.
+import Media from './Media.astro';
+import type { Props } from './ScrollWorldMedia.types';
+
+const { paradas, poster } = Astro.props;
+---
+
+<div aria-hidden="true" class="media absolute inset-0">
+  {
+    paradas.map((parada) => (
+      <div data-frame class="frame absolute inset-0" style={parada.isFirst ? undefined : 'opacity: 0'}>
+        <Media
+          img={poster}
+          alt=""
+          widths={[480, 720, 960]}
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          loading={parada.isFirst ? 'eager' : 'lazy'}
+          fetchpriority={parada.isFirst ? 'high' : 'low'}
+          pictureClass="block size-full"
+          class="size-full object-cover"
+          style="object-position: var(--focus-x) 50%"
+        />
+      </div>
+    ))
+  }
+  <div class="clips absolute inset-0">
+    {
+      paradas.map((parada) => (
+        <video
+          data-clip
+          data-src={parada.clip}
+          data-auto={parada.auto ? '' : undefined}
+          data-continua={parada.continua ? '' : undefined}
+          loop={parada.auto}
+          muted
+          playsinline
+          preload="none"
+          disablepictureinpicture
+          disableRemotePlayback
+          tabindex="-1"
+          class="clip absolute inset-0 size-full object-cover"
+        />
+      ))
+    }
+  </div>
+</div>

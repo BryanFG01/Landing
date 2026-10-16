@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { audit } from '../../../../admin/server/db';
-import { json } from '../../../../admin/server/http';
-import { publishDraft, triggerDeploy } from '../../../../admin/server/site';
+import { audit } from '@/shared/server/db';
+import { json } from '@/shared/server/http';
+import { publishDraft, triggerDeploy } from '@/features/admin/site-editor/server/site';
 
 export const prerender = false;
 

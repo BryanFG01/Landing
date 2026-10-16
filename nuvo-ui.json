@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "componentsDir": "src/components/ui",
+  "componentsDir": "src/shared/ui",
   "typescript": true,
   "tailwind": {
     "config": "",

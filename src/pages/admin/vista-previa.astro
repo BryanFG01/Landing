@@ -2,16 +2,14 @@
 // Vista previa del borrador de Sitio web: la landing completa con el contenido sin publicar. Solo administradores (lo
 // comprueba el middleware). No se indexa y no se guarda en caché.
 import Layout from '../../layouts/Layout.astro';
-import Landing from '../../components/Landing.astro';
-import { loadCatalog } from '../../admin/server/catalog';
-import { getDraft } from '../../admin/server/site';
-import { aplicarCatalogo, usaCatalogo } from '../../data/catalogo';
+import Landing from '@/features/landing/components/Landing.astro';
+import { loadPreviewDraft } from '@/features/admin/site-editor/server/preview';
 
 export const prerender = false;
 
 // Con el catálogo único, los productos del borrador salen del módulo del panel, igual que en la web.
-const borrador = await getDraft();
-const draft = usaCatalogo(borrador) ? aplicarCatalogo(borrador, await loadCatalog()) : borrador;
+const draft = await loadPreviewDraft();
+// El Layout lee el borrador de aquí (siteFor) en vez del contenido publicado.
 Astro.locals.sitePreview = draft;
 ---
 

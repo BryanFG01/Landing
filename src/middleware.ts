@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
-import { getSessionUser } from './admin/server/auth';
-import { DbConfigError } from './admin/server/db';
-import { fail } from './admin/server/http';
+import { getSessionUser } from '@/features/admin/auth/server/auth';
+import { DbConfigError } from '@/shared/server/db';
+import { fail } from '@/shared/server/http';
 
 // Rutas del admin que no piden sesión.
 const PUBLIC = new Set(['/admin/login', '/api/admin/auth/login']);
@@ -44,6 +44,8 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
       if (isApi) return fail(401, 'Tu sesión ha caducado. Vuelve a entrar.');
       return ctx.redirect(`/admin/login?next=${encodeURIComponent(path + ctx.url.search)}`);
     }
+    // Con sesión iniciada no tiene sentido ver el login.
+    if (user && path === '/admin/login') return ctx.redirect('/admin');
     if (user && user.role !== 'admin' && ADMIN_ONLY.test(path)) {
       return fail(403, 'Esta parte del panel es solo para administradores.');
     }

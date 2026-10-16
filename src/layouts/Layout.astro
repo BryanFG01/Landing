@@ -1,36 +1,16 @@
 ---
 import { Font } from 'astro:assets';
 import '../styles/global.css';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import ChatBot from '../components/ChatBot.astro';
-import { ogImage } from '../data/imagenes';
-import { siteFor } from '../data/contenido';
-import { FONTS, plain, temaCss } from '../data/sitio';
-
-interface Props {
-  /** Sin título ni descripción, los del SEO del panel (Sitio web). */
-  title?: string;
-  description?: string;
-  noindex?: boolean;
-  header?: boolean;
-}
+import Header from '@/features/landing/components/Header.astro';
+import Footer from '@/features/landing/components/Footer.astro';
+import ChatBot from '@/features/landing/components/ChatBot.astro';
+import { siteFor } from '@/features/landing/server/contenido';
+import { layoutView } from './Layout.view';
+import type { Props } from './Layout.types';
 
 const site = await siteFor(Astro);
-const { marca, tema } = site;
-const {
-  title = site.seo.titulo,
-  description = plain(site.seo.descripcion),
-  noindex = false,
-  header = true,
-} = Astro.props;
-// Solo se cargan las dos tipografías elegidas en el panel.
-const fonts = [...new Set([FONTS[tema.titulos].css, FONTS[tema.cuerpo].css])];
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const ogUrl = new URL(ogImage.src, Astro.site);
-const robots = noindex
-  ? 'noindex, follow'
-  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+const { marca, tema, title, description, noindex, header, fonts, canonical, ogUrl, ogAlt, robots, temaCss, hasChat } =
+  layoutView(site, Astro.props, Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
@@ -70,17 +50,17 @@ const robots = noindex
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={ogImage.alt} />
+    <meta property="og:image:alt" content={ogAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:url" content={canonical} />
     <meta name="twitter:image" content={ogUrl} />
-    <meta name="twitter:image:alt" content={ogImage.alt} />
+    <meta name="twitter:image:alt" content={ogAlt} />
 
     {fonts.map((css) => <Font cssVariable={css as '--font-hina'} preload />)}
     <!-- Colores y tipografías del panel (Sitio web → Colores y tipografía). -->
-    <style is:inline set:html={temaCss(tema)}></style>
+    <style is:inline set:html={temaCss}></style>
 
     <slot name="head" />
   </head>
@@ -90,10 +70,10 @@ const robots = noindex
       <slot />
     </main>
     <Footer site={site} />
-    {site.chat.activo === 'si' && <ChatBot site={site} />}
+    {hasChat && <ChatBot site={site} />}
     <script>
-      import '../scripts/motion';
-      import '../scripts/metrics';
+      import '@/features/landing/scripts/motion';
+      import '@/features/landing/scripts/metrics';
     </script>
   </body>
 </html>

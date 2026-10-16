@@ -27,7 +27,7 @@ La web queda en `http://localhost:4321`.
 
 ## Cómo funciona el paseo
 
-- **Seis paradas, seis tramos.** Cada parada de `paseo.paradas` (en `src/data/finca.ts`) tiene su clip, que va de ella a la siguiente: la granja, el nacimiento, los pollitos, la crianza, la recogida y al aire libre. Los seis clips salen de un solo vídeo de 8 s partido en tramos iguales, así que cada uno termina donde empieza el siguiente.
+- **Seis paradas, seis tramos.** Cada parada de `paseo.paradas` (en `src/features/landing/domain/finca.ts`) tiene su clip, que va de ella a la siguiente: la granja, el nacimiento, los pollitos, la crianza, la recogida y al aire libre. Los seis clips salen de un solo vídeo de 8 s partido en tramos iguales, así que cada uno termina donde empieza el siguiente.
 - **El scroll manda.** `world.ts` traduce la posición del scroll a un valor continuo y fija el `currentTime` del clip activo. El vídeo solo avanza cuando haces scroll.
 - **Los pósters tapan la carga.** Bajo cada vídeo está su primer fotograma. Mientras el clip no ha cargado se ve el póster, y el cambio no se nota.
 - **Carga por cercanía.** Los clips se descargan de uno en uno, empezando por el tramo actual y siguiendo por el más cercano.
@@ -71,7 +71,7 @@ public/
 
 ## Editar el contenido
 
-Casi todo el texto vive en `src/data/finca.ts`. El copy de las paradas del paseo está en `ScrollWorld.astro`.
+Casi todo el texto vive en `src/features/landing/domain/finca.ts`. El copy de las paradas del paseo está en `ScrollWorld.astro`.
 
 - **Nombre de la marca:** se cambia en `marca` y se actualiza en toda la web (logo, títulos, SEO y JSON-LD).
 - **WhatsApp:** el número va en `whatsapp`, con indicativo y sin espacios (`57…`). De él salen los enlaces de pedido y el teléfono.
@@ -98,8 +98,8 @@ ffmpeg -i public/video/finca-1.mp4 -frames:v 1 \
 
 ## SEO
 
-- **Metas:** título y descripción en `seo` (`src/data/finca.ts`), Open Graph y Twitter Card con `og-image.jpg`. La 404 lleva `noindex`.
-- **Datos estructurados:** `src/data/schema.ts` genera `LocalBusiness` (ubicación, contacto, catálogo de productos y combos, y pedido por WhatsApp), `WebSite`, `WebPage` y `FAQPage`.
+- **Metas:** título y descripción en `seo` (`src/features/landing/domain/finca.ts`), Open Graph y Twitter Card con `og-image.jpg`. La 404 lleva `noindex`.
+- **Datos estructurados:** `src/features/landing/domain/schema.ts` genera `LocalBusiness` (ubicación, contacto, catálogo de productos y combos, y pedido por WhatsApp), `WebSite`, `WebPage` y `FAQPage`.
 - **Rastreo:** `@astrojs/sitemap` genera el sitemap con las fotos de la finca, y `robots.txt` lo enlaza.
 
 ## Pendiente

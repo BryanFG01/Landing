@@ -1,0 +1,24 @@
+---
+import './styles/Stop.css';
+import { stopView } from './Stop.view';
+import type { Props } from './Stop.types';
+// Una parada del paseo. El artículo marca la distancia de scroll; el texto se queda abajo a la izquierda
+// mientras la cámara avanza y sale empujado por la parada siguiente.
+
+const { id, index, total, lugar, focus = 50, eyebrow, spy = '#crianza' } = Astro.props;
+const { position, count } = stopView(index, total);
+---
+
+<article id={id} data-stop data-focus={focus} data-spy={spy} class="stop pointer-events-none flex min-h-[200svh] flex-col justify-end">
+  <div
+    class="stop-body pointer-events-auto sticky bottom-0 flex w-full max-w-2xl xl:max-w-3xl flex-col items-start px-4 pt-32 pb-12 md:px-12 lg:pb-16 xl:px-20"
+  >
+    <p class="flex items-center gap-2 text-xs tracking-widest text-crema/60 uppercase">
+      <span class="tabular-nums">{position} / {count}</span>
+      <span aria-hidden="true" class="size-1 rounded-full bg-teja"></span>
+      <span>{lugar}</span>
+    </p>
+    {eyebrow && <p class="mt-4 text-xs font-medium tracking-widest text-teja uppercase">{eyebrow}</p>}
+    <slot />
+  </div>
+</article>

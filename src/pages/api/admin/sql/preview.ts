@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { checkQuerySql, describeQuery, queryFields } from '../../../../admin/server/datos';
-import { queryErrorMessage } from '../../../../admin/server/definition';
-import { fail, json, readJson } from '../../../../admin/server/http';
+import { checkQuerySql, describeQuery, queryFields } from '@/features/admin/core/server/datos';
+import { queryErrorMessage } from '@/features/admin/module-editor/server/definition';
+import { fail, json, readJson } from '@/shared/server/http';
 
 export const prerender = false;
 

@@ -2,44 +2,17 @@
 // Documento de las páginas del admin. Comparte con la landing las fuentes y la paleta, pero no sus estilos ni scripts.
 // Los colores y el redondeo se pueden cambiar desde Apariencia (admin.settings): aquí se aplican antes de pintar.
 import { Font } from 'astro:assets';
-import { DEFAULT_APPEARANCE, followsSite, panelCss, type Appearance, type PanelSiteTheme } from '../admin/schema';
-import { FONTS, type FontKey } from '../data/sitio';
+import { adminLayoutView } from './AdminLayout.view';
+import type { Props } from './AdminLayout.types';
 import '../styles/admin.css';
 
-interface Props {
-  title: string;
-  /** 'auto': el tema guardado, el de Apariencia o el del sistema. 'dark' / 'light': fijo (el login, según la web). */
-  theme?: 'auto' | 'dark' | 'light';
-  appearance?: Appearance;
-  /** Plantilla publicada de la web: el panel toma de ella colores, esquinas y tipografías (si Apariencia lo indica). */
-  site?: PanelSiteTheme | null;
-  /** CSS extra después de Apariencia (el login con los colores de la web). */
-  extraCss?: string;
-  /** Tipografías de la web para títulos y textos (el login). Sin ellas, las de la plantilla o las de siempre. */
-  fonts?: { titulos: FontKey; cuerpo: FontKey; peso: string };
-}
-
-const { title, theme = 'auto', appearance = DEFAULT_APPEARANCE, site = null, extraCss = '' } = Astro.props;
-const isFont = (k: string): k is FontKey => k in FONTS;
-const siteFonts =
-  followsSite(appearance, site) && isFont(site.titulos) && isFont(site.cuerpo)
-    ? { titulos: site.titulos, cuerpo: site.cuerpo, peso: site.pesoTitulos }
-    : undefined;
-const fonts = Astro.props.fonts ?? siteFonts;
-const stack = (k: FontKey) => `var(${FONTS[k].css}), ${FONTS[k].fallback}`;
-// El grosor de títulos de la plantilla: en el login, sus títulos grandes; en el panel, solo el título de cada página
-// (los subtítulos pequeños se quedan con el suyo para que se lean).
-const weightSelector = Astro.props.fonts ? 'h1,h2' : 'h1';
-const fontCss = fonts
-  ? `html:root{--font-display:${stack(fonts.titulos)};--font-sans:${stack(fonts.cuerpo)}}${weightSelector}{font-weight:${fonts.peso}}`
-  : '';
-const fontVars = fonts ? [...new Set([FONTS[fonts.titulos].css, FONTS[fonts.cuerpo].css])] : ['--font-hina', '--font-zen'];
-const css = panelCss(appearance, site) + extraCss + fontCss;
-const favicon = appearance.logo || '/icon-192.png';
+const { title } = Astro.props;
+// Tema, CSS de Apariencia y tipografías, favicon y el script que fija el tema antes de pintar.
+const { appearance, htmlClass, isAutoTheme, fontVars, css, favicon, themeScript } = adminLayoutView(Astro.props);
 ---
 
 <!doctype html>
-<html lang="es-CO" class={theme === 'dark' ? 'dark' : undefined}>
+<html lang="es-CO" class={htmlClass}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -50,19 +23,7 @@ const favicon = appearance.logo || '/icon-192.png';
     <link rel="icon" type="image/png" href={favicon} sizes="192x192" />
     {fontVars.map((v) => <Font cssVariable={v as '--font-hina'} preload />)}
     <style id="admin-appearance" set:html={css} is:inline></style>
-    {
-      theme === 'auto' && (
-        <script is:inline define:vars={{ preferred: appearance.theme }}>
-          // Tema antes de pintar: el que eligió la persona, el de Apariencia o el del sistema.
-          try {
-            const saved = localStorage.getItem('admin-theme');
-            const choice = saved || (preferred === 'auto' ? null : preferred);
-            const dark = choice ? choice === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.classList.toggle('dark', dark);
-          } catch {}
-        </script>
-      )
-    }
+    {isAutoTheme && <script is:inline set:html={themeScript}></script>}
   </head>
   <body>
     <slot />

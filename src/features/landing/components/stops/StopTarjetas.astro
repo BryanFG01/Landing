@@ -1,0 +1,17 @@
+---
+// Estilo "Tarjetas": cada dato en una tarjeta translúcida sobre el vídeo.
+import type { ItemsProps as Props } from './types';
+
+const { items } = Astro.props;
+---
+
+<ul class="mt-6 grid w-full max-w-md grid-cols-2 gap-4">
+  {
+    items.map((it) => (
+      <li class="flex flex-col gap-1 rounded-(--radius-card-sm) bg-bg/40 p-4 ring-1 ring-crema/15 backdrop-blur-md">
+        <span class="font-display text-2xl lg:text-3xl">{it.valor}</span>
+        <span class="text-xs text-crema/70 lg:text-sm">{it.etiqueta}</span>
+      </li>
+    ))
+  }
+</ul>

@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { destroyUserSessions } from '../../../../admin/server/auth';
-import { audit, exec, transaction } from '../../../../admin/server/db';
-import { fail, json, readJson, toId } from '../../../../admin/server/http';
-import { hashPassword, PASSWORD_MIN } from '../../../../admin/server/password';
-import { parsePermissions, parseRole, savePermissions } from '../../../../admin/server/users';
+import { destroyUserSessions } from '@/features/admin/auth/server/auth';
+import { audit, exec, transaction } from '@/shared/server/db';
+import { fail, json, readJson, toId } from '@/shared/server/http';
+import { hashPassword, PASSWORD_MIN } from '@/features/admin/auth/server/password';
+import { parsePermissions, parseRole, savePermissions } from '@/features/admin/users/server/users';
 
 export const prerender = false;
 

@@ -1,42 +1,28 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { LoginView } from '../../admin/ui/LoginView';
-import { getAppearance } from '../../admin/server/settings';
-import { isLightTheme, loginThemeCss } from '../../admin/schema';
+import { LoginView } from '@/features/admin/auth/ui/LoginView';
+import { loginPage } from '@/features/admin/auth/ui/lib/loginPage';
+import { getAppearance } from '@/features/admin/appearance/server/settings';
 import foto from '../../assets/paseo/bascula.webp';
-import { getSite } from '../../data/contenido';
-import { SITE_DEFAULTS, type SiteContent } from '../../data/sitio';
+import { getSiteOrDefaults } from '@/features/landing/server/contenidoOpcional';
 
 export const prerender = false;
 
-// Con sesión iniciada no tiene sentido ver el login.
-if (Astro.locals.adminUser) return Astro.redirect('/admin');
-
+// Si ya hay sesión, el middleware redirige a /admin antes de llegar aquí.
 const appearance = await getAppearance();
 // El login se viste con la plantilla publicada en la web (colores y tipografías). Si no se puede leer, la de siempre.
-let site: SiteContent = SITE_DEFAULTS;
-try {
-  site = await getSite();
-} catch (e) {
-  console.warn('[login] Sin el contenido publicado:', e instanceof Error ? e.message : e);
-}
-const { tema, marca } = site;
+const site = await getSiteOrDefaults('login');
+const { theme, extraCss, fonts, view } = loginPage(appearance, site, foto.src);
 ---
 
-<AdminLayout
-  title="Entrar"
-  theme={isLightTheme(tema) ? 'light' : 'dark'}
-  appearance={appearance}
-  extraCss={loginThemeCss(tema)}
-  fonts={{ titulos: tema.titulos, cuerpo: tema.cuerpo, peso: tema.pesoTitulos }}
->
+<AdminLayout title="Entrar" theme={theme} appearance={appearance} extraCss={extraCss} fonts={fonts}>
   <LoginView
     client:only="react"
-    image={appearance.login_image || foto.src}
-    brand={appearance.name}
-    tagline={marca.lema}
-    logo={appearance.logo || '/icon-192.png'}
-    title={appearance.login_title}
-    text={appearance.login_text}
+    image={view.image}
+    brand={view.brand}
+    tagline={view.tagline}
+    logo={view.logo}
+    title={view.title}
+    text={view.text}
   />
 </AdminLayout>

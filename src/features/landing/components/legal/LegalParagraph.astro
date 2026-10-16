@@ -1,0 +1,7 @@
+---
+import type { LegalTextProps as Props } from './types';
+
+const { bloque } = Astro.props;
+---
+
+<p class="text-base text-crema/80" set:html={bloque.html} />

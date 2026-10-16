@@ -20,7 +20,7 @@
 }
 
 @layer base {
-  /* Valores por defecto; el tema del panel los reemplaza (temaCss en src/data/sitio.ts). */
+  /* Valores por defecto; el tema del panel los reemplaza (temaCss en src/features/landing/domain/sitio.ts). */
   :root {
     interpolate-size: allow-keywords;
     color-scheme: dark;

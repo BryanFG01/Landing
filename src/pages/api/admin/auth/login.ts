@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { createSession, login } from '../../../../admin/server/auth';
-import { fail, json, readJson } from '../../../../admin/server/http';
+import { createSession, login } from '@/features/admin/auth/server/auth';
+import { fail, json, readJson } from '@/shared/server/http';
 
 export const prerender = false;
 

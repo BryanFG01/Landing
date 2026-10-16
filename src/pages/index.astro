@@ -1,14 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Landing from '../components/Landing.astro';
-import { getSite } from '../data/contenido';
-import { structuredData } from '../data/schema';
+import Landing from '@/features/landing/components/Landing.astro';
+import { loadPortada } from '@/features/landing/server/portada';
 
 // Se prerenderiza con el contenido publicado desde el panel (Sitio web → Publicar lanza un nuevo despliegue).
-const site = Astro.site;
-if (!site) throw new Error('Falta site en astro.config.mjs');
-const content = await getSite();
-const jsonLd = JSON.stringify(structuredData(site, content)).replaceAll('<', '\\u003c');
+const { content, jsonLd } = await loadPortada(Astro.site);
 ---
 
 <Layout>

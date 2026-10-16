@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import type { FileRef } from '../../../../admin/schema';
-import { one } from '../../../../admin/server/db';
-import { fail, json } from '../../../../admin/server/http';
+import type { FileRef } from '@/features/admin/core/domain/schema';
+import { one } from '@/shared/server/db';
+import { fail, json } from '@/shared/server/http';
 
 export const prerender = false;
 

@@ -1,0 +1,45 @@
+---
+// Cuerpo de la landing: los bloques visibles en el orden del panel (Sitio web). Lo usan la portada y la vista previa.
+import ScrollWorld from './ScrollWorld.astro';
+import Tagline from './Tagline.astro';
+import Dishes from './Dishes.astro';
+import Difference from './Difference.astro';
+import Testimonials from './Testimonials.astro';
+import Faq from './Faq.astro';
+import Gift from './Gift.astro';
+import FinalCta from './FinalCta.astro';
+import { landingView } from './Landing.view';
+import type { TipoBloque } from '../domain/sitio';
+import type { Props } from './Landing.types';
+
+const { site } = Astro.props;
+// Los bloques visibles en orden, cada uno con el estilo de su envoltorio si tiene colores propios.
+const bloques = landingView(site);
+
+// `satisfies` comprueba que no falte ningún tipo de bloque sin obligar a que todos los componentes tengan las mismas
+// props (cada uno recibe su propio tipo de bloque).
+const COMPONENTS = {
+  paseo: ScrollWorld,
+  frase: Tagline,
+  productos: Dishes,
+  diferencia: Difference,
+  opiniones: Testimonials,
+  preguntas: Faq,
+  semanal: Gift,
+  final: FinalCta,
+} satisfies Record<TipoBloque, unknown>;
+---
+
+{
+  bloques.map(({ bloque, style }) => {
+    const Block = COMPONENTS[bloque.tipo];
+    // Con colores propios, el bloque va envuelto: el envoltorio pinta el fondo y redefine los colores del tema.
+    return style ? (
+      <div data-colores={bloque.tipo} style={style}>
+        <Block bloque={bloque as never} site={site} />
+      </div>
+    ) : (
+      <Block bloque={bloque as never} site={site} />
+    );
+  })
+}

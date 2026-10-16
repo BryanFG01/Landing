@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { audit } from '../../../../admin/server/db';
-import { checkConsoleSql, runConsole } from '../../../../admin/server/datos';
-import { queryErrorMessage } from '../../../../admin/server/definition';
-import { fail, json, readJson } from '../../../../admin/server/http';
+import { audit } from '@/shared/server/db';
+import { checkConsoleSql, runConsole } from '@/features/admin/core/server/datos';
+import { queryErrorMessage } from '@/features/admin/module-editor/server/definition';
+import { fail, json, readJson } from '@/shared/server/http';
 
 export const prerender = false;
 

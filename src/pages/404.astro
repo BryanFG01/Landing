@@ -1,11 +1,11 @@
 ---
 import { Picture } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
-import Logo from '../components/Logo.astro';
-import Icon from '../components/Icon.astro';
-import { ASSETS } from '../data/assets';
-import { getSite } from '../data/contenido';
-import { links as linksFor } from '../data/sitio';
+import Logo from '@/features/landing/components/Logo.astro';
+import Icon from '@/features/landing/components/Icon.astro';
+import { ASSETS } from '@/features/landing/domain/assets';
+import { getSite } from '@/features/landing/server/contenido';
+import { links as linksFor } from '@/features/landing/domain/sitio';
 
 const site = await getSite();
 const { marca } = site;

@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro';
-import { toCsv, toXlsx } from '../../../../../admin/server/csv';
-import { audit } from '../../../../../admin/server/db';
-import { listQueryFrom } from '../../../../../admin/server/filters';
-import { moduleFor, sourceFailure } from '../../../../../admin/server/guard';
-import { fail } from '../../../../../admin/server/http';
-import { allRows } from '../../../../../admin/server/sources';
+import { toCsv, toXlsx } from '@/features/admin/records/server/csv';
+import { audit } from '@/shared/server/db';
+import { listQueryFrom } from '@/features/admin/core/server/filters';
+import { moduleFor, sourceFailure } from '@/features/admin/core/server/guard';
+import { fail } from '@/shared/server/http';
+import { allRows } from '@/features/admin/core/server/sources';
 
 export const prerender = false;
 

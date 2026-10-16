@@ -1,0 +1,12 @@
+---
+// Estilo "Un número destacado": solo cuenta el primer dato; el resto se ignora.
+import type { ItemsProps as Props } from './types';
+
+const { items } = Astro.props;
+const [destacado] = items;
+---
+
+<div class="mt-6 flex items-end gap-4">
+  <span class="font-display text-5xl text-teja lg:text-7xl">{destacado.valor}</span>
+  <span class="max-w-48 pb-1 text-sm text-crema/70">{destacado.etiqueta}</span>
+</div>

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { columnTypeOf, listTables, suggestField, type RelationTargets } from '../../../admin/server/datos';
-import { json } from '../../../admin/server/http';
-import { listModules } from '../../../admin/server/modules';
+import { columnTypeOf, listTables, suggestField, type RelationTargets } from '@/features/admin/core/server/datos';
+import { json } from '@/shared/server/http';
+import { listModules } from '@/features/admin/core/server/modules';
 
 export const prerender = false;
 

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { destroySession } from '../../../../admin/server/auth';
-import { audit } from '../../../../admin/server/db';
-import { json } from '../../../../admin/server/http';
+import { destroySession } from '@/features/admin/auth/server/auth';
+import { audit } from '@/shared/server/db';
+import { json } from '@/shared/server/http';
 
 export const prerender = false;
 

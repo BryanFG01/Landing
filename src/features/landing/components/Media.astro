@@ -1,0 +1,34 @@
+---
+// Imagen del contenido editable: si es del proyecto ("asset:…"), Picture con AVIF/WebP y tamaños; si se subió desde el
+// panel ("/media/…", ya reducida en el navegador), un <img> normal.
+import { Picture } from 'astro:assets';
+import { mediaView } from './Media.view';
+import type { Props } from './Media.types';
+
+const { img, widths, sizes, class: className, pictureClass, loading = 'lazy', fetchpriority, alt, style } = Astro.props;
+const { asset, text } = mediaView(img, alt);
+---
+
+{
+  asset ? (
+    <Picture
+      src={asset}
+      alt={text}
+      formats={['avif', 'webp']}
+      widths={widths}
+      sizes={sizes}
+      loading={loading}
+      fetchpriority={fetchpriority}
+      decoding="async"
+      pictureAttributes={{ class: pictureClass }}
+      class={className}
+      style={style}
+    />
+  ) : (
+    img.src && (
+      <picture class={pictureClass}>
+        <img src={img.src} alt={text} loading={loading} decoding="async" class={className} style={style} {...(fetchpriority ? { fetchpriority } : {})} />
+      </picture>
+    )
+  )
+}

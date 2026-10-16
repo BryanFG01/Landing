@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { DEFAULT_APPEARANCE, parseAppearance } from '../../../../admin/schema';
-import { audit } from '../../../../admin/server/db';
-import { fail, json, readJson } from '../../../../admin/server/http';
-import { getAppearance, saveAppearance } from '../../../../admin/server/settings';
+import { DEFAULT_APPEARANCE, parseAppearance } from '@/features/admin/core/domain/schema';
+import { audit } from '@/shared/server/db';
+import { fail, json, readJson } from '@/shared/server/http';
+import { getAppearance, saveAppearance } from '@/features/admin/appearance/server/settings';
 
 export const prerender = false;
 

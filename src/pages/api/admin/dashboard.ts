@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { json } from '../../../admin/server/http';
-import { getDashboardStats } from '../../../admin/server/pages';
+import { json } from '@/shared/server/http';
+import { getDashboardStats } from '@/features/admin/dashboard/server/pages';
 
 export const prerender = false;
 

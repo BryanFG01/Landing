@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { countWebEvent, isWebEvent } from '../../admin/server/webEvents';
+import { countWebEvent, isWebEvent } from '@/features/admin/dashboard/server/webEvents';
 
 export const prerender = false;
 

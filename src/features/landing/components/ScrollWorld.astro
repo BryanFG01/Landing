@@ -1,0 +1,102 @@
+---
+import './styles/ScrollWorld.css';
+import ScrollWorldMedia from './ScrollWorldMedia.astro';
+import Stop from './Stop.astro';
+import StopItems from './stops/StopItems.astro';
+import { scrollWorldView } from './ScrollWorld.view';
+import type { Props } from './ScrollWorld.types';
+
+const { bloque, site } = Astro.props;
+// Paradas con su ancla, su parte del vídeo y lo que pinta cada una; enlace de pedido; posición de la pista.
+const { paradas, pedir, chatOnRight } = scrollWorldView(bloque, site);
+const body = 'mt-4 max-w-md text-base text-crema/80 lg:text-lg';
+const title = 'mt-4 max-w-xl text-4xl lg:text-5xl xl:text-6xl';
+---
+
+<section id="recorrido" data-world data-disenio={bloque.disenio} aria-label="Paseo por la finca" class="relative">
+  <!-- Escenario fijo. Los vídeos son verticales (grabados con el celular): en móvil ocupan toda la pantalla; en
+       escritorio, la mitad derecha de borde a borde (pantalla dividida, el texto a la izquierda). Debajo de cada clip, su
+       primer fotograma con el mismo encuadre, para que el vídeo entre sin que se note el cambio. -->
+  <div data-stage class="sticky top-0 h-lvh overflow-hidden bg-bg" style="--focus-x: 50%">
+    <ScrollWorldMedia paradas={paradas} poster={bloque.poster} />
+
+    <!-- Velos para leer el texto encima del vídeo. -->
+    <div aria-hidden="true" class="veil-top absolute inset-x-0 top-0 h-40 bg-linear-to-b from-bg/60 to-transparent"></div>
+    <div
+      aria-hidden="true"
+      class="veil-main absolute inset-0 bg-linear-to-t from-bg from-15% via-bg/50 via-50% to-transparent to-80% max-lg:from-30% max-lg:via-bg/70 max-lg:via-55% lg:bg-linear-to-r lg:from-bg/85 lg:via-bg/35 lg:via-35% lg:to-transparent lg:to-65%"
+    >
+    </div>
+    <div aria-hidden="true" class="veil-bottom absolute inset-x-0 bottom-0 hidden h-1/2 bg-linear-to-t from-bg/80 to-transparent lg:block"></div>
+
+    <!-- Raíl de paradas. -->
+    <nav aria-label="Paradas del paseo" class="absolute top-1/2 right-6 hidden -translate-y-1/2 lg:block xl:right-8">
+      <ol class="relative flex flex-col items-end gap-4">
+        <span aria-hidden="true" class="absolute top-3 right-1 bottom-3 w-px translate-x-1/2 bg-crema/20">
+          <span data-rail-fill class="absolute inset-0 origin-top scale-y-0 bg-teja"></span>
+        </span>
+        {
+          paradas.map((parada) => (
+            <li>
+              <a href={`#${parada.id}`} data-goto aria-current={parada.isFirst ? 'true' : 'false'} class="rail-link group flex h-6 items-center gap-3">
+                <span class="rail-label rounded-full bg-bg/60 px-3 py-1 text-xs whitespace-nowrap text-crema ring-1 ring-crema/10 backdrop-blur-xl">
+                  {parada.lugar}
+                </span>
+                <span class="relative grid size-2 place-items-center">
+                  <span class="rail-dot size-2 rounded-full bg-crema/50" />
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <p
+      data-hint
+      aria-hidden="true"
+      class:list={[
+        'absolute right-8 hidden items-center gap-3 text-xs tracking-widest text-crema/70 uppercase lg:flex',
+        chatOnRight ? 'bottom-24' : 'bottom-8',
+      ]}
+    >
+      {bloque.pista}
+      <span class="hint-line relative block h-8 w-px overflow-hidden bg-crema/20"></span>
+    </p>
+  </div>
+
+  <!-- Paradas: cada una deja su texto abajo a la izquierda mientras el paseo avanza. El contenido sale del panel
+       (Sitio web); el estilo de cada parada elige cómo se pintan sus datos. La primera lleva el h1: la marca y el
+       producto van dentro para que el titular principal diga qué es y qué vende. -->
+  <div class="relative z-10 -mt-[100lvh]">
+    {
+      paradas.map((p, i) => (
+        <Stop id={p.id} index={i} total={paradas.length} lugar={p.lugar} eyebrow={p.stopEyebrow} spy={p.spy}>
+          {p.isFirst ? (
+            <h1 class="mt-4">
+              <span class="block font-sans text-xs font-medium tracking-widest text-teja uppercase">{p.heroEyebrow}</span>
+              <span class="hero-title mt-4 block max-w-[680px] bg-linear-to-r from-crema to-(--color-hero-fin) bg-clip-text pb-2 text-4xl text-transparent lg:text-6xl">
+                {p.titulo}
+              </span>
+            </h1>
+          ) : (
+            <h2 class={title}>{p.titulo}</h2>
+          )}
+          {p.textoHtml && <p class={body} set:html={p.textoHtml} />}
+          {p.notaHtml && <p class="mt-4 max-w-md text-sm text-crema/60" set:html={p.notaHtml} />}
+          {p.itemsStyle && <StopItems estilo={p.itemsStyle} items={p.items} />}
+          {p.hasWhatsappButton && (
+            <a href={pedir} class="btn btn-primary mt-6" rel="noopener" target="_blank">
+              <span>Pedir por WhatsApp</span>
+            </a>
+          )}
+          {p.hasProductsLink && (
+            <a href="#productos" class="link mt-6 text-sm">
+              Ver todos los productos
+            </a>
+          )}
+        </Stop>
+      ))
+    }
+  </div>
+</section>

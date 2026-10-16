@@ -1,0 +1,12 @@
+---
+// Espirales decorativas de fondo.
+import { spiralView } from './Spiral.view';
+import type { Props } from './Spiral.types';
+
+const { class: className = '', rings = 14, draw = false } = Astro.props;
+const { viewBox, paths } = spiralView(rings);
+---
+
+<svg viewBox={viewBox} fill="none" stroke="currentColor" class={className} aria-hidden="true" data-spiral-draw={draw ? '' : undefined}>
+  {paths.map((d) => <path d={d} pathLength="1" stroke-width="1" vector-effect="non-scaling-stroke" />)}
+</svg>

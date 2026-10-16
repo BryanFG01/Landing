@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { audit, one } from '../../../../admin/server/db';
-import { fail, json, readJson } from '../../../../admin/server/http';
-import { listGroups } from '../../../../admin/server/modules';
+import { audit, one } from '@/shared/server/db';
+import { fail, json, readJson } from '@/shared/server/http';
+import { listGroups } from '@/features/admin/core/server/modules';
 
 export const prerender = false;
 

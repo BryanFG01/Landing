@@ -1,0 +1,77 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { enFrase, links as linksFor, menu, PRIVACIDAD_URL } from '../domain/sitio';
+import type { Props } from './Footer.types';
+
+const { site } = Astro.props;
+const { contacto, marca } = site;
+const links = linksFor(site);
+const nav = menu(site);
+const year = new Date().getFullYear();
+---
+
+<footer class="zona-pie px-4 pt-24 pb-12 md:px-12 xl:px-24">
+  <div class="grid gap-12 md:grid-cols-2 xl:grid-cols-4">
+    <div class="flex flex-col gap-4">
+      <Logo site={site} class="self-start text-2xl text-crema" />
+      <p class="max-w-xs text-sm text-crema/70">
+        {marca.lema}. {marca.pie}
+      </p>
+      {marca.promesa && <p class="text-xs tracking-widest text-teja uppercase">{marca.promesa}</p>}
+      <nav aria-label="Secciones">
+        <ul class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          {
+            nav.map((item) => (
+              <li>
+                <a href={`/${item.href}`} class="link">
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+
+    <div class="flex flex-col gap-2 text-sm">
+      <h2 class="font-sans text-xs tracking-widest text-crema/50 uppercase">Domicilios</h2>
+      <p class="inline-flex items-center gap-2"><Icon name="mapPin" />{contacto.ubicacion}</p>
+      <p class="inline-flex items-start gap-2 text-crema/70">
+        <Icon name="truck" class="mt-0.5 size-4 shrink-0" />Cubrimos {contacto.zonaEntrega}
+      </p>
+      <p class="text-crema/70">Pago al recibir: {enFrase(contacto.pagos)}</p>
+    </div>
+
+    <div class="flex flex-col gap-2 text-sm">
+      <h2 class="font-sans text-xs tracking-widest text-crema/50 uppercase">Horario de pedidos</h2>
+      <p>{contacto.horario}</p>
+      <p class="text-crema/70">{contacto.entregas}</p>
+    </div>
+
+    <div class="flex flex-col gap-2 text-sm">
+      <h2 class="font-sans text-xs tracking-widest text-crema/50 uppercase">Contacto</h2>
+      <a href={links.pedir} class="link inline-flex items-center gap-2 self-start" rel="noopener" target="_blank">
+        <Icon name="whatsapp" />
+        WhatsApp
+      </a>
+      <a href={links.telefono} class="link inline-flex items-center gap-2 self-start">
+        <Icon name="phone" />
+        {contacto.telefono}
+      </a>
+      {
+        contacto.instagram && contacto.instagramUrl && (
+          <a href={contacto.instagramUrl} class="link inline-flex items-center gap-2 self-start" rel="noopener" target="_blank">
+            <Icon name="instagram" />
+            {contacto.instagram}
+          </a>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="mt-16 flex flex-col gap-4 pt-8 text-xs text-crema/50 md:flex-row md:items-center md:justify-between">
+    <p>© {year} {marca.nombre}</p>
+    <a href={PRIVACIDAD_URL} class="link self-start md:self-auto">Política de tratamiento de datos</a>
+  </div>
+</footer>

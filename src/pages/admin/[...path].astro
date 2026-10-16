@@ -4,23 +4,16 @@
 // publicada de la web (de la que el panel toma sus colores) para el primer pintado; cada vista pide sus datos a
 // /api/admin. El middleware ya ha comprobado la sesión.
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import AdminApp from '../../admin/ui/AdminApp';
-import { getNav } from '../../admin/server/modules';
-import { getAppearance } from '../../admin/server/settings';
-import { panelThemeOf } from '../../admin/ui/lib/siteEditor';
-import { getSite } from '../../data/contenido';
+import AdminApp from '@/features/admin/shell/ui/AdminApp';
+import { getNav } from '@/features/admin/core/server/modules';
+import { getAppearance } from '@/features/admin/appearance/server/settings';
+import { getPublishedPanelTheme } from '@/features/admin/site-editor/server/panelTheme';
 
 export const prerender = false;
 
 const user = Astro.locals.adminUser!;
-const [nav, appearance, site] = await Promise.all([
-  getNav(user),
-  getAppearance(),
-  // Sin la plantilla (base caída a medias), el panel usa los colores de Apariencia.
-  getSite()
-    .then((s) => panelThemeOf(s.tema))
-    .catch(() => null),
-]);
+// Sin la plantilla (base caída a medias), el panel usa los colores de Apariencia.
+const [nav, appearance, site] = await Promise.all([getNav(user), getAppearance(), getPublishedPanelTheme()]);
 ---
 
 <AdminLayout title="Panel" appearance={appearance} site={site}>

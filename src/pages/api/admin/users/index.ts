@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { audit, one, query, transaction } from '../../../../admin/server/db';
-import { fail, json, readJson } from '../../../../admin/server/http';
-import { hashPassword, PASSWORD_MIN } from '../../../../admin/server/password';
-import { parsePermissions, parseRole, savePermissions } from '../../../../admin/server/users';
+import { audit, one, query, transaction } from '@/shared/server/db';
+import { fail, json, readJson } from '@/shared/server/http';
+import { hashPassword, PASSWORD_MIN } from '@/features/admin/auth/server/password';
+import { parsePermissions, parseRole, savePermissions } from '@/features/admin/users/server/users';
 
 export const prerender = false;
 

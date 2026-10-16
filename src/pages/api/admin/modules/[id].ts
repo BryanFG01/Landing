@@ -1,14 +1,14 @@
 import type { APIRoute } from 'astro';
-import { audit, exec } from '../../../../admin/server/db';
-import { validateDefinition } from '../../../../admin/server/definition';
-import { fail, json, readJson, toId } from '../../../../admin/server/http';
+import { audit, exec } from '@/shared/server/db';
+import { validateDefinition } from '@/features/admin/module-editor/server/definition';
+import { fail, json, readJson, toId } from '@/shared/server/http';
 import {
   countRecords,
   getModuleById,
   getModuleByKey,
   modulesReferencing,
   updateModule,
-} from '../../../../admin/server/modules';
+} from '@/features/admin/core/server/modules';
 
 export const prerender = false;
 

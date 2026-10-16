@@ -1,0 +1,11 @@
+---
+// Estilo "Etiquetas": cada dato es una píldora.
+import type { ItemsProps as Props } from './types';
+
+const { items } = Astro.props;
+const pill = 'rounded-full bg-bg/40 px-3 py-1 ring-1 ring-crema/20 backdrop-blur-md';
+---
+
+<ul class="mt-6 flex flex-wrap gap-2 text-xs text-crema/80" aria-label="Lo que ofrecemos">
+  {items.map((it) => <li class={pill}>{it.valor}</li>)}
+</ul>

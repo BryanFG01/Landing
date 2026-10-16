@@ -1,0 +1,9 @@
+---
+import { icons } from './Icon.svgs';
+import type { Props } from './Icon.types';
+
+const { name, class: className = 'size-4' } = Astro.props;
+const svg = icons[name].replace('<svg ', `<svg aria-hidden="true" focusable="false" class="${className}" `);
+---
+
+<Fragment set:html={svg} />

@@ -2,10 +2,11 @@
 // Política de tratamiento de datos (Ley 1581 de 2012). El texto se edita en el panel (Sitio web → Privacidad); aquí solo
 // se pinta. Sin la cabecera de la landing: sus enlaces llevan a secciones de la portada.
 import Layout from '../layouts/Layout.astro';
-import Logo from '../components/Logo.astro';
-import Icon from '../components/Icon.astro';
-import { getSite } from '../data/contenido';
-import { legalBlocks } from '../data/sitio';
+import Logo from '@/features/landing/components/Logo.astro';
+import Icon from '@/features/landing/components/Icon.astro';
+import LegalBlock from '@/features/landing/components/legal/LegalBlock.astro';
+import { getSite } from '@/features/landing/server/contenido';
+import { legalBlocks } from '@/features/landing/domain/sitio';
 
 const site = await getSite();
 const { marca, legal } = site;
@@ -27,20 +28,7 @@ const blocks = legalBlocks(site);
     <p class="mt-4 text-sm text-crema/60">Última actualización: {legal.actualizado}</p>
 
     <div class="mt-12 flex flex-col gap-6">
-      {
-        blocks.map((b) => {
-          if (b.tipo === 'titulo') return <h2 class="mt-6 text-2xl" set:html={b.html} />;
-          if (b.tipo === 'lista')
-            return (
-              <ul class="flex list-disc flex-col gap-2 pl-6 text-base text-crema/80 marker:text-teja">
-                {b.items.map((item) => (
-                  <li set:html={item} />
-                ))}
-              </ul>
-            );
-          return <p class="text-base text-crema/80" set:html={b.html} />;
-        })
-      }
+      {blocks.map((b) => <LegalBlock bloque={b} />)}
     </div>
   </article>
 </Layout>

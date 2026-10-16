@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import react from '@astrojs/react';
 import vercel from '@astrojs/vercel';
-import { fotosPublicas, ogImage } from './src/data/imagenes.ts';
+import { fotosPublicas, ogImage } from './src/features/landing/domain/imagenes.ts';
 
 // https://astro.build/config
 export default defineConfig({
