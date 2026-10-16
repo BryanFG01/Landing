@@ -37,6 +37,35 @@ export const describeAction = (action: string) => ACTIONS[action] ?? action;
 export const activityActor = (a: { action: string; user: string | null }) =>
   a.user ?? (a.action === 'web_order' ? 'Un cliente' : 'Alguien');
 
+/**
+ * Enlace de WhatsApp para un teléfono de un registro. Un celular colombiano de 10 dígitos (3xx…) lleva el indicativo 57;
+ * los que ya traen indicativo se dejan igual. Null si no parece un teléfono.
+ */
+export function whatsappHref(phone: string) {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 7) return null;
+  const full = digits.length === 10 && digits.startsWith('3') ? `57${digits}` : digits;
+  return `https://wa.me/${full}`;
+}
+
+const pesosFmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+/** 40000 → "$40.000". */
+export const formatPesos = (n: number) => pesosFmt.format(n).replace(/\s/g, '');
+
+const dayFmt = new Intl.DateTimeFormat('es-CO', { weekday: 'short', day: 'numeric' });
+const weekdayFmt = new Intl.DateTimeFormat('es-CO', { weekday: 'short' });
+const atNoon = (day: string) => new Date(`${day}T12:00:00`);
+/** "2026-10-15" → "jue 15" (para el gráfico de pedidos por día). */
+export const dayShort = (day: string) => dayFmt.format(atNoon(day)).replaceAll('.', '');
+/** "2026-10-15" → { weekday: "jue", num: "15" } (en móvil el gráfico solo muestra el número). */
+export const dayParts = (day: string) => ({ weekday: weekdayFmt.format(atNoon(day)).replaceAll('.', ''), num: String(Number(day.slice(8))) });
+
+/** Alto de cada barra del gráfico, en % del día con más pedidos (mínimo visible si hubo alguno). */
+export function barHeights(values: number[]) {
+  const max = Math.max(...values, 1);
+  return values.map((v) => (v ? Math.max(6, Math.round((v / max) * 100)) : 0));
+}
+
 /** Texto del contador de un módulo en el inicio. */
 export function recordsLabel(records: number | null, sourceType: string) {
   if (records !== null) return `${records} registro(s)`;

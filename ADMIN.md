@@ -218,6 +218,13 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
     - `.zona-menu` y `.zona-pie` hacen lo mismo con el menú y el pie.
     - Por eso los componentes no cambian con cada plantilla.
 
+**Privacidad** (Sitio web → General → Privacidad). Política de tratamiento de datos (Ley 1581 de 2012), obligatoria porque el chat pide nombre, teléfono y dirección.
+- Se ve en `/privacidad` (`src/pages/privacidad.astro`), enlazada en el pie, y el chat la enlaza en un aviso justo antes de "Enviar pedido por WhatsApp".
+- Campos: responsable, NIT o cédula, correo, fecha y el texto. En el texto, "## " crea un título, "- " una viñeta y una línea en blanco separa párrafos. Admite las variables `{marca} {responsable} {documento} {correo} {telefono} {ubicacion} {actualizado}` (`legalBlocks` en `src/data/sitio.ts`).
+- Como el resto de la landing, sale al publicar.
+
+**URL del sitio:** `astro.config.mjs` usa `SITE_URL` si existe (variable de Vercel) y si no `https://landing-agro-sepia.vercel.app`. Con dominio propio basta con crear `SITE_URL` en Vercel y volver a desplegar.
+
 **Textos con formato:** `**así**` pone negrita y un salto de línea parte el renglón (títulos del llamado final, notas).
 
 **Qué sigue siendo de código:** el diseño de cada bloque, las animaciones y crear un *tipo* de bloque nuevo. Para añadir un campo editable a un bloque basta con añadirlo a su tipo, a `SITE_DEFAULTS` y a `BLOCK_DEFS` en `src/data/sitio.ts`, y usarlo en su componente: el editor lo dibuja solo.
@@ -292,6 +299,55 @@ Nombre, subtítulo, logo (se reduce a 256 px en el navegador), color principal, 
 
 ---
 
+## Catálogo, pedidos y números del negocio
+
+### Catálogo único (migración `0006`)
+
+En Sitio web → Productos → **"De dónde salen los productos"**: la lista del bloque (por defecto) o **el módulo Productos del panel**.
+
+- **Con el módulo**, la web, el chat, los datos para Google (JSON-LD, con `InStock`/`OutOfStock`) y la validación de pedidos usan sus registros:
+  - Se aplica al cargar el contenido: `aplicarCatalogo` en `src/data/catalogo.ts` y `loadCatalog` en `src/admin/server/catalog.ts`. La landing (`contenido.ts`) y la vista previa lo llaman.
+  - Del registro salen el nombre, la descripción, el precio con "Precio por" (unidad, libra → "/ lb" o kilo → "/ kg") y la foto.
+  - En el chat, cada producto se identifica por su id de registro, estable aunque cambie el orden.
+- **"Disponible" en No** = agotado: sale en la web con la etiqueta "Agotado" y el chat no lo ofrece; el servidor rechaza pedirlo.
+- **Al guardar, borrar o importar productos:**
+  - Sus fotos pasan a ser públicas (`/media/<id>`).
+  - Si la web publicada usa el módulo, se llama al Deploy Hook y la web se reconstruye. El panel avisa: "La web se actualiza en 1 o 2 minutos".
+- **La migración `0006`** añade al módulo `productos` los campos `foto` y `precio_por` si faltan.
+- **Si la base falla** al construir, el bloque se queda con su propia lista: la web nunca sale sin productos.
+
+### Pedidos con aviso
+
+- **Contador en el menú:** cada módulo de registros con un campo de lista `estado` que tenga la opción `pendiente` muestra cuántos pendientes tiene (`getNav` → `pending`).
+  - El panel lo refresca cada 30 s con la pestaña visible, y al guardar, borrar o cambiar un estado.
+  - Si sube, avisa con "Llegó un pedido nuevo." y la pestaña muestra "(n)" (`usePendingAlerts`).
+- **Cambio rápido de estado:** en esos módulos la columna Estado es un selector en cada fila.
+- **WhatsApp:** los campos de tipo teléfono son un enlace a WhatsApp en las tablas (a los celulares de 10 dígitos se les añade el 57).
+- **Aviso por Telegram (opcional):** con `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel, cada pedido del chat llega como mensaje con sus datos y el enlace al panel (`src/admin/server/notify.ts`). Si falla o no está configurado, el pedido se guarda igual.
+  1. En Telegram, habla con **@BotFather** → `/newbot` y copia el token.
+  2. Escríbele al bot y abre `https://api.telegram.org/bot<token>/getUpdates`. El `chat.id` que aparece es `TELEGRAM_CHAT_ID`. Para un grupo, añade el bot al grupo y usa el id del grupo (empieza por `-`).
+  3. Guarda las dos variables en Vercel (Production) y vuelve a desplegar.
+
+### Números en el inicio (migración `0007`)
+
+Quien puede ver "Pedidos de la web" ve en el inicio:
+
+- **Pedidos:** de hoy, de los últimos 7 días y por atender.
+- **Ventas de 7 días:** suma de totales sin cancelados; lo que se cobra por peso no tiene total.
+- **Gráfico** de pedidos por día (14 días) y **más pedidos** (30 días, contados desde el texto "productos" de cada pedido: `topProducts` en `src/admin/sales.ts`).
+- **La web en 7 días:**
+  - visitas, clics en WhatsApp y chats abiertos;
+  - pedidos por cada 100 visitas.
+
+**Cómo se mide** (`src/scripts/metrics.ts` → `POST /api/evento` → `admin.web_events`):
+
+- Hay un contador por día y tipo, sin cookies ni datos personales.
+- La visita se cuenta una vez por sesión del navegador. El chat, una vez por página.
+- No cuenta la vista previa del panel.
+- La API solo acepta esos tres eventos y desde la propia web.
+
+---
+
 ## Seguridad
 
 - **Sesión**: cookie `HttpOnly`, `SameSite=Lax` y `Secure` en HTTPS. Desactivar un usuario o cambiarle la contraseña cierra sus sesiones.
@@ -330,7 +386,7 @@ Para conectarte con **pgAdmin 4**: host, usuario y contraseña de `DATABASE_URL_
    No ejecutes `db:seed` en producción.
 4. Despliega (push a la rama conectada en Vercel).
 
-Cambia también `site` en `astro.config.mjs` por el dominio real (lo usan robots.txt y el sitemap). Antes de migrar producción, prueba la migración en una rama de Neon creada desde production.
+Con dominio propio, crea la variable `SITE_URL` en Vercel (lo usan canónica, robots.txt, sitemap y JSON-LD). Variables opcionales: `VERCEL_DEPLOY_HOOK` (publicar), `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` (aviso de pedidos). Antes de migrar producción, prueba la migración en una rama de Neon creada desde production.
 
 ---
 

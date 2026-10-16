@@ -7,6 +7,7 @@
 // La vista previa del panel (/admin/vista-previa) pone el borrador en Astro.locals.sitePreview.
 
 import type { AstroGlobal } from 'astro';
+import { aplicarCatalogo, usaCatalogo } from './catalogo';
 import { parseSite, SITE_DEFAULTS, type SiteContent } from './sitio';
 
 let published: Promise<SiteContent> | undefined;
@@ -15,7 +16,12 @@ async function loadPublished(): Promise<SiteContent> {
   const { DbConfigError, one } = await import('../admin/server/db');
   try {
     const row = await one<{ value: unknown }>("SELECT value FROM admin.settings WHERE key = 'site_published'");
-    return row ? parseSite(row.value).value : SITE_DEFAULTS;
+    if (!row) return SITE_DEFAULTS;
+    // Con el catálogo único, los productos salen del módulo del panel (src/data/catalogo.ts).
+    const site = parseSite(row.value).value;
+    if (!usaCatalogo(site)) return site;
+    const { loadCatalog } = await import('../admin/server/catalog');
+    return aplicarCatalogo(site, await loadCatalog());
   } catch (e) {
     if (e instanceof DbConfigError) {
       console.warn('[sitio] Sin DATABASE_URL: se usa el contenido por defecto.');

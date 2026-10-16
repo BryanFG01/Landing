@@ -9,7 +9,7 @@ import { DynamicFilter } from '../../components/ui/dynamic-filter';
 import { Modal } from '../../components/ui/modal';
 import { Pagination } from '../../components/ui/pagination';
 import { Select } from '../../components/ui/select';
-import type { ColumnConfig, FieldConfig, ModuleAccess, Option, RecordRow } from '../schema';
+import { hasPendingState, type ColumnConfig, type FieldConfig, type ModuleAccess, type Option, type RecordRow } from '../schema';
 import { ConfirmDialog } from './ConfirmDialog';
 import { formatCell } from './format';
 import { useModuleRows } from './hooks/useModuleRows';
@@ -28,17 +28,45 @@ interface ColumnContext {
   /** Sin acciones: módulo de solo lectura. */
   onEdit?: (row: RecordRow) => void;
   onDelete?: (row: RecordRow) => void;
+  /** Cambio rápido de estado (módulos con "pendiente", como pedidos). */
+  onStatus?: (row: RecordRow, estado: string) => void;
+}
+
+/** Selector compacto del estado en la fila (pedidos: pendiente, confirmado, entregado…). */
+function StatusCell({ value, field, onChange }: Readonly<{ value: unknown; field: FieldConfig; onChange: (v: string) => void }>) {
+  return (
+    <select
+      aria-label={field.label}
+      value={String(value ?? '')}
+      onChange={(e) => onChange(e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    >
+      {field.options?.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 /** Columnas de la tabla según column_configs, más editar/borrar si se puede editar (presentación). */
-function columnsFor({ configs, fields, relationOptions, onEdit, onDelete }: ColumnContext): ColumnDef<RecordRow>[] {
-  const data: ColumnDef<RecordRow>[] = configs.map((c) => ({
-    key: c.column,
-    label: c.headerText,
-    render: (value: unknown) => (
-      <div className={ALIGN_CLASS[c.align ?? 'left']}>{formatCell(value, c, fields.get(c.column), relationOptions[c.column])}</div>
-    ),
-  }));
+function columnsFor({ configs, fields, relationOptions, onEdit, onDelete, onStatus }: ColumnContext): ColumnDef<RecordRow>[] {
+  const data: ColumnDef<RecordRow>[] = configs.map((c) => {
+    const field = fields.get(c.column);
+    const quickStatus = onStatus && field && c.column === 'estado' && hasPendingState([field]);
+    return {
+      key: c.column,
+      label: c.headerText,
+      render: (value: unknown, row: RecordRow) =>
+        quickStatus ? (
+          <StatusCell value={value} field={field} onChange={(v) => onStatus(row, v)} />
+        ) : (
+          <div className={ALIGN_CLASS[c.align ?? 'left']}>{formatCell(value, c, field, relationOptions[c.column])}</div>
+        ),
+    };
+  });
   if (!onEdit || !onDelete) return data;
   return [
     ...data,
@@ -100,7 +128,7 @@ export function ModuleView({ module: mod, access, canConfigure }: Readonly<Modul
   const canEdit = canEditModule(mod, access);
 
   const { fields, relationOptions } = rows;
-  const { open, askDelete } = editor;
+  const { open, askDelete, setStatus } = editor;
   const columns = React.useMemo(
     () =>
       columnsFor({
@@ -109,8 +137,9 @@ export function ModuleView({ module: mod, access, canConfigure }: Readonly<Modul
         relationOptions,
         onEdit: canEdit ? open : undefined,
         onDelete: canEdit ? askDelete : undefined,
+        onStatus: canEdit ? setStatus : undefined,
       }),
-    [mod.column_configs, fields, relationOptions, canEdit, open, askDelete],
+    [mod.column_configs, fields, relationOptions, canEdit, open, askDelete, setStatus],
   );
 
   let summary = 'Sin resultados';

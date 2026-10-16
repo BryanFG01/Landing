@@ -6,6 +6,7 @@ import { StatCard } from '../../components/ui/stat-card';
 import type { AdminUser, DashboardStats } from '../schema';
 import { Icon, iconComponent } from './icons';
 import { activityActor, describeAction, formatDateTime, recordsLabel } from './lib/format';
+import { SalesPanel } from './dashboard/SalesPanel';
 import { PageHeader } from './PageHeader';
 import { useRouter } from './router';
 
@@ -68,6 +69,8 @@ export function DashboardView({ user, stats }: Readonly<{ user: AdminUser; stats
         <StatCard title="Registros" value={stats.totalRecords} icon={iconComponent('database')} />
         {showUsers && <StatCard title="Usuarios activos" value={stats.admins!} icon={iconComponent('user-gear')} />}
       </div>
+
+      {stats.sales && <SalesPanel sales={stats.sales} />}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
         <section>

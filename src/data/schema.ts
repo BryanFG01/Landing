@@ -45,10 +45,11 @@ export function structuredData(site: URL, content: SiteContent) {
     height: 630,
     caption: ogImage.alt,
   };
-  const oferta = (nombre: string, descripcion: string, label: string) => ({
+  const oferta = (nombre: string, descripcion: string, label: string, agotado = false) => ({
     '@type': 'Offer',
     itemOffered: { '@type': 'Product', name: nombre, description: descripcion },
     ...precio(label),
+    availability: agotado ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
   });
 
   return {
@@ -76,7 +77,7 @@ export function structuredData(site: URL, content: SiteContent) {
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
           name: 'Productos de la finca',
-          itemListElement: productos.visible ? productos.items.map((p) => oferta(p.nombre, p.detalle, p.precio)) : [],
+          itemListElement: productos.visible ? productos.items.map((p) => oferta(p.nombre, p.detalle, p.precio, p.agotado)) : [],
         },
         mainEntityOfPage: { '@id': webpageId },
         potentialAction: {

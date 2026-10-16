@@ -3,11 +3,15 @@
 // comprueba el middleware). No se indexa y no se guarda en caché.
 import Layout from '../../layouts/Layout.astro';
 import Landing from '../../components/Landing.astro';
+import { loadCatalog } from '../../admin/server/catalog';
 import { getDraft } from '../../admin/server/site';
+import { aplicarCatalogo, usaCatalogo } from '../../data/catalogo';
 
 export const prerender = false;
 
-const draft = await getDraft();
+// Con el catálogo único, los productos del borrador salen del módulo del panel, igual que en la web.
+const borrador = await getDraft();
+const draft = usaCatalogo(borrador) ? aplicarCatalogo(borrador, await loadCatalog()) : borrador;
 Astro.locals.sitePreview = draft;
 ---
 

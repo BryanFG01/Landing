@@ -38,6 +38,7 @@ export const SETTING_ICONS: Record<SettingKey, string> = {
   contacto: 'map-pin',
   seo: 'file',
   chat: 'chat',
+  legal: 'lock',
 };
 
 export function sectionKey(s: Section) {

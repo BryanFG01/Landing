@@ -1,6 +1,6 @@
 // Chat de ayuda de la landing: datos que recibe el navegador y reglas del pedido (precios, total y mensaje de
 // WhatsApp). Puro: sin DOM ni Astro, lo usan el componente (al construir) y el script del chat (en el navegador).
-import { bloque, conMarca, rich, type SiteContent } from './sitio';
+import { bloque, conMarca, PRIVACIDAD_URL, rich, type SiteContent } from './sitio';
 
 export interface ChatProduct {
   id: string;
@@ -31,6 +31,9 @@ export interface ChatData {
   /** Guardar el pedido en el panel al enviarlo. */
   registrar: boolean;
   mensaje: string;
+  /** Aviso de datos personales antes de enviar, y el enlace a la política (Ley 1581). */
+  aviso: string;
+  privacidad: string;
 }
 
 export const MAX_QTY = 20;
@@ -55,9 +58,13 @@ export function buildChatData(site: SiteContent, logo: string): ChatData {
   const questions = [...c.preguntas, ...(c.usarFaq === 'si' && faqs.visible ? faqs.items : [])]
     .filter((q) => q.pregunta && q.respuesta)
     .map((q) => ({ pregunta: q.pregunta, respuestaHtml: rich(q.respuesta) }));
+  // Los del catálogo traen su id (estable aunque cambie el orden); los del bloque, su posición. Los agotados no se piden.
   const products =
     c.pedido === 'si' && productos.visible
-      ? productos.items.map((p, i) => ({ id: String(i), nombre: p.nombre, detalle: p.detalle, precio: p.precio, unitPrice: unitPriceOf(p.precio) }))
+      ? productos.items
+          .map((p, i) => ({ ...p, id: p.id ?? String(i) }))
+          .filter((p) => !p.agotado)
+          .map((p) => ({ id: p.id, nombre: p.nombre, detalle: p.detalle, precio: p.precio, unitPrice: unitPriceOf(p.precio) }))
       : [];
   return {
     nombre: c.nombre,
@@ -71,6 +78,8 @@ export function buildChatData(site: SiteContent, logo: string): ChatData {
     pedirNota: c.pedirNota === 'si',
     registrar: c.registrar === 'si',
     mensaje: c.mensaje,
+    aviso: conMarca(site.legal.aceptacion, site),
+    privacidad: PRIVACIDAD_URL,
   };
 }
 

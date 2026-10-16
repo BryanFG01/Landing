@@ -324,6 +324,21 @@ const side = site.chat.posicion === 'izquierda' ? 'left' : 'right';
   .chat-hint:empty {
     display: none;
   }
+  .chat-legal {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: color-mix(in oklab, var(--color-crema) 65%, transparent);
+    text-wrap: pretty;
+  }
+  .chat-legal-link {
+    color: var(--color-crema);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .chat-legal-link:focus-visible {
+    outline: 2px solid var(--color-teja);
+    outline-offset: 2px;
+  }
   .chat-send {
     border-radius: 9999px;
     background: var(--color-teja);

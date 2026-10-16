@@ -14,6 +14,7 @@ import {
   type OrderDetails,
   type Quantities,
 } from '../data/chat';
+import { track } from './metrics';
 
 const QUESTIONS_SHOWN = 5;
 const TYPING_MS = 450;
@@ -313,7 +314,18 @@ function initChat(root: HTMLElement) {
       setActions(group(choice('Volver al inicio', () => showMenu())));
       void finishOrder();
     });
-    setActions(group(send, choice('Cambiar el pedido', startOrder), choice('Volver al inicio', () => showMenu())));
+    setActions(privacyNotice(), group(send, choice('Cambiar el pedido', startOrder), choice('Volver al inicio', () => showMenu())));
+  }
+
+  /** "Al enviar tu pedido aceptas… política de tratamiento de datos." (Ley 1581: se piden nombre, teléfono y dirección). */
+  function privacyNotice() {
+    const notice = el('p', 'chat-legal', `${data.aviso} `);
+    const link = el('a', 'chat-legal-link', 'política de tratamiento de datos');
+    link.href = data.privacidad;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    notice.append(link, '.');
+    return notice;
   }
 
   /** Guarda el pedido en el panel (si está activado) y lo cuenta en el chat. */
@@ -331,6 +343,8 @@ function initChat(root: HTMLElement) {
     launcher.setAttribute('aria-expanded', 'true');
     if (!started) {
       started = true;
+      // Se cuenta una vez por página (abrir y cerrar varias veces no suma más chats).
+      track('chat');
       await botSay(data.bienvenida);
       showMenu();
     } else {

@@ -1,6 +1,8 @@
 // Contrato de los módulos del admin: lo comparten el servidor (valida y construye el SQL) y el navegador (pinta el
 // formulario, la tabla y los filtros). Todo lo que se configura de un módulo pasa por aquí antes de llegar a la base.
 
+import type { SalesStats } from './sales';
+
 export const SLUG_RE = /^[a-z][a-z0-9_]{1,47}$/;
 /** Nombre de tabla o columna de PostgreSQL sin comillas (minúsculas). */
 export const IDENT_RE = /^[a-z_][a-z0-9_]{0,62}$/;
@@ -197,7 +199,13 @@ export interface NavModule {
   name: string;
   icon: string | null;
   group_id: number | null;
+  /** Registros con estado "pendiente" (módulos con un campo de lista "estado"), para el contador del menú. */
+  pending: number;
 }
+
+/** ¿El módulo lleva estados con "pendiente"? (pedidos y similares: el menú cuenta los pendientes). */
+export const hasPendingState = (fields: FieldConfig[]) =>
+  fields.some((f) => f.key === 'estado' && f.type === 'select' && f.options?.some((o) => o.value === 'pendiente'));
 
 export const ROLES = {
   admin: 'Administrador (todo el panel)',
@@ -234,6 +242,8 @@ export interface DashboardStats {
   /** Solo para administradores. */
   admins: number | null;
   recent: { action: string; created_at: string; user: string | null; module: string | null; record_id: number | null }[];
+  /** Pedidos de la web (solo si se puede ver ese módulo). */
+  sales: SalesStats | null;
 }
 
 export interface RecordsPage {

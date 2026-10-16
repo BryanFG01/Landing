@@ -2,7 +2,8 @@ import type { APIRoute } from 'astro';
 import { buildChatData, parseWebOrder } from '../../data/chat';
 import { getSite } from '../../data/contenido';
 import { fail, json, readJson } from '../../admin/server/http';
-import { ipFingerprint, saveWebOrder, tooManyOrders } from '../../admin/server/webOrders';
+import { notifyNewOrder } from '../../admin/server/notify';
+import { ipFingerprint, saveWebOrder, tooManyOrders, WEB_ORDERS_MODULE } from '../../admin/server/webOrders';
 
 export const prerender = false;
 
@@ -38,5 +39,7 @@ export const POST: APIRoute = async (ctx) => {
   if (await tooManyOrders(fingerprint)) return fail(429, 'Demasiados pedidos seguidos. Escríbenos por WhatsApp.');
 
   const id = await saveWebOrder(parsed.value, fingerprint);
+  // Aviso al celular del negocio (si está configurado Telegram). No frena la respuesta más de 3 s ni la hace fallar.
+  if (id) await notifyNewOrder(id, parsed.value, `${url.origin}/admin/m/${WEB_ORDERS_MODULE}`);
   return json({ saved: id !== null, id }, id ? 201 : 200);
 };

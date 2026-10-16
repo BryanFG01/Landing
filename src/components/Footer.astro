@@ -1,7 +1,7 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
-import { enFrase, links as linksFor, menu, type SiteContent } from '../data/sitio';
+import { enFrase, links as linksFor, menu, PRIVACIDAD_URL, type SiteContent } from '../data/sitio';
 
 interface Props {
   site: SiteContent;
@@ -75,5 +75,6 @@ const year = new Date().getFullYear();
 
   <div class="mt-16 flex flex-col gap-4 pt-8 text-xs text-crema/50 md:flex-row md:items-center md:justify-between">
     <p>© {year} {marca.nombre}</p>
+    <a href={PRIVACIDAD_URL} class="link self-start md:self-auto">Política de tratamiento de datos</a>
   </div>
 </footer>

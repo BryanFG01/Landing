@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { parseRecordData } from '../../../../../admin/schema';
+import { onCatalogChange } from '../../../../../admin/server/catalog';
 import { audit } from '../../../../../admin/server/db';
 import { moduleFor, sourceFailure } from '../../../../../admin/server/guard';
 import { fail, json, readJson } from '../../../../../admin/server/http';
@@ -44,7 +45,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   try {
     if (!(await updateRow(mod, id, parsed.value, locals.adminUser!.id))) return fail(404, 'El registro no existe.');
     await audit({ userId: locals.adminUser!.id, action: 'update', moduleId: mod.id, ...auditId(id) });
-    return json({ ok: true });
+    return json({ ok: true, deploy: await onCatalogChange(mod, parsed.value) });
   } catch (e) {
     return sourceFailure(e);
   }
@@ -62,7 +63,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     if (refs) return fail(409, `No se puede borrar: ${refs} registro(s) de otros módulos apuntan a este.`);
     if (!(await deleteRow(mod, id))) return fail(404, 'El registro no existe.');
     await audit({ userId: locals.adminUser!.id, action: 'delete', moduleId: mod.id, ...auditId(id) });
-    return json({ ok: true });
+    return json({ ok: true, deploy: await onCatalogChange(mod) });
   } catch (e) {
     return sourceFailure(e);
   }

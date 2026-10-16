@@ -4,6 +4,7 @@ import { fieldOptions, importValue } from '../../../../../admin/server/csv';
 import { audit } from '../../../../../admin/server/db';
 import { moduleFor, sourceFailure } from '../../../../../admin/server/guard';
 import { fail, json, readJson } from '../../../../../admin/server/http';
+import { onCatalogChange } from '../../../../../admin/server/catalog';
 import { checkRelationValues, insertRows } from '../../../../../admin/server/sources';
 
 export const prerender = false;
@@ -61,5 +62,6 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     return sourceFailure(e);
   }
   await audit({ userId: locals.adminUser!.id, action: 'import', moduleId: mod.id, detail: { rows: valid.length } });
-  return json({ inserted: valid.length });
+  // Un solo despliegue para toda la importación (las importaciones no traen fotos).
+  return json({ inserted: valid.length, deploy: await onCatalogChange(mod) });
 };

@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { Badge } from '../../components/ui/badge';
 import { fileUrl, parseFileRef, type ColumnConfig, type FieldConfig, type Option } from '../schema';
+import { whatsappHref } from './lib/format';
 
 const dateFmt = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 const dateTimeFmt = new Intl.DateTimeFormat('es-CO', {
@@ -95,6 +96,21 @@ export function formatCell(
     default: {
       const ref = parseFileRef(value);
       if (ref) return ref.name;
+      const wa = field?.type === 'phone' ? whatsappHref(String(value)) : null;
+      if (wa) {
+        return (
+          <a
+            href={wa}
+            target="_blank"
+            rel="noopener"
+            title="Escribirle por WhatsApp"
+            onClick={(e) => e.stopPropagation()}
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            {String(value)}
+          </a>
+        );
+      }
       if (typeof value === 'object') return JSON.stringify(value);
       const text = options ? optionLabel(value, options) : String(value);
       return text.length > 80 ? `${text.slice(0, 80)}…` : text;

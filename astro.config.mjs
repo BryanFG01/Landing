@@ -9,8 +9,9 @@ import { fotosPublicas, ogImage } from './src/data/imagenes.ts';
 
 // https://astro.build/config
 export default defineConfig({
-  // URL de la landing. Canónica, sitemap, robots.txt, og:image y JSON-LD salen de aquí.
-  site: 'http://localhost:4321',
+  // URL pública de la landing: canónica, sitemap, robots.txt, og:image y JSON-LD salen de aquí. Con dominio propio,
+  // basta con la variable SITE_URL en Vercel (p. ej. https://elagropecuario.com) y volver a desplegar.
+  site: process.env.SITE_URL || 'https://landing-agro-sepia.vercel.app',
   // La landing sigue siendo estática (se prerenderiza). Solo /admin y /api/admin se ejecutan como funciones de Vercel,
   // conectadas a Neon (PostgreSQL).
   adapter: vercel(),
@@ -24,6 +25,9 @@ export default defineConfig({
       DATABASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Deploy Hook de Vercel (Settings → Git → Deploy Hooks). Con él, "Publicar" en Sitio web despliega la landing.
       VERCEL_DEPLOY_HOOK: envField.string({ context: 'server', access: 'secret', optional: true }),
+      // Aviso de pedidos nuevos de la web por Telegram (opcional): token del bot (@BotFather) y chat que lo recibe.
+      TELEGRAM_BOT_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
+      TELEGRAM_CHAT_ID: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
   integrations: [

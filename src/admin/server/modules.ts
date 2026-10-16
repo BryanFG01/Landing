@@ -9,6 +9,7 @@ import type {
   NavModule,
   SourceType,
 } from '../schema';
+import { hasPendingState } from '../schema';
 import { exec, one, query } from './db';
 
 type ModuleRow = {
@@ -83,14 +84,28 @@ export async function moduleAccess(user: AdminUser, moduleId: number): Promise<M
 
 /** Lo que pinta el sidebar: grupos y módulos activos que el usuario puede ver, en orden. */
 export async function getNav(user: AdminUser): Promise<{ groups: ModuleGroup[]; modules: NavModule[] }> {
-  const [groups, modules, access] = await Promise.all([
+  const [groups, rows, access] = await Promise.all([
     listGroups(),
-    query<NavModule>(
-      'SELECT id, module_key, name, icon, group_id FROM admin.modules WHERE is_active ORDER BY sort_order, name',
+    query<Omit<NavModule, 'pending'> & { source_type: string; fields: FieldConfig[] }>(
+      'SELECT id, module_key, name, icon, group_id, source_type, fields FROM admin.modules WHERE is_active ORDER BY sort_order, name',
     ),
     accessMap(user),
   ]);
-  return { groups, modules: modules.filter((m) => access(m.id) !== 'none') };
+  const visible = rows.filter((m) => access(m.id) !== 'none');
+  const pending = await pendingCounts(visible.filter((m) => m.source_type === 'records' && hasPendingState(m.fields)).map((m) => m.id));
+  const modules = visible.map(({ source_type: _s, fields: _f, ...m }) => ({ ...m, pending: pending.get(m.id) ?? 0 }));
+  return { groups, modules };
+}
+
+/** Cuántos registros en estado "pendiente" tiene cada módulo (una sola consulta). */
+async function pendingCounts(moduleIds: number[]) {
+  if (!moduleIds.length) return new Map<number, number>();
+  const rows = await query<{ module_id: number; n: number }>(
+    `SELECT module_id, count(*)::int AS n FROM admin.records
+     WHERE module_id = ANY(?::int[]) AND data->>'estado' = 'pendiente' GROUP BY module_id`,
+    [moduleIds],
+  );
+  return new Map(rows.map((r) => [r.module_id, r.n]));
 }
 
 /** Comprueba que los módulos relacionados existen y tienen el campo de etiqueta. */

@@ -7,6 +7,8 @@ export interface MenuItem {
   label: string;
   href: string;
   icon: string | null;
+  /** Pendientes del módulo (pedidos por atender). */
+  badge?: number;
 }
 
 export interface MenuSection {
@@ -23,7 +25,19 @@ export const SETTINGS_LINKS: MenuItem[] = [
   { label: 'Apariencia', href: '/admin/apariencia', icon: 'palette' },
 ];
 
-const moduleItem = (m: NavModule): MenuItem => ({ label: m.name, href: `/admin/m/${m.module_key}`, icon: m.icon });
+const moduleItem = (m: NavModule): MenuItem => ({
+  label: m.name,
+  href: `/admin/m/${m.module_key}`,
+  icon: m.icon,
+  ...(m.pending > 0 ? { badge: m.pending } : {}),
+});
+
+/** Total de pendientes del menú (para el aviso de pedidos nuevos y el título de la pestaña). */
+export const totalPending = (modules: NavModule[]) => modules.reduce((sum, m) => sum + m.pending, 0);
+
+/** Texto del aviso cuando llegan pendientes nuevos. */
+export const newPendingMessage = (added: number) =>
+  added === 1 ? 'Llegó un pedido nuevo.' : `Llegaron ${added} pedidos nuevos.`;
 
 export function buildMenu(nav: Nav, isAdmin: boolean): MenuSection[] {
   const sections: MenuSection[] = [{ section: '', items: [{ label: 'Inicio', href: '/admin', icon: 'house' }] }];

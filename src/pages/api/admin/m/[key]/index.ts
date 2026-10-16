@@ -4,6 +4,7 @@ import { audit } from '../../../../../admin/server/db';
 import { listQueryFrom } from '../../../../../admin/server/filters';
 import { moduleFor, sourceFailure } from '../../../../../admin/server/guard';
 import { fail, json, readJson } from '../../../../../admin/server/http';
+import { onCatalogChange } from '../../../../../admin/server/catalog';
 import { checkRelationValues, insertRow, listRows } from '../../../../../admin/server/sources';
 
 export const prerender = false;
@@ -43,7 +44,9 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       recordId: typeof id === 'number' ? id : null,
       subject: String(id),
     });
-    return json({ id }, 201);
+    // Si es un producto del catálogo de la web: foto pública y web actualizada.
+    const deploy = await onCatalogChange(mod, parsed.value);
+    return json({ id, deploy }, 201);
   } catch (e) {
     return sourceFailure(e);
   }

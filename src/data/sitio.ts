@@ -194,12 +194,29 @@ export interface BloqueFrase extends Base {
   tipo: 'frase';
   lineas: string[];
 }
+export const ORIGENES_PRODUCTOS = {
+  bloque: 'Los de la lista de este bloque',
+  modulo: 'Los del módulo Productos del panel (catálogo único)',
+} as const;
+
+export interface ProductoWeb {
+  nombre: string;
+  detalle: string;
+  precio: string;
+  foto: Img;
+  /** Solo con el catálogo del módulo: id del registro (estable para el chat) y si está agotado. */
+  id?: string;
+  agotado?: boolean;
+}
+
 export interface BloqueProductos extends Base {
   tipo: 'productos';
   eyebrow: string;
   titulo: string;
   nota: string;
-  items: { nombre: string; detalle: string; precio: string; foto: Img }[];
+  /** "modulo": los productos salen del módulo Productos del panel (src/data/catalogo.ts). */
+  origen: keyof typeof ORIGENES_PRODUCTOS;
+  items: ProductoWeb[];
 }
 export interface BloqueDiferencia extends Base {
   tipo: 'diferencia';
@@ -255,6 +272,22 @@ export type Bloque =
 
 export type TipoBloque = Bloque['tipo'];
 
+/** Política de tratamiento de datos (Ley 1581 de 2012): la página /privacidad y el aviso del chat. */
+export interface Legal {
+  /** Nombre o razón social del responsable de los datos. */
+  responsable: string;
+  /** NIT o cédula del responsable. */
+  documento: string;
+  /** Correo para consultas y reclamos sobre los datos. */
+  correo: string;
+  /** Fecha de la última actualización, como se muestra ("15 de octubre de 2026"). */
+  actualizado: string;
+  /** Texto de la política. "## " empieza un título, "- " una viñeta y una línea en blanco separa párrafos. */
+  texto: string;
+  /** Línea del chat antes de enviar el pedido (lleva el enlace a la política). */
+  aceptacion: string;
+}
+
 export interface SiteContent {
   version: 1;
   tema: Tema;
@@ -262,6 +295,7 @@ export interface SiteContent {
   contacto: Contacto;
   seo: Seo;
   chat: ChatConfig;
+  legal: Legal;
   bloques: Bloque[];
 }
 
@@ -328,6 +362,53 @@ export const SITE_DEFAULTS: SiteContent = {
     registrar: 'si',
     mensaje:
       'Hola, {marca}. Quiero hacer este pedido:\n{pedido}\n{total}\n\nNombre: {nombre}\nWhatsApp: {telefono}\nDirección: {direccion}\nEntrega: {entrega}{nota}',
+  },
+  legal: {
+    responsable: 'El Agropecuario',
+    documento: '[NIT o cédula]',
+    correo: '[correo de contacto]',
+    actualizado: '15 de octubre de 2026',
+    aceptacion: 'Al enviar tu pedido aceptas que usemos tus datos para entregarlo, según nuestra',
+    texto: `{responsable}, identificado con {documento}, con domicilio en {ubicacion}, es el responsable del tratamiento de los datos personales que recibe a través de esta página, del chat de pedidos y de WhatsApp. Esta política cumple la Ley 1581 de 2012 y el Decreto 1377 de 2013.
+
+## Qué datos recogemos
+
+- Nombre.
+- Número de WhatsApp o teléfono.
+- Dirección o barrio de entrega.
+- Lo que pides y las notas que nos dejes.
+
+No recogemos datos sensibles ni datos de menores de edad.
+
+## Para qué los usamos
+
+- Preparar, confirmar y entregar tu pedido.
+- Comunicarnos contigo sobre ese pedido por WhatsApp o llamada.
+- Llevar el registro de pedidos del negocio.
+
+No vendemos ni compartimos tus datos con terceros, salvo cuando lo exija una autoridad.
+
+## Tus derechos
+
+Como titular de los datos puedes:
+
+- Conocer, actualizar y corregir tus datos.
+- Pedir prueba de la autorización que nos diste.
+- Saber cómo hemos usado tus datos.
+- Revocar la autorización o pedir que borremos tus datos, si no hay un deber legal de conservarlos.
+- Presentar quejas ante la Superintendencia de Industria y Comercio.
+
+## Cómo ejercerlos
+
+Escríbenos a **{correo}** o por WhatsApp al **{telefono}**. Respondemos las consultas en un máximo de 10 días hábiles y los reclamos en un máximo de 15 días hábiles.
+
+## Autorización
+
+Al enviar un pedido por el chat o por WhatsApp nos autorizas a tratar tus datos para las finalidades de esta política.
+
+## Vigencia
+
+Esta política rige desde el {actualizado}. Conservamos los datos mientras sean necesarios para las finalidades descritas o lo exija la ley.`,
   },
   bloques: [
     {
@@ -431,6 +512,7 @@ export const SITE_DEFAULTS: SiteContent = {
       id: 'productos',
       tipo: 'productos',
       visible: true,
+      origen: 'bloque',
       eyebrow: 'Productos',
       titulo: 'Lo que sale de la finca',
       nota: `El pollo no se vende por libra fija: se pesa completo y **cada libra vale ${pollo}**, entero o despresado, **con el domicilio incluido**.`,
@@ -694,8 +776,15 @@ export const BLOCK_DEFS: Record<TipoBloque, BlockDef> = conColores({
       { key: 'eyebrow', label: 'Antetítulo', type: 'text', max: 40 },
       { key: 'titulo', label: 'Título', type: 'text', max: 90 },
       {
+        key: 'origen',
+        label: 'De dónde salen los productos',
+        type: 'select',
+        options: ORIGENES_PRODUCTOS,
+        help: 'Con el módulo, los productos y precios se editan en el panel (Catálogo → Productos) y la web y el chat los toman de ahí: la lista de abajo no se usa. Los marcados como no disponibles salen como "Agotado" y no se pueden pedir.',
+      },
+      {
         key: 'items',
-        label: 'Productos',
+        label: 'Productos (si salen de este bloque)',
         type: 'list',
         itemLabel: 'Producto',
         max: 20,
@@ -816,7 +905,7 @@ export const BLOCK_DEFS: Record<TipoBloque, BlockDef> = conColores({
 
 /** Ajustes generales del sitio, en el mismo formato que los bloques. */
 export const SETTINGS_DEFS: {
-  key: 'tema' | 'marca' | 'contacto' | 'seo' | 'chat';
+  key: 'tema' | 'marca' | 'contacto' | 'seo' | 'chat' | 'legal';
   nombre: string;
   descripcion: string;
   fields: FieldDef[];
@@ -957,6 +1046,26 @@ export const SETTINGS_DEFS: {
         max: 600,
         help: 'Variables: {marca} {pedido} {total} {nombre} {telefono} {direccion} {entrega} {nota}.',
       },
+    ],
+  },
+  {
+    key: 'legal',
+    nombre: 'Privacidad',
+    descripcion:
+      'Política de tratamiento de datos (Ley 1581 de 2012): la página /privacidad, enlazada en el pie y en el chat. El texto es una base: revísalo con tus datos reales.',
+    fields: [
+      { key: 'responsable', label: 'Responsable (nombre o razón social)', type: 'text', max: 120 },
+      { key: 'documento', label: 'NIT o cédula', type: 'text', max: 40 },
+      { key: 'correo', label: 'Correo para consultas y reclamos', type: 'text', max: 120 },
+      { key: 'actualizado', label: 'Fecha de actualización', type: 'text', max: 40, help: 'Como se muestra, por ejemplo "15 de octubre de 2026".' },
+      {
+        key: 'texto',
+        label: 'Texto de la política',
+        type: 'textarea',
+        max: 12000,
+        help: '"## " al inicio de una línea crea un título, "- " una viñeta, y una línea en blanco separa párrafos. Variables: {marca} {responsable} {documento} {correo} {telefono} {ubicacion} {actualizado}.',
+      },
+      { key: 'aceptacion', label: 'Aviso en el chat antes de enviar', type: 'text', max: 200, help: 'Al final se añade el enlace "política de tratamiento de datos".' },
     ],
   },
 ];
@@ -1151,6 +1260,36 @@ export const rich = (s: string) =>
   escapeHtml(s)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br />');
+
+export const PRIVACIDAD_URL = '/privacidad';
+
+/** Bloque de la página de privacidad: título, párrafo o lista (con negritas, escapado: seguro para set:html). */
+export type LegalBlock = { tipo: 'titulo'; html: string } | { tipo: 'parrafo'; html: string } | { tipo: 'lista'; items: string[] };
+
+/** La política con sus variables resueltas, en bloques para pintarla. */
+export function legalBlocks(site: SiteContent): LegalBlock[] {
+  const l = site.legal;
+  const vars: Record<string, string> = {
+    marca: site.marca.nombre,
+    responsable: l.responsable,
+    documento: l.documento,
+    correo: l.correo,
+    telefono: site.contacto.telefono,
+    ubicacion: site.contacto.ubicacion,
+    actualizado: l.actualizado,
+  };
+  const text = l.texto.replace(/\{(\w+)\}/g, (all, k: string) => vars[k] ?? all);
+  return text
+    .split(/\n\s*\n/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk): LegalBlock => {
+      if (chunk.startsWith('## ')) return { tipo: 'titulo', html: rich(chunk.slice(3).trim()) };
+      const lines = chunk.split('\n').map((line) => line.trim());
+      if (lines.every((line) => line.startsWith('- '))) return { tipo: 'lista', items: lines.map((line) => rich(line.slice(2))) };
+      return { tipo: 'parrafo', html: rich(chunk) };
+    });
+}
 
 /** Texto plano (sin marcas), para SEO y JSON-LD. */
 export const plain = (s: string) => s.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\s*\n\s*/g, ' ');

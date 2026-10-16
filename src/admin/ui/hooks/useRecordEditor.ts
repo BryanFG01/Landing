@@ -5,9 +5,22 @@ import type { RecordRow } from '../../schema';
 import { api, ApiError, errorMessage } from '../api';
 import { rowPath, type ViewModule } from '../lib/moduleView';
 import { initialValues, type FormValues } from '../lib/recordForm';
+import { useNav } from '../nav';
+
+/** `deploy`: si el registro es un producto del catálogo de la web, el resultado de pedir a Vercel que la actualice. */
+type SaveResult = { deploy?: 'ok' | 'sin_hook' | 'error' | null };
+
+const WEB_UPDATING = 'La web se actualiza en 1 o 2 minutos.';
+
+function savedMessage(created: boolean, deploy: SaveResult['deploy']) {
+  const base = created ? 'Registro creado' : 'Cambios guardados';
+  return deploy === 'ok' ? `${base}. ${WEB_UPDATING}` : base;
+}
 
 export function useRecordEditor(mod: ViewModule, onChanged: () => void) {
   const { toast } = useToast();
+  // El menú cuenta los pendientes: tras guardar o borrar, se actualiza ya.
+  const { refreshNav } = useNav();
   const [editing, setEditing] = React.useState<RecordRow | 'new' | null>(null);
   const [values, setValues] = React.useState<FormValues>({});
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -33,11 +46,14 @@ export function useRecordEditor(mod: ViewModule, onChanged: () => void) {
     if (!editing) return;
     setSaving(true);
     try {
-      if (editing === 'new') await api(`/m/${mod.module_key}`, { method: 'POST', body: values });
-      else await api(rowPath(mod.module_key, editing.__id), { method: 'PUT', body: values });
-      toast({ variant: 'success', title: editing === 'new' ? 'Registro creado' : 'Cambios guardados' });
+      const r =
+        editing === 'new'
+          ? await api<SaveResult>(`/m/${mod.module_key}`, { method: 'POST', body: values })
+          : await api<SaveResult>(rowPath(mod.module_key, editing.__id), { method: 'PUT', body: values });
+      toast({ variant: 'success', title: savedMessage(editing === 'new', r.deploy) });
       setEditing(null);
       onChanged();
+      void refreshNav();
     } catch (err) {
       const fieldErrors = err instanceof ApiError ? err.fieldErrors : {};
       setErrors(fieldErrors);
@@ -47,12 +63,30 @@ export function useRecordEditor(mod: ViewModule, onChanged: () => void) {
     }
   }
 
+  /** Cambio rápido de estado desde la lista (pendiente → confirmado…), sin abrir el formulario. */
+  const setStatus = React.useCallback(
+    async (row: RecordRow, estado: string) => {
+      try {
+        const body = { ...initialValues(mod.fields, row), estado };
+        await api(rowPath(mod.module_key, row.__id), { method: 'PUT', body });
+        const label = mod.fields.find((f) => f.key === 'estado')?.options?.find((o) => o.value === estado)?.label ?? estado;
+        toast({ variant: 'success', title: `#${String(row.__id)}: ${label}` });
+        onChanged();
+        void refreshNav();
+      } catch (err) {
+        toast({ variant: 'error', title: errorMessage(err, 'No se pudo cambiar el estado.') });
+      }
+    },
+    [mod.fields, mod.module_key, onChanged, refreshNav, toast],
+  );
+
   async function remove() {
     if (!deleting) return;
     try {
-      await api(rowPath(mod.module_key, deleting.__id), { method: 'DELETE' });
-      toast({ variant: 'success', title: 'Registro borrado' });
+      const r = await api<SaveResult>(rowPath(mod.module_key, deleting.__id), { method: 'DELETE' });
+      toast({ variant: 'success', title: r.deploy === 'ok' ? `Registro borrado. ${WEB_UPDATING}` : 'Registro borrado' });
       onChanged();
+      void refreshNav();
     } catch (err) {
       toast({ variant: 'error', title: errorMessage(err, 'No se pudo borrar.') });
     }
@@ -73,5 +107,6 @@ export function useRecordEditor(mod: ViewModule, onChanged: () => void) {
     askDelete: setDeleting,
     cancelDelete: () => setDeleting(null),
     remove,
+    setStatus,
   };
 }

@@ -34,6 +34,12 @@ export async function getSiteState() {
   };
 }
 
+/** Lo publicado, o null si aún no se ha publicado nada desde el panel. */
+export async function getPublished(): Promise<SiteContent | null> {
+  const row = await getSetting('site_published');
+  return row ? parseSite(row.value).value : null;
+}
+
 export async function getDraft(): Promise<SiteContent> {
   const row = (await getSetting('site_draft')) ?? (await getSetting('site_published'));
   return row ? parseSite(row.value).value : SITE_DEFAULTS;

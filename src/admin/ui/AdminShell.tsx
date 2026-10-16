@@ -13,6 +13,7 @@ import {
 } from '../../components/ui/dropdown';
 import { Sidebar } from '../../components/ui/sidebar';
 import type { AdminUser } from '../schema';
+import { usePendingAlerts } from './hooks/usePendingAlerts';
 import { useTheme } from './hooks/useShellState';
 import { logout, useSidebar } from './hooks/useSidebar';
 import { Icon } from './icons';
@@ -81,6 +82,7 @@ interface AdminShellProps {
 export function AdminShell({ user, breadcrumb, children }: Readonly<AdminShellProps>) {
   const sidebar = useSidebar(user);
   const theme = useTheme();
+  usePendingAlerts();
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
