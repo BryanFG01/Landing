@@ -1,6 +1,6 @@
 # Estado del proyecto · El Agropecuario
 
-Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · Producción: https://landing-agro-sepia.vercel.app
+Actualizado: 15 de octubre de 2026 (noche) · Rama `main` (último commit `85c8ece`; sin subir: el arreglo del scroll del panel) · Producción: https://landing-agro-sepia.vercel.app
 
 ## Resumen
 
@@ -13,11 +13,11 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 | SEO técnico | 75 % | Todo hecho **salvo la URL del sitio** (sigue en `localhost`) |
 | Panel: base (login, sesiones, menú, módulos, CRUD) | 100 % | En producción |
 | Panel: fase 2 (tablas, consultas SQL, consola, permisos, archivos, Excel, apariencia) | 100 % | En producción |
-| Sitio web editable desde el panel | 90 % | Funciona; falta configurar el Deploy Hook de Vercel |
+| Sitio web editable desde el panel | 90 % | Funciona, con 4 plantillas; falta configurar el Deploy Hook de Vercel |
 | Base de datos e infraestructura | 85 % | 5 migraciones aplicadas en producción; faltan Deploy Hook y rama Develop por caducar |
 | Seguridad | 75 % | Falta rotar la contraseña de Neon y cambiar la del usuario temporal |
 | Calidad de código | 90 % | Refactorizado con reglas de Clean Code; las pruebas automáticas no están en el repositorio |
-| Documentación | 90 % | `ADMIN.md`, `SCROLL-VIDEO.md`, skill de Clean Code |
+| Documentación | 90 % | `ADMIN.md`, `SCROLL-VIDEO.md`, skills de Clean Code y de las plantillas |
 
 ---
 
@@ -34,6 +34,7 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
   - Cada pedido queda registrado en el panel (módulo "Pedidos de la web") con su número, estado y datos del cliente.
   - Se configura desde el panel y no tiene costo, porque no usa IA.
 - **Diseño responsive:** pantalla dividida en escritorio, video a pantalla completa en móvil y menú hamburguesa.
+- **Aspecto cambiable desde el panel:** 4 plantillas y 4 diseños de portada (dividida, panel, centrada y tarjeta); menú a la izquierda, al centro o a la derecha. Todos los colores salen de variables CSS, así que los bloques no cambian de código con cada plantilla.
 - **SEO:**
   - title y description, Open Graph y Twitter.
   - JSON-LD: LocalBusiness, catálogo de ofertas y FAQ.
@@ -51,19 +52,32 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 - **Inicio:** resumen y actividad reciente, filtrados según los permisos de cada usuario.
 - **Constructor de módulos sin código.** Cada módulo puede ser de tres tipos:
   - **Registros del panel:** formulario libre con 14 tipos de campo, incluidos relación, foto y archivo.
-  - **Tabla real** de la base, con su clave primaria. La tabla se puede crear con SQL desde el propio constructor.
-  - **Consulta SQL** de solo lectura (reportes y totales), con prueba previa.
-  - En todos: columnas, filtros y orden configurables, y grupos del menú.
+  - **Tabla real** de la base, con su clave primaria. La tabla se crea o se cambia (`ALTER`) con SQL desde el propio constructor.
+    - Del SQL salen solos los campos, las columnas y los filtros.
+    - `CHECK ... IN (...)` o `ENUM` dan una lista con su filtro.
+    - `REFERENCES` da una relación con el módulo de esa tabla.
+    - `COMMENT ON COLUMN` da la etiqueta y `COMMENT ON TABLE` el nombre del módulo.
+  - **Consulta SQL** de solo lectura (reportes y totales), con prueba previa. El SQL se puede editar después de creado el módulo.
+  - En todos: columnas, filtros y orden configurables, y grupos del menú. El tipo de origen no se cambia después de crear el módulo.
 - **Cada módulo ofrece:** tabla con filtros, orden y paginación; alta, edición y borrado; **exportar a Excel (.xlsx)** e **importar desde Excel o CSV** con validación de todo o nada.
 - **Consola SQL** sobre el esquema `datos`:
   - Solo lectura por defecto, con confirmación antes de borrar.
   - Historial, ejemplos y lista de tablas.
 - **Usuarios y permisos:** rol Administrador, o rol Usuario con acceso por módulo ("ver y exportar" o "ver y editar").
-- **Apariencia:** nombre, logo, colores, esquinas, tema por defecto y textos del login, con vista previa en vivo.
+- **Apariencia:** nombre, logo, tema por defecto, foto y textos del login, con vista previa en vivo.
+  - **Colores del panel:** por defecto, los de la plantilla publicada en la web (colores, esquinas y tipografías, en modo claro y oscuro); al publicar otra plantilla, el panel cambia al momento. Opción "Propios del panel" para usar un color principal y unas esquinas propios.
 - **Sitio web:**
   - Edita la landing por bloques: textos, listas, fotos, video, colores, tipografías, orden y visibilidad.
-  - **4 plantillas de diseño** (Finca, Órbita, Atardecer y Lima), cada una con colores, tipografía, esquinas, menú, pie y su propia portada. El login se viste con la plantilla publicada.
-  - Colores propios por bloque, menú y pie; diseño de portada elegible; avisos de contraste.
+  - **4 plantillas de diseño** (Finca, Órbita, Atardecer y Lima), cada una con colores, tipografía, esquinas, menú, pie y su propia portada.
+    - Al elegir una, se guarda en el borrador; se publica con el botón Publicar.
+    - El login y el panel se visten con la plantilla publicada.
+  - **Colores y tipografía**, en grupos:
+    - **Página:** fondo, texto, acento y degradado del titular.
+    - **Botones:** texto, degradado y esquinas.
+    - **Menú y pie de página:** posición del menú (izquierda, centro o derecha), y fondo y texto del menú y del pie.
+    - **Tipografía:** fuentes y grosor de títulos.
+  - **Colores propios por bloque.** En la portada van arriba, como "Colores de la portada": el fondo es el velo sobre el video. Un aviso indica qué bloques no siguen los colores de la página y permite quitárselos a todos.
+  - Diseño de portada elegible y avisos de contraste (WCAG) en el tema y en cada bloque.
   - También el chat de ayuda: preguntas, pasos del pedido y mensaje de WhatsApp.
   - Borrador, vista previa, publicar (redespliega la web vía Deploy Hook) y recuperar versiones anteriores.
 - **Auditoría** de cada cambio (`admin.audit_log`).
@@ -87,7 +101,13 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 - **Arquitectura por capas:** dominio, servidor, API, hooks, `lib` y componentes. Los `.tsx` solo pintan; la lógica está en hooks y en `.ts`. Las reglas están en `.claude/skills/clean-code/SKILL.md` y en `ADMIN.md`.
 - **Verificado el 15/10/2026:**
   - El build compila y TypeScript no reporta errores en todo el proyecto.
-  - Pasan las pruebas de punta a punta de la API (fase 2, Sitio web y pedidos del chat) y los recorridos en el navegador del panel y de la landing, en escritorio y móvil.
+  - Pasan las pruebas de punta a punta de la API (fase 2, Sitio web, pedidos del chat y módulos creados solo con SQL) y los recorridos en el navegador del panel y de la landing, en escritorio y móvil.
+  - Plantillas: cada una sin avisos de contraste; aplicarla conserva textos y fotos; la vista previa, el login y el panel la muestran.
+  - El panel no desplaza la página: solo el contenido hace scroll y el menú lateral queda fijo (7 pantallas, ventana normal y muy baja).
+- **Arreglados hoy:**
+  - Apariencia no dejaba guardar (Guardar y Descartar quedaban desactivados tras cualquier cambio).
+  - Una plantilla aplicada no se veía en una pestaña de vista previa abierta de antes.
+  - En algunas pantallas del panel se desplazaba la página entera con el menú lateral.
 
 ---
 
@@ -118,6 +138,9 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 - En los formularios, los interruptores Sí/No empiezan en "No" aunque la columna de la tabla tenga `DEFAULT true`.
 - Los archivos de registros borrados no se limpian solos de la base (ocupan espacio en Neon).
 - Fotos de producto en el bloque Productos (el campo ya existe en el editor).
+- "Pasar a tabla de la base" para módulos de Registros del panel (como Categorías): crear la tabla, copiar los registros y poder manejarlos con SQL.
+- "Intensidad del velo" en la portada (suave, media o fuerte): hoy la fija cada diseño de portada.
+- Las plantillas solo cambian el aspecto. Si más adelante se quieren variantes de diseño en otros bloques (como ya tiene la portada), el modelo lo admite.
 - Llevar a nuvo-ui los arreglos hechos aquí (modal, sidebar, dashboard-layout, login); ver la lista en `ADMIN.md`.
 - Node 25 en local frente a Node 24 en Vercel: usar Node 22 o 24 también en local para evitar diferencias.
 
@@ -130,5 +153,7 @@ Actualizado: 15 de octubre de 2026 · Rama `main` (último commit `226006f`) · 
 | `ADMIN.md` | Arquitectura, tablas, API, seguridad, comandos, puesta en producción, Sitio web y fase 2 |
 | `SCROLL-VIDEO.md` | Guía para reutilizar el efecto de video al hacer scroll en otras webs |
 | `.claude/skills/clean-code/SKILL.md` | Reglas de código: dónde va cada cosa y lista de comprobación |
+| `.claude/skills/plantilla-*/SKILL.md` | Referencia de estilo de cada plantilla (Órbita, Atardecer y Lima) y qué se ajustó |
+| `src/data/plantillas.ts` | Las plantillas: tema, colores por bloque y portada de cada una |
 | `db/migrations/` | Cambios de la base, en orden (`pnpm db:migrate`) |
 | `db/validar.sql` | Consultas de solo lectura para revisar la base de producción |

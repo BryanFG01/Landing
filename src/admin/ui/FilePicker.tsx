@@ -26,7 +26,9 @@ export function FilePicker({
 }: Readonly<FilePickerProps>) {
   const input = React.useRef<HTMLInputElement>(null);
   return (
-    <>
+    // relative: el input oculto (sr-only es absoluto) se queda junto al botón. Sin esto se ubica respecto a la página
+    // y la alarga: el panel entero, con su menú lateral, se desplazaba.
+    <span className="relative inline-flex">
       <input
         ref={input}
         type="file"
@@ -43,6 +45,6 @@ export function FilePicker({
       <Button type="button" size={size} variant={variant} disabled={disabled} onClick={() => input.current?.click()}>
         <Icon name="upload" /> {children}
       </Button>
-    </>
+    </span>
   );
 }

@@ -186,7 +186,7 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 - **Se configura:** mostrarlo u ocultarlo, texto y lado del botón, nombre del asistente, bienvenida, preguntas, entregas, nota, registro en el panel y plantilla del mensaje. Sale con Publicar, como el resto.
 - **Código:** reglas del pedido en `src/data/chat.ts` (puro, también valida el pedido en el servidor), conversación en `src/scripts/chat.ts`, marco en `src/components/ChatBot.astro` y guardado en `src/admin/server/webOrders.ts`. No usa React: la landing sigue ligera.
 
-**Plantillas** (Sitio web → General → Plantillas). Cambian de una vez el aspecto de la web sin tocar textos, fotos ni el orden de los bloques. Aplicar una deja el cambio sin guardar; se revisa en Vista previa y sale con Publicar.
+**Plantillas** (Sitio web → General → Plantillas). Cambian de una vez el aspecto de la web sin tocar textos, fotos ni el orden de los bloques. Al aplicar una se guarda en el borrador (así cualquier vista previa la muestra, también una pestaña abierta de antes); se revisa en Vista previa y sale con Publicar.
 
 | Plantilla | Aspecto | Portada |
 |---|---|---|
@@ -196,8 +196,10 @@ Sin nada publicado, la landing usa `SITE_DEFAULTS` (el contenido de siempre). Si
 | Lima | Blanco cálido y verde bosque, lima en las franjas oscuras, DM Sans 300, tarjetas rectas | Clara, con el video en una tarjeta |
 
 - **Qué cambia una plantilla:**
-  - **Tema** (Colores y tipografía, en grupos): fondo, texto y acento de la página; segundo color del titular; texto de los botones y su degradado opcional; esquinas de botones y tarjetas; colores del menú y del pie; tipografías y grosor de los títulos.
+  - **Tema** (Colores y tipografía, en grupos): fondo, texto y acento de la página; segundo color del titular; texto de los botones y su degradado opcional; esquinas de botones y tarjetas; posición del menú en escritorio (izquierda, centro o derecha; en el celular siempre al centro) y colores del menú y del pie; tipografías y grosor de los títulos.
   - **Colores de cada bloque** (al final de cada bloque, "Colores del bloque"): fondo (con degradado opcional), texto y acento. Vacíos: los del tema.
+    - En la portada van arriba, como "Colores de la portada", sin degradado: su fondo es el velo de color sobre el video.
+    - Los colores de un bloque mandan sobre los de la página. En Colores y tipografía, un aviso lista los bloques con colores propios y tiene un botón para quitárselos a todos.
   - **Diseño de la portada** (bloque Portada → "Diseño de la portada"): dividida, panel, centrada o tarjeta. Solo cambia dónde van el video y el texto; el recorrido con scroll es el mismo.
 - **El login** del panel se viste con la plantilla **publicada** (fondo, texto, acento, texto de botones y tipografías).
 - **El panel** también, si en Apariencia → "Colores del panel" está "Los de la plantilla de la web" (por defecto). `panelCss` en `src/admin/schema.ts`:
@@ -343,3 +345,4 @@ El código de nuvo-ui vive en el proyecto (`src/components/ui`), así que se aju
 5. **`data-table`**: no admite paginación ni orden en servidor. Aquí la paginación usa `Pagination` aparte y el orden un selector propio.
 6. **`modal`**: se centraba con `-translate-x-1/2 -translate-y-1/2` y se animaba con `slide-in-from-left-1/2` / `slide-in-from-top-[48%]` (patrón de Tailwind v3). En v4 `translate` y la animación van en propiedades distintas y se suman: el modal entraba desde la esquina superior izquierda. Ahora se centra con `fixed inset-0 m-auto h-fit` (sin translate) y entra con fundido y `zoom-in-95` desde el centro; además hace scroll si es más alto que la pantalla.
 7. **`sidebar`**: plegado, el div de recorte seguía midiendo 240 px y, en móvil (menú superpuesto), tapaba de forma invisible los botones de la izquierda de la página. Ahora lleva `pointer-events-none` y el `nav` es `inert` mientras está plegado.
+8. **`dashboard-layout`**: el `main` con scroll no era `relative`. Un elemento absoluto de dentro sin padre posicionado (como un `input type="file"` con `sr-only`) se ubicaba respecto a la página y la alargaba. Al hacer scroll se movía todo el panel, menú lateral incluido, y quedaba un hueco en blanco. Ahora `main` es `relative`; además `FilePicker` envuelve su input en un `span` relativo.

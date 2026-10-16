@@ -57,8 +57,9 @@ export function DashboardLayout({
           </header>
         )}
 
-        {/* Main scrollable */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Main scrollable. relative: lo absoluto de dentro (p. ej. inputs sr-only) se queda en este scroll y no
+            alarga la página (si no, se desplaza todo el panel, menú lateral incluido). */}
+        <main className="relative flex-1 overflow-y-auto">
           {children}
         </main>
 
