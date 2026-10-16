@@ -1,0 +1,185 @@
+.frame {
+  will-change: opacity, transform;
+}
+
+/* Escritorio: pantalla dividida. El vídeo vertical llena la mitad derecha a toda la altura (en media pantalla apenas
+   se recorta y no pierde nitidez; a pantalla completa quedaría borroso, es de 576 px de ancho). Su borde izquierdo se
+   funde con el fondo para que no haya una línea dura entre el texto y el vídeo. */
+@media (min-width: 1024px) {
+  .media {
+    left: auto;
+    width: 48%;
+    mask-image: linear-gradient(to right, transparent, #000 24%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .media {
+    width: 52%;
+  }
+}
+
+/* ─── Diseños de la portada (Sitio web → Portada → Diseño). Solo cambian dónde van el video y el texto; el
+   recorrido con scroll (src/scripts/motion.ts) es el mismo. "dividida" es el de arriba. ─── */
+
+/* Panel: la portada es un gran panel redondeado; alrededor se ve el fondo de la página. */
+[data-disenio='panel'] {
+  background-color: var(--color-page);
+}
+
+[data-disenio='panel'] [data-stage] {
+  clip-path: inset(5.5rem 0.75rem 0.75rem round calc(var(--radius-card) * 2));
+}
+
+[data-disenio='panel'] .stop-body {
+  padding-left: 2rem;
+  padding-bottom: 3rem;
+}
+
+@media (min-width: 1024px) {
+  [data-disenio='panel'] [data-stage] {
+    clip-path: inset(6rem 1.5rem 1.5rem round calc(var(--radius-card) * 2));
+  }
+
+  [data-disenio='panel'] .stop-body {
+    padding-left: 5rem;
+    padding-bottom: 4.5rem;
+  }
+}
+
+/* Centrada: el video llena la pantalla bajo un velo de color parejo y el texto va al centro. */
+[data-disenio='centrada'] .media {
+  left: 0;
+  width: 100%;
+  mask-image: none;
+}
+
+[data-disenio='centrada'] .veil-main {
+  background-image: none;
+  background-color: color-mix(in oklab, var(--color-bg) 74%, transparent);
+}
+
+[data-disenio='centrada'] .veil-bottom {
+  display: none;
+}
+
+[data-disenio='centrada'] .stop-body {
+  margin-inline: auto;
+  align-items: center;
+  padding-bottom: 18svh;
+  text-align: center;
+}
+
+[data-disenio='centrada'] .stop-body ul,
+[data-disenio='centrada'] .stop-body dl {
+  justify-content: center;
+}
+
+[data-disenio='centrada'] .hero-title {
+  margin-inline: auto;
+}
+
+/* Tarjeta: portada clara; el video va en una tarjeta flotante (arriba en móvil, a la derecha en escritorio). */
+[data-disenio='tarjeta'] .media {
+  inset: 5.5rem 1rem auto;
+  width: auto;
+  height: 40svh;
+  overflow: hidden;
+  border-radius: 16px;
+  mask-image: none;
+}
+
+[data-disenio='tarjeta'] .veil-top {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  [data-disenio='tarjeta'] .media {
+    /* A la derecha deja sitio al raíl de paradas y abajo al texto "desliza". */
+    inset: 7rem 9rem 9rem auto;
+    width: 34%;
+    height: auto;
+  }
+
+  [data-disenio='tarjeta'] .veil-main,
+  [data-disenio='tarjeta'] .veil-bottom {
+    display: none;
+  }
+
+  [data-disenio='tarjeta'] .stop-body {
+    max-width: min(42rem, 54vw);
+  }
+}
+
+.clips {
+  opacity: 0;
+  transition: opacity 1200ms var(--ease-fluid);
+}
+
+[data-mode='video'] .clips {
+  opacity: 1;
+}
+
+/* Solo se ve el clip del tramo actual. Los clips son tomas distintas: al cambiar de tramo se funden en vez de cortar. */
+.clip {
+  object-position: var(--focus-x) 50%;
+  opacity: 0;
+  transition: opacity 500ms var(--ease-fluid);
+}
+
+.clip.is-shown {
+  opacity: 1;
+}
+
+.rail-label {
+  opacity: 0;
+  transform: translateX(0.5rem);
+  transition:
+    opacity 700ms var(--ease-fluid),
+    transform 700ms var(--ease-fluid);
+}
+
+.rail-dot {
+  transition:
+    background-color 700ms var(--ease-fluid),
+    transform 700ms var(--ease-fluid);
+}
+
+.rail-link:hover .rail-label,
+.rail-link:focus-visible .rail-label,
+.rail-link[aria-current='true'] .rail-label {
+  opacity: 1;
+  transform: none;
+}
+
+.rail-link:hover .rail-dot {
+  background-color: var(--color-crema);
+}
+
+.rail-link[aria-current='true'] .rail-dot {
+  background-color: var(--color-teja);
+  transform: scale(1.5);
+}
+
+.hint-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-crema);
+  animation: hint 2400ms var(--ease-fluid) infinite;
+}
+
+@keyframes hint {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint-line::after {
+    animation: none;
+  }
+}

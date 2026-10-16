@@ -1,0 +1,33 @@
+/* Antes de JS (sin clase .js): todos los elementos visibles. Con JS activo, se animan al entrar. */
+.js .stop-body > * {
+  opacity: 0;
+  transform: translateY(2rem);
+  transition:
+    opacity 700ms var(--ease-fluid),
+    transform 700ms var(--ease-fluid);
+}
+
+.js .stop.is-current .stop-body > *,
+.js .stop-body:focus-within > * {
+  opacity: 1;
+  transform: none;
+  transition-duration: 1000ms;
+}
+
+.stop.is-current .stop-body > *:nth-child(2) { transition-delay: 60ms; }
+.stop.is-current .stop-body > *:nth-child(3) { transition-delay: 120ms; }
+.stop.is-current .stop-body > *:nth-child(4) { transition-delay: 180ms; }
+.stop.is-current .stop-body > *:nth-child(5) { transition-delay: 240ms; }
+.stop.is-current .stop-body > *:nth-child(6) { transition-delay: 300ms; }
+.stop.is-current .stop-body > *:nth-child(7) { transition-delay: 360ms; }
+.stop.is-current .stop-body > *:nth-child(8) { transition-delay: 420ms; }
+
+.js .stop:not(.is-current) .stop-body:not(:focus-within) {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .stop-body > * {
+    transform: none;
+  }
+}

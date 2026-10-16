@@ -1,4 +1,5 @@
 ---
+import './styles/Dishes.css';
 import Icon from './Icon.astro';
 import Media from './Media.astro';
 import { links, rich, type BloqueProductos, type SiteContent } from '../data/sitio';
@@ -68,10 +69,3 @@ const { bloque, site } = Astro.props;
     {bloque.nota && <p data-reveal class="mt-8 max-w-2xl text-sm text-crema/70" set:html={rich(bloque.nota)} />}
   </div>
 </section>
-
-<style>
-  /* Las negritas de la nota, en el color del texto (no atenuadas). */
-  section :global(strong) {
-    color: var(--color-crema);
-  }
-</style>

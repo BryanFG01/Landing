@@ -1,0 +1,65 @@
+.menu-toggle span {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  width: 16px;
+  height: 1.5px;
+  margin-top: -0.75px;
+  border-radius: 9999px;
+  background-color: currentColor;
+  transition: transform 700ms var(--ease-fluid);
+}
+
+.menu-toggle span:nth-child(1) {
+  transform: translateY(-3px);
+}
+
+.menu-toggle span:nth-child(2) {
+  transform: translateY(3px);
+}
+
+.menu-toggle[aria-expanded='true'] span:nth-child(1) {
+  transform: translateY(0) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded='true'] span:nth-child(2) {
+  transform: translateY(0) rotate(-45deg);
+}
+
+.menu[data-open] {
+  visibility: visible;
+  opacity: 1;
+}
+
+.menu-item {
+  opacity: 0;
+  transform: translateY(3rem);
+  transition:
+    opacity 700ms var(--ease-fluid),
+    transform 700ms var(--ease-fluid);
+}
+
+.menu[data-open] .menu-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(100ms + var(--i, 0) * 50ms);
+}
+
+/* Píldora que se desliza hasta la sección activa. */
+.nav-indicator {
+  width: var(--w, 0);
+  translate: var(--x, 0) 0;
+  opacity: 0;
+  transition:
+    translate 700ms var(--ease-fluid),
+    width 700ms var(--ease-fluid),
+    opacity 700ms var(--ease-fluid);
+}
+
+.nav-indicator[data-visible] {
+  opacity: 1;
+}
+
+.nav-indicator[data-instant] {
+  transition: opacity 700ms var(--ease-fluid);
+}

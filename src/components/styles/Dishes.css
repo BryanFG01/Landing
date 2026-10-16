@@ -1,0 +1,4 @@
+/* Las negritas de la nota, en el color del texto (no atenuadas). */
+section :global(strong) {
+  color: var(--color-crema);
+}
